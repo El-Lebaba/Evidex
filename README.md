@@ -3,9 +3,9 @@
 Application mobile éducative interactive permettant de visualiser et comprendre des concepts scientifiques abstraits en **mathématiques**, **physique** et **programmation**.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/React%20Native-Mobile-blue?style=for-the-badge&logo=react">
-  <img src="https://img.shields.io/badge/Expo-Framework-black?style=for-the-badge&logo=expo">
-  <img src="https://img.shields.io/badge/JavaScript-Language-yellow?style=for-the-badge&logo=javascript">
+  <img src="https://img.shields.io/badge/React%20Native-Mobile-blue?style=for-the-badge&logo=react">&nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="https://img.shields.io/badge/Expo-Framework-black?style=for-the-badge&logo=expo">&nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="https://img.shields.io/badge/JavaScript-Language-yellow?style=for-the-badge&logo=javascript">&nbsp;&nbsp;&nbsp;&nbsp;
   <img src="https://img.shields.io/badge/SQLite-Database-blue?style=for-the-badge&logo=sqlite">
 </p>
 
