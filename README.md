@@ -76,4 +76,4 @@ Exemples :
 Cloner le dépôt :
 
 ```bash
-git clone https://github.com/Veng143/Evidex.git
+git clone https://github.com/El-Lebaba/Evidex.git
