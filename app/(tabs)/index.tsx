@@ -5,67 +5,132 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const palette = {
   cream: '#F5F1E6',
-  sand: '#E8E0C9',
+  creamDeep: '#E8E0C9',
   sage: '#B8C7B1',
+  sageDeep: '#8FA37E',
   copper: '#BC8559',
+  copperSoft: '#D9B796',
   charcoal: '#19191F',
   slate: '#536165',
   white: '#FFFFFF',
 };
 
-const highlights = [
-  { value: 'Clair', label: 'suivi des dossiers' },
-  { value: 'Rapide', label: 'acces aux informations' },
-  { value: 'Structure', label: 'travail equipe' },
+const missions = [
+  {
+    badge: '01',
+    title: 'Rassembler',
+    text: 'Vos idees, notes et dossiers se retrouvent dans un seul espace net.',
+    tone: 'sage',
+  },
+  {
+    badge: '02',
+    title: 'Organiser',
+    text: 'Chaque point important garde sa place, sans friction et sans bruit.',
+    tone: 'cream',
+  },
+  {
+    badge: '03',
+    title: 'Avancer',
+    text: 'L equipe sait quoi faire, ou cliquer et quoi retenir en quelques secondes.',
+    tone: 'copper',
+  },
 ];
 
 export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
-          <View style={styles.glowTop} />
-          <View style={styles.glowBottom} />
-
-          <View style={styles.logoWrap}>
-            <Image
-              source={require('@/assets/images/evidexe-logo.png')}
-              contentFit="contain"
-              style={styles.logo}
-            />
+        <View style={styles.heroCard}>
+          <View style={styles.topRow}>
+            <View style={styles.logoBadge}>
+              <Image
+                source={require('@/assets/images/evidexe-logo.png')}
+                contentFit="contain"
+                style={styles.logo}
+              />
+            </View>
+            <View style={styles.statusPill}>
+              <Text style={styles.statusPillText}>Pret a lancer</Text>
+            </View>
           </View>
 
-          <View style={styles.copyBlock}>
-            <Text style={styles.eyebrow}>Ecran d&apos;accueil</Text>
-            <Text style={styles.title}>La connaissance prend une forme simple.</Text>
-            <Text style={styles.subtitle}>
-              Evidexe centralise vos idees, vos dossiers et vos points clefs dans une interface
-              lisible, calme et immediate.
-            </Text>
+          <Text style={styles.heroTitle}>Une page d&apos;accueil plus forte, plus claire, plus mobile.</Text>
+          <Text style={styles.heroSubtitle}>
+            Evidex met votre marque au premier plan et transforme l entree dans l application en
+            experience immediate, lisible et memorisable.
+          </Text>
+
+          <View style={styles.progressCard}>
+            <Text style={styles.progressLabel}>Identite visuelle</Text>
+            <View style={styles.progressTrack}>
+              <View style={styles.progressFill} />
+            </View>
+            <View style={styles.progressFooter}>
+              <Text style={styles.progressValue}>Theme Evidex</Text>
+              <Text style={styles.progressPercent}>100%</Text>
+            </View>
           </View>
 
-          <Link href="/(tabs)/explore" style={styles.primaryAction}>
-            <Text style={styles.primaryActionText}>Decouvrir la plateforme</Text>
+          <Link href="/(tabs)/explore" style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>Commencer l&apos;exploration</Text>
           </Link>
 
-          <View style={styles.previewCard}>
-            <View style={styles.previewHeader}>
-              <Text style={styles.previewKicker}>Ambiance</Text>
-              <Text style={styles.previewTag}>Sauge / cuivre / creme</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>Logo</Text>
+              <Text style={styles.statLabel}>visible des l&apos;ouverture</Text>
             </View>
-            <Image
-              source={require('@/assets/images/home-illustration.png')}
-              contentFit="cover"
-              style={styles.previewImage}
-            />
+            <View style={[styles.statCard, styles.statCardAccent]}>
+              <Text style={styles.statValue}>Mobile</Text>
+              <Text style={styles.statLabel}>structure plus dynamique</Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.highlightsRow}>
-          {highlights.map((item) => (
-            <View key={item.value} style={styles.highlightCard}>
-              <Text style={styles.highlightValue}>{item.value}</Text>
-              <Text style={styles.highlightLabel}>{item.label}</Text>
+        <View style={styles.showcaseCard}>
+          <View style={styles.showcaseHeader}>
+            <Text style={styles.sectionKicker}>Apercu</Text>
+            <Text style={styles.sectionTitle}>Une interface qui va droit au but.</Text>
+          </View>
+          <View style={styles.showcasePanel}>
+            <View style={styles.showcaseOrb} />
+            <View style={styles.showcaseStack}>
+              <View style={[styles.showcaseTile, styles.showcaseTileLarge]}>
+                <Text style={styles.showcaseTileTitle}>Identite forte</Text>
+                <Text style={styles.showcaseTileText}>Le logo et le message restent visibles des la premiere seconde.</Text>
+              </View>
+              <View style={styles.showcaseRow}>
+                <View style={[styles.showcaseTile, styles.showcaseTileSage]}>
+                  <Text style={styles.showcaseMiniLabel}>Calme</Text>
+                </View>
+                <View style={[styles.showcaseTile, styles.showcaseTileCopper]}>
+                  <Text style={styles.showcaseMiniLabel}>Impact</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.missionsBlock}>
+          <Text style={styles.sectionKicker}>Parcours</Text>
+          <Text style={styles.sectionTitle}>Trois actions, une sensation de progression.</Text>
+
+          {missions.map((mission) => (
+            <View
+              key={mission.badge}
+              style={[
+                styles.missionCard,
+                mission.tone === 'sage' && styles.missionCardSage,
+                mission.tone === 'cream' && styles.missionCardCream,
+                mission.tone === 'copper' && styles.missionCardCopper,
+              ]}>
+              <View style={styles.missionBadge}>
+                <Text style={styles.missionBadgeText}>{mission.badge}</Text>
+              </View>
+              <View style={styles.missionCopy}>
+                <Text style={styles.missionTitle}>{mission.title}</Text>
+                <Text style={styles.missionText}>{mission.text}</Text>
+              </View>
             </View>
           ))}
         </View>
@@ -80,142 +145,278 @@ const styles = StyleSheet.create({
     backgroundColor: palette.cream,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 32,
-    gap: 22,
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 36,
+    gap: 18,
   },
-  hero: {
-    position: 'relative',
-    overflow: 'hidden',
-    borderRadius: 32,
-    paddingHorizontal: 22,
-    paddingTop: 24,
-    paddingBottom: 26,
-    backgroundColor: palette.sand,
+  heroCard: {
+    borderRadius: 34,
+    padding: 20,
+    backgroundColor: palette.sage,
     borderWidth: 1,
-    borderColor: 'rgba(83, 97, 101, 0.12)',
+    borderColor: 'rgba(25,25,31,0.08)',
+    gap: 16,
   },
-  glowTop: {
-    position: 'absolute',
-    top: -80,
-    right: -30,
-    width: 220,
-    height: 220,
-    borderRadius: 999,
-    backgroundColor: 'rgba(184, 199, 177, 0.55)',
-  },
-  glowBottom: {
-    position: 'absolute',
-    bottom: -120,
-    left: -60,
-    width: 250,
-    height: 250,
-    borderRadius: 999,
-    backgroundColor: 'rgba(188, 133, 89, 0.18)',
-  },
-  logoWrap: {
-    width: '100%',
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 22,
+    gap: 12,
+  },
+  logoBadge: {
+    flex: 1,
+    minHeight: 92,
+    borderRadius: 26,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    backgroundColor: palette.white,
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 2,
   },
   logo: {
-    width: 178,
-    height: 56,
+    width: '100%',
+    height: 58,
   },
-  copyBlock: {
-    gap: 12,
-    marginBottom: 22,
-  },
-  eyebrow: {
-    alignSelf: 'flex-start',
+  statusPill: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 10,
     borderRadius: 999,
-    overflow: 'hidden',
-    backgroundColor: palette.sage,
-    color: palette.charcoal,
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.1,
+    backgroundColor: palette.charcoal,
   },
-  title: {
-    maxWidth: 320,
+  statusPillText: {
+    color: palette.white,
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  heroTitle: {
     color: palette.charcoal,
     fontSize: 34,
-    lineHeight: 39,
+    lineHeight: 40,
     fontWeight: '800',
   },
-  subtitle: {
-    maxWidth: 330,
+  heroSubtitle: {
     color: palette.slate,
     fontSize: 16,
     lineHeight: 24,
+    maxWidth: 330,
   },
-  primaryAction: {
-    alignSelf: 'flex-start',
-    marginBottom: 22,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderRadius: 18,
-    backgroundColor: palette.charcoal,
+  progressCard: {
+    borderRadius: 24,
+    padding: 16,
+    backgroundColor: 'rgba(255,255,255,0.68)',
+    gap: 10,
   },
-  primaryActionText: {
-    color: palette.white,
-    fontSize: 15,
+  progressLabel: {
+    color: palette.sageDeep,
+    fontSize: 13,
     fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
-  previewCard: {
-    borderRadius: 28,
-    padding: 14,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    borderWidth: 1,
-    borderColor: 'rgba(25, 25, 31, 0.08)',
+  progressTrack: {
+    height: 16,
+    borderRadius: 999,
+    backgroundColor: 'rgba(25,25,31,0.08)',
+    overflow: 'hidden',
   },
-  previewHeader: {
+  progressFill: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: palette.copper,
+  },
+  progressFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
   },
-  previewKicker: {
+  progressValue: {
     color: palette.charcoal,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
-  previewTag: {
+  progressPercent: {
     color: palette.copper,
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
   },
-  previewImage: {
-    width: '100%',
-    aspectRatio: 1.93,
-    borderRadius: 20,
-    backgroundColor: palette.sage,
-  },
-  highlightsRow: {
-    gap: 14,
-  },
-  highlightCard: {
-    borderRadius: 24,
+  primaryButton: {
+    borderRadius: 22,
     paddingHorizontal: 18,
-    paddingVertical: 18,
-    backgroundColor: palette.white,
-    borderWidth: 1,
-    borderColor: 'rgba(151, 168, 134, 0.18)',
+    paddingVertical: 16,
+    backgroundColor: palette.charcoal,
   },
-  highlightValue: {
-    color: palette.copper,
-    fontSize: 24,
+  primaryButtonText: {
+    color: palette.white,
+    fontSize: 16,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+    backgroundColor: palette.white,
+  },
+  statCardAccent: {
+    backgroundColor: palette.creamDeep,
+  },
+  statValue: {
+    color: palette.charcoal,
+    fontSize: 18,
     fontWeight: '800',
     marginBottom: 4,
   },
-  highlightLabel: {
+  statLabel: {
+    color: palette.slate,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+  },
+  showcaseCard: {
+    borderRadius: 30,
+    padding: 16,
+    backgroundColor: palette.white,
+    borderWidth: 1,
+    borderColor: 'rgba(25,25,31,0.06)',
+    gap: 14,
+  },
+  showcaseHeader: {
+    gap: 6,
+  },
+  sectionKicker: {
+    color: palette.copper,
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.9,
+  },
+  sectionTitle: {
+    color: palette.charcoal,
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '800',
+  },
+  showcasePanel: {
+    overflow: 'hidden',
+    borderRadius: 24,
+    padding: 16,
+    backgroundColor: palette.creamDeep,
+    minHeight: 220,
+  },
+  showcaseOrb: {
+    position: 'absolute',
+    top: -32,
+    right: -22,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(184, 199, 177, 0.75)',
+  },
+  showcaseStack: {
+    gap: 12,
+  },
+  showcaseRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  showcaseTile: {
+    borderRadius: 22,
+    padding: 16,
+    backgroundColor: palette.white,
+  },
+  showcaseTileLarge: {
+    minHeight: 118,
+    justifyContent: 'flex-end',
+  },
+  showcaseTileSage: {
+    flex: 1,
+    backgroundColor: palette.sage,
+    minHeight: 72,
+    justifyContent: 'center',
+  },
+  showcaseTileCopper: {
+    flex: 1,
+    backgroundColor: palette.copperSoft,
+    minHeight: 72,
+    justifyContent: 'center',
+  },
+  showcaseTileTitle: {
+    color: palette.charcoal,
+    fontSize: 22,
+    lineHeight: 26,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  showcaseTileText: {
     color: palette.slate,
     fontSize: 14,
     lineHeight: 20,
+    fontWeight: '600',
+  },
+  showcaseMiniLabel: {
+    color: palette.charcoal,
+    fontSize: 16,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  missionsBlock: {
+    gap: 12,
+  },
+  missionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    borderRadius: 28,
+    padding: 16,
+  },
+  missionCardSage: {
+    backgroundColor: palette.sage,
+  },
+  missionCardCream: {
+    backgroundColor: palette.creamDeep,
+  },
+  missionCardCopper: {
+    backgroundColor: palette.copperSoft,
+  },
+  missionBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.charcoal,
+  },
+  missionBadgeText: {
+    color: palette.white,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  missionCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  missionTitle: {
+    color: palette.charcoal,
+    fontSize: 19,
+    fontWeight: '800',
+  },
+  missionText: {
+    color: palette.slate,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
   },
 });
