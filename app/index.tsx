@@ -21,18 +21,18 @@ const symbolPool = [
   '=',
   'x',
   'y',
-  'z',
+  '兀',
   '%',
-  'pi',
-  'f(x)',
-  'sum',
-  'sqrt',
-  'infinity',
-  'theta',
-  'delta',
-  'lambda',
-  'mu',
-  'sigma',
+  '∫',
+  '∅',
+  '∂',
+  '⋢',
+  '∡',
+  '∰',
+  '∑',
+  'β',
+  'ψ',
+  'ζ',
   '>',
   '<',
   '1/2',
@@ -244,9 +244,9 @@ export default function IntroScreen() {
         </Animated.View>
 
         <Animated.View
-          pointerEvents="none"
           style={[
             styles.curtain,
+            styles.noPointerEvents,
             {
               transform: [{ translateY: curtainTranslateY }],
             },
@@ -322,5 +322,8 @@ const styles = StyleSheet.create({
   curtain: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: palette.cream,
+  },
+  noPointerEvents: {
+    pointerEvents: 'none',
   },
 });
