@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+type PercentString = `${number}%`;
+
 const palette = {
   cream: '#EEF5ED',
   sage: '#B8C7B1',
@@ -38,14 +40,18 @@ const symbolPool = [
 
 const symbolCount = 26;
 
+function toPercent(value: number): PercentString {
+  return `${value}%`;
+}
+
 function createSymbolSeed(index: number) {
   const horizontalBand = (index * 37) % 84;
   const verticalBand = (index * 19) % 72;
 
   return {
     symbol: symbolPool[index % symbolPool.length],
-    left: `${8 + horizontalBand}%`,
-    top: `${10 + verticalBand}%`,
+    left: toPercent(8 + horizontalBand),
+    top: toPercent(10 + verticalBand),
     size: 16 + ((index * 7) % 18),
     duration: 3600 + ((index * 233) % 2600),
     delay: (index * 140) % 1800,
@@ -311,6 +317,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.4,
     textTransform: 'lowercase',
+    zIndex: 2,
   },
   curtain: {
     ...StyleSheet.absoluteFillObject,
