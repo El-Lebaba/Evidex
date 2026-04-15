@@ -163,7 +163,7 @@ export default function IntroScreen() {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/home');
     });
   };
 
