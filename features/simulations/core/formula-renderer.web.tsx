@@ -1,5 +1,5 @@
 import katex from 'katex';
-import 'katex/dist/katex.min.css';
+import { useEffect } from 'react';
 
 type FormulaRendererProps = {
   fallback: string;
@@ -15,6 +15,23 @@ const FONT_SIZE = {
 } as const;
 
 export function FormulaRenderer({ fallback, math, centered = false, size = 'md' }: FormulaRendererProps) {
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const stylesheetId = 'katex-cdn-stylesheet';
+    if (document.getElementById(stylesheetId)) {
+      return;
+    }
+
+    const link = document.createElement('link');
+    link.id = stylesheetId;
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.45/dist/katex.min.css';
+    document.head.appendChild(link);
+  }, []);
+
   const markup = katex.renderToString(math || fallback, {
     displayMode: false,
     output: 'html',
