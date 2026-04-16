@@ -1,5 +1,5 @@
 import { LineSimulationScreen } from '@/features/simulations/core/line-simulation-screen';
 
 export function Physics7Simulation() {
-  return <LineSimulationScreen title="Physics 7" color="#577590" />;
+  return <LineSimulationScreen title="Physics 7" />;
 }

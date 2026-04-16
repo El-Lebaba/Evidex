@@ -1,5 +1,5 @@
 import { LineSimulationScreen } from '@/features/simulations/core/line-simulation-screen';
 
 export function Math9Simulation() {
-  return <LineSimulationScreen title="Math 9" color="#FB5607" />;
+  return <LineSimulationScreen title="Math 9" />;
 }

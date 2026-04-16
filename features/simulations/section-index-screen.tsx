@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Href, Link } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,18 +21,20 @@ export function SectionIndexScreen({ section, title }: SectionIndexScreenProps) 
     <SafeAreaView style={styles.safeArea}>
       <ThemedView style={styles.container}>
         <ThemedText type="title">{title}</ThemedText>
-        <ThemedText style={styles.description}>
-          Temporary simulation files are ready below. Open any file to test the section.
-        </ThemedText>
+        <ThemedText style={styles.description}>Choisis une simulation.</ThemedText>
 
         <ScrollView contentContainerStyle={styles.listContent} style={styles.list}>
-          {entries.map((entry) => (
-            <Link href={entry.href} key={entry.href} asChild>
-              <Pressable style={styles.card}>
-                <ThemedText type="defaultSemiBold">{entry.title}</ThemedText>
-              </Pressable>
-            </Link>
-          ))}
+          {entries.length === 0 ? (
+            <ThemedText style={styles.description}>Aucune simulation pour l'instant.</ThemedText>
+          ) : (
+            entries.map((entry) => (
+            <Link href={entry.href as Href} key={entry.href} asChild>
+                <Pressable style={styles.card}>
+                  <ThemedText type="defaultSemiBold">{entry.title}</ThemedText>
+                </Pressable>
+              </Link>
+            ))
+          )}
         </ScrollView>
       </ThemedView>
     </SafeAreaView>
