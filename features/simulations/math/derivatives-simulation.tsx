@@ -340,10 +340,15 @@ export function DerivativesSimulation() {
   const [functionIndex, setFunctionIndex] = useState(0);
   const [x0, setX0] = useState(1);
   const { width } = useWindowDimensions();
-  const contentWidth = Math.min(width - 32, 760);
-  const graphWidth = contentWidth;
-  const graphHeight = clamp(Math.round(graphWidth * 0.62), 320, 460);
+  const horizontalPadding = width >= 1200 ? 12 : 16;
+  const contentWidth = width - horizontalPadding * 2;
+  const isWide = width >= 980;
   const isCompact = width < 560;
+  const graphWidth = isWide ? Math.round(contentWidth * 0.665) : contentWidth;
+  const graphHeight = isWide
+    ? clamp(Math.round(graphWidth * 0.82), 540, 820)
+    : clamp(Math.round(graphWidth * 0.82), 400, 580);
+  const sideWidth = isWide ? contentWidth - graphWidth - 20 : contentWidth;
   const activeFunction = FUNCTIONS[functionIndex];
   const y0 = activeFunction.fn(x0);
   const slope = activeFunction.dfn(x0);
@@ -352,89 +357,93 @@ export function DerivativesSimulation() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ThemedView lightColor={THEME.background} style={styles.container}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={[styles.header, { width: contentWidth }]}>
-            <ThemedText lightColor={THEME.ink} style={styles.title}>
-              {'D\u00e9riv\u00e9es'}
-            </ThemedText>
-            <ThemedText lightColor={THEME.mutedInk} style={styles.subtitle}>
-              {'Le taux de variation instantan\u00e9'}
-            </ThemedText>
-          </View>
+          <View
+            style={[
+              styles.workspace,
+              {
+                width: contentWidth,
+                alignItems: isWide ? 'center' : 'stretch',
+                flexDirection: isWide ? 'row' : 'column',
+                paddingLeft: isWide ? 22 : 0,
+                paddingRight: isWide ? 22 : 0,
+                minHeight: isWide ? graphHeight + 40 : undefined,
+              },
+            ]}>
+            <DerivativeGraph activeFunction={activeFunction} graphHeight={graphHeight} graphWidth={graphWidth} x0={x0} />
 
-          <View style={[styles.formulaCard, { width: contentWidth }]}>
-            <FormulaRenderer
-              centered
-              fallback={"f'(x) = lim h->0 (f(x+h) - f(x)) / h"}
-              math={"f'(x)=\\lim_{h\\to0}\\frac{f(x+h)-f(x)}{h}"}
-              size="md"
-            />
-          </View>
+            <View style={[styles.sidebar, { paddingRight: isWide ? 44 : 0, width: sideWidth }]}>
+              <View style={styles.formulaCard}>
+                <FormulaRenderer
+                  centered
+                  fallback={"f'(x) = lim h->0 (f(x+h) - f(x)) / h"}
+                  math={"f'(x)=\\lim_{h\\to0}\\frac{f(x+h)-f(x)}{h}"}
+                  size="md"
+                />
+              </View>
 
-          <DerivativeGraph activeFunction={activeFunction} graphHeight={graphHeight} graphWidth={graphWidth} x0={x0} />
+              <View style={styles.panel}>
+                <View style={styles.controlHeader}>
+                  <ThemedText lightColor={THEME.mutedInk} style={styles.label}>
+                    Fonction
+                  </ThemedText>
+                  <View style={styles.activeFormulaWrap}>
+                    <FormulaRenderer fallback={activeFunction.label} math={activeFunction.latex} size="sm" />
+                  </View>
+                </View>
+                <View style={styles.functionGrid}>
+                  {FUNCTIONS.map((mathFunction, index) => {
+                    const isActive = functionIndex === index;
 
-          <View style={[styles.panel, { width: contentWidth }]}>
-            <View style={styles.controlHeader}>
-              <ThemedText lightColor={THEME.mutedInk} style={styles.label}>
-                Fonction
-              </ThemedText>
-              <View style={styles.activeFormulaWrap}>
-                <FormulaRenderer fallback={activeFunction.label} math={activeFunction.latex} size="sm" />
+                    return (
+                      <Pressable
+                        key={mathFunction.label}
+                        onPress={() => setFunctionIndex(index)}
+                        style={[styles.functionButton, isActive ? styles.functionButtonActive : undefined]}>
+                        <View style={styles.functionButtonFormula}>
+                          <FormulaRenderer
+                            fallback={mathFunction.label}
+                            math={mathFunction.latex}
+                            centered
+                            size="sm"
+                          />
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <View style={styles.derivativeFormulaCard}>
+                  <ThemedText lightColor={THEME.mutedInk} style={styles.derivativeFormulaLabel}>
+                    {'Fonction d\u00e9riv\u00e9e'}
+                  </ThemedText>
+                  <FormulaRenderer fallback={`f(x) = ${activeFunction.label}`} math={`f(x)=${activeFunction.latex}`} />
+                  <FormulaRenderer fallback={`f'(x) = ${activeFunction.derivativeLabel}`} math={`f'(x)=${activeFunction.derivativeLatex}`} />
+                </View>
+              </View>
+
+              <View style={styles.panel}>
+                <XSlider onChange={setX0} value={x0} />
+              </View>
+
+              <View style={[styles.statsGrid, { flexDirection: isCompact ? 'column' : 'row' }]}>
+                <View style={styles.statCard}>
+                  <View style={styles.statFormulaWrap}>
+                    <FormulaRenderer fallback="f(x0)" math="f(x_0)" centered size="sm" />
+                  </View>
+                  <ThemedText lightColor={THEME.ink} style={styles.statValue}>
+                    {formatNumber(y0)}
+                  </ThemedText>
+                </View>
+                <View style={styles.statCard}>
+                  <View style={styles.statFormulaWrap}>
+                    <FormulaRenderer fallback="f'(x0)" math="f'(x_0)" centered size="sm" />
+                  </View>
+                  <ThemedText lightColor={THEME.ink} style={styles.statValue}>
+                    {formatNumber(slope)}
+                  </ThemedText>
+                </View>
               </View>
             </View>
-            <View style={styles.functionGrid}>
-              {FUNCTIONS.map((mathFunction, index) => {
-                const isActive = functionIndex === index;
-
-                return (
-                  <Pressable
-                    key={mathFunction.label}
-                    onPress={() => setFunctionIndex(index)}
-                    style={[styles.functionButton, isActive ? styles.functionButtonActive : undefined]}>
-                    <View style={styles.functionButtonFormula}>
-                      <FormulaRenderer
-                        fallback={mathFunction.label}
-                        math={mathFunction.latex}
-                        centered
-                        size="sm"
-                      />
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-            <View style={styles.derivativeFormulaCard}>
-              <ThemedText lightColor={THEME.mutedInk} style={styles.derivativeFormulaLabel}>
-                {'Fonction d\u00e9riv\u00e9e'}
-              </ThemedText>
-              <FormulaRenderer fallback={`f(x) = ${activeFunction.label}`} math={`f(x)=${activeFunction.latex}`} />
-              <FormulaRenderer fallback={`f'(x) = ${activeFunction.derivativeLabel}`} math={`f'(x)=${activeFunction.derivativeLatex}`} />
-            </View>
-
           </View>
-
-          <View style={[styles.panel, { width: contentWidth }]}>
-            <XSlider onChange={setX0} value={x0} />
-          </View>
-
-          <View style={[styles.statsGrid, { flexDirection: isCompact ? 'column' : 'row', width: contentWidth }]}>
-            <View style={styles.statCard}>
-              <View style={styles.statFormulaWrap}>
-                <FormulaRenderer fallback="f(x0)" math="f(x_0)" centered size="sm" />
-              </View>
-              <ThemedText lightColor={THEME.ink} style={styles.statValue}>
-                {formatNumber(y0)}
-              </ThemedText>
-            </View>
-            <View style={styles.statCard}>
-              <View style={styles.statFormulaWrap}>
-                <FormulaRenderer fallback="f'(x0)" math="f'(x_0)" centered size="sm" />
-              </View>
-              <ThemedText lightColor={THEME.ink} style={styles.statValue}>
-                {formatNumber(slope)}
-              </ThemedText>
-            </View>
-          </View>
-
         </ScrollView>
       </ThemedView>
       <DefinitionPopover
@@ -460,32 +469,27 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: 'center',
-    gap: 22,
-    paddingBottom: 36,
-    paddingHorizontal: 16,
-    paddingTop: 24,
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingBottom: 28,
+    paddingHorizontal: 12,
+    paddingTop: 20,
   },
-  header: {
-    gap: 6,
+  workspace: {
+    alignItems: 'flex-start',
+    gap: 20,
   },
-  title: {
-    color: THEME.ink,
-    fontSize: 34,
-    fontWeight: '800',
-    lineHeight: 38,
-  },
-  subtitle: {
-    color: THEME.mutedInk,
-    fontSize: 16,
-    lineHeight: 22,
+  sidebar: {
+    gap: 16,
   },
   formulaCard: {
     backgroundColor: THEME.surface,
     borderColor: THEME.border,
     borderRadius: 8,
     borderWidth: 1,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    width: '100%',
   },
   graph: {
     backgroundColor: THEME.panel,
@@ -555,7 +559,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     gap: 18,
-    padding: 18,
+    padding: 16,
+    width: '100%',
   },
   controlHeader: {
     alignItems: 'center',
@@ -698,7 +703,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   statsGrid: {
-    gap: 14,
+    gap: 12,
+    width: '100%',
   },
   statCard: {
     alignItems: 'center',
