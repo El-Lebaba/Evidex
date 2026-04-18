@@ -1,8 +1,8 @@
 export type SimulationSection = 'math' | 'physics' | 'java-programming';
 
 export type SimulationEntry = {
-  title: string;
   href: string;
+  title: string;
 };
 
 function createEntries(section: SimulationSection, prefix: string): SimulationEntry[] {
@@ -10,8 +10,8 @@ function createEntries(section: SimulationSection, prefix: string): SimulationEn
     const number = index + 1;
 
     return {
-      title: `${prefix} ${number}`,
       href: `/(tabs)/${section}/${prefix.toLowerCase()}-${number}`,
+      title: `${prefix} ${number}`,
     };
   });
 }
@@ -19,10 +19,14 @@ function createEntries(section: SimulationSection, prefix: string): SimulationEn
 export const SIMULATION_CATALOG: Record<SimulationSection, SimulationEntry[]> = {
   math: [
     {
-      title: 'Dérivées',
       href: '/(tabs)/math/derivatives',
+      title: 'Derivees',
     },
-    ...createEntries('math', 'Math').slice(1),
+    {
+      href: '/(tabs)/math/integrals',
+      title: 'Integrales',
+    },
+    ...createEntries('math', 'Math').slice(2),
   ],
   physics: createEntries('physics', 'Physics'),
   'java-programming': createEntries('java-programming', 'Java'),
