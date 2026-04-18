@@ -27,6 +27,8 @@ type IntegralFunction = {
 };
 
 type MethodKey = 'left' | 'right' | 'midpoint' | 'trapezoid';
+type IntegralKind = 'definite' | 'indefinite';
+type ViewMode = 'integral' | 'riemann';
 
 type Domain = {
   xMax: number;
@@ -40,7 +42,44 @@ type Point = {
   y: number;
 };
 
+type TrapezoidSegment = {
+  fill: string;
+  points: string;
+  stroke: string;
+};
+
+type GraphShape =
+  | {
+      kind: 'rect';
+      rect: {
+        fill: string;
+        height: number;
+        stroke: string;
+        width: number;
+        x: number;
+        y: number;
+      };
+    }
+  | {
+      kind: 'segments';
+      segments: TrapezoidSegment[];
+    }
+  | {
+      kind: 'polygon';
+      fill: string;
+      points: string;
+      stroke: string;
+    };
+
 const FUNCTIONS: IntegralFunction[] = [
+  {
+    exact: (a, b) => (b ** 2 - a ** 2) / 2,
+    fn: (x) => x,
+    integralLabel: 'x^2 / 2',
+    integralLatex: '\\frac{x^2}{2}',
+    label: 'x',
+    latex: 'x',
+  },
   {
     exact: (a, b) => (b ** 3 - a ** 3) / 3,
     fn: (x) => x * x,
@@ -73,6 +112,14 @@ const FUNCTIONS: IntegralFunction[] = [
     label: 'e^x / 3',
     latex: '\\frac{e^x}{3}',
   },
+  {
+    exact: (a, b) => Math.sin(b) - Math.sin(a),
+    fn: (x) => Math.cos(x),
+    integralLabel: 'sin(x)',
+    integralLatex: '\\sin(x)',
+    label: 'cos(x)',
+    latex: '\\cos(x)',
+  },
 ];
 
 const METHODS: { key: MethodKey; label: string }[] = [
@@ -87,6 +134,8 @@ const THEME = {
   accent: '#D97B6C',
   approximation: 'rgba(124, 207, 191, 0.26)',
   approximationStroke: '#7EA6E0',
+  approximationNegative: 'rgba(217, 123, 108, 0.24)',
+  approximationNegativeStroke: '#D97B6C',
   background: '#E9ECE4',
   border: '#A8B59A',
   bounds: '#D8A94A',
@@ -214,16 +263,20 @@ function IntegralGraph({
   b,
   graphHeight,
   graphWidth,
+  integralKind,
   method,
   n,
+  viewMode,
 }: {
   a: number;
   activeFunction: IntegralFunction;
   b: number;
   graphHeight: number;
   graphWidth: number;
+  integralKind: IntegralKind;
   method: MethodKey;
   n: number;
+  viewMode: ViewMode;
 }) {
   const functionPaths = useMemo(
     () => sampleFunction(activeFunction.fn, graphWidth, graphHeight, DOMAIN),
@@ -237,7 +290,7 @@ function IntegralGraph({
   const shapes = useMemo(() => {
     const dx = (b - a) / n;
 
-    return Array.from({ length: n }, (_, index) => {
+    return Array.from({ length: n }, (_, index): GraphShape => {
       const xLeft = a + index * dx;
       const xRight = xLeft + dx;
       const baseLeft = getScreenPoint(xLeft, 0, graphWidth, graphHeight, DOMAIN);
@@ -248,14 +301,68 @@ function IntegralGraph({
         const yRight = activeFunction.fn(xRight);
         const topLeft = getScreenPoint(xLeft, yLeft, graphWidth, graphHeight, DOMAIN);
         const topRight = getScreenPoint(xRight, yRight, graphWidth, graphHeight, DOMAIN);
+        const sameSign = yLeft === 0 || yRight === 0 || yLeft * yRight > 0;
+
+        if (sameSign) {
+          return {
+            kind: 'polygon',
+            fill: yLeft >= 0 || yRight >= 0 ? THEME.approximation : THEME.approximationNegative,
+            points: [
+              `${baseLeft.x},${baseLeft.y}`,
+              `${topLeft.x},${topLeft.y}`,
+              `${topRight.x},${topRight.y}`,
+              `${baseRight.x},${baseRight.y}`,
+            ].join(' '),
+            stroke: yLeft >= 0 || yRight >= 0 ? THEME.approximationStroke : THEME.approximationNegativeStroke,
+          };
+        }
+
+        const zeroX = xLeft + ((0 - yLeft) * (xRight - xLeft)) / (yRight - yLeft);
+        const zeroPoint = getScreenPoint(zeroX, 0, graphWidth, graphHeight, DOMAIN);
 
         return {
-          points: [
-            `${baseLeft.x},${baseLeft.y}`,
-            `${topLeft.x},${topLeft.y}`,
-            `${topRight.x},${topRight.y}`,
-            `${baseRight.x},${baseRight.y}`,
-          ].join(' '),
+          kind: 'segments',
+          segments: yLeft > 0
+            ? [
+                {
+                  fill: THEME.approximation,
+                  points: [
+                    `${baseLeft.x},${baseLeft.y}`,
+                    `${topLeft.x},${topLeft.y}`,
+                    `${zeroPoint.x},${zeroPoint.y}`,
+                  ].join(' '),
+                  stroke: THEME.approximationStroke,
+                },
+                {
+                  fill: THEME.approximationNegative,
+                  points: [
+                    `${zeroPoint.x},${zeroPoint.y}`,
+                    `${topRight.x},${topRight.y}`,
+                    `${baseRight.x},${baseRight.y}`,
+                  ].join(' '),
+                  stroke: THEME.approximationNegativeStroke,
+                },
+              ]
+            : [
+                {
+                  fill: THEME.approximationNegative,
+                  points: [
+                    `${baseLeft.x},${baseLeft.y}`,
+                    `${topLeft.x},${topLeft.y}`,
+                    `${zeroPoint.x},${zeroPoint.y}`,
+                  ].join(' '),
+                  stroke: THEME.approximationNegativeStroke,
+                },
+                {
+                  fill: THEME.approximation,
+                  points: [
+                    `${zeroPoint.x},${zeroPoint.y}`,
+                    `${topRight.x},${topRight.y}`,
+                    `${baseRight.x},${baseRight.y}`,
+                  ].join(' '),
+                  stroke: THEME.approximationStroke,
+                },
+              ],
         };
       }
 
@@ -266,15 +373,48 @@ function IntegralGraph({
       const rectHeight = Math.abs(baseLeft.y - topY);
 
       return {
+        kind: 'rect',
         rect: {
+          fill: y >= 0 ? THEME.approximation : THEME.approximationNegative,
           height: rectHeight,
+          stroke: y >= 0 ? THEME.approximationStroke : THEME.approximationNegativeStroke,
           width: baseRight.x - baseLeft.x,
           x: baseLeft.x,
           y: rectY,
-        },
+            },
       };
     });
   }, [a, activeFunction, b, graphHeight, graphWidth, method, n]);
+
+  const integralAreaPolygons = useMemo(() => {
+    const steps = 320;
+    const rangeStart = integralKind === 'indefinite' ? DOMAIN.xMin : a;
+    const rangeEnd = integralKind === 'indefinite' ? DOMAIN.xMax : b;
+    const xValues = Array.from({ length: steps + 1 }, (_, index) => rangeStart + (index / steps) * (rangeEnd - rangeStart));
+    const positivePoints: string[] = [];
+    const negativePoints: string[] = [];
+
+    const startBase = getScreenPoint(rangeStart, 0, graphWidth, graphHeight, DOMAIN);
+    positivePoints.push(`${startBase.x},${startBase.y}`);
+    negativePoints.push(`${startBase.x},${startBase.y}`);
+
+    xValues.forEach((x) => {
+      const y = activeFunction.fn(x);
+      const positivePoint = getScreenPoint(x, Math.max(y, 0), graphWidth, graphHeight, DOMAIN);
+      const negativePoint = getScreenPoint(x, Math.min(y, 0), graphWidth, graphHeight, DOMAIN);
+      positivePoints.push(`${positivePoint.x},${positivePoint.y}`);
+      negativePoints.push(`${negativePoint.x},${negativePoint.y}`);
+    });
+
+    const endBase = getScreenPoint(rangeEnd, 0, graphWidth, graphHeight, DOMAIN);
+    positivePoints.push(`${endBase.x},${endBase.y}`);
+    negativePoints.push(`${endBase.x},${endBase.y}`);
+
+    return {
+      negative: negativePoints.join(' '),
+      positive: positivePoints.join(' '),
+    };
+  }, [a, activeFunction, b, graphHeight, graphWidth, integralKind]);
 
   return (
     <View style={[styles.graph, { height: graphHeight, width: graphWidth }]}>
@@ -308,33 +448,66 @@ function IntegralGraph({
         <Line stroke={THEME.grid} strokeWidth={1.5} x1={0} x2={graphWidth} y1={origin.y} y2={origin.y} />
         <Line stroke={THEME.grid} strokeWidth={1.5} x1={origin.x} x2={origin.x} y1={0} y2={graphHeight} />
 
-        {shapes.map((shape, index) =>
-          shape.rect ? (
-            <Rect
-              fill={THEME.approximation}
-              height={shape.rect.height}
-              key={index}
-              stroke={THEME.approximationStroke}
-              strokeWidth={1}
-              width={shape.rect.width}
-              x={shape.rect.x}
-              y={shape.rect.y}
-            />
-          ) : (
+        {viewMode === 'integral' ? (
+          <>
             <Polygon
               fill={THEME.approximation}
-              key={index}
-              points={shape.points}
+              points={integralAreaPolygons.positive}
               stroke={THEME.approximationStroke}
               strokeWidth={1.2}
             />
+            <Polygon
+              fill={THEME.approximationNegative}
+              points={integralAreaPolygons.negative}
+              stroke={THEME.approximationNegativeStroke}
+              strokeWidth={1.2}
+            />
+          </>
+        ) : (
+          shapes.map((shape, index) =>
+            shape.kind === 'rect'
+              ? (
+                  <Rect
+                    fill={shape.rect.fill}
+                    height={shape.rect.height}
+                    key={index}
+                    stroke={shape.rect.stroke}
+                    strokeWidth={1}
+                    width={shape.rect.width}
+                    x={shape.rect.x}
+                    y={shape.rect.y}
+                  />
+                )
+              : shape.kind === 'segments'
+                ? shape.segments.map((segment: TrapezoidSegment, segmentIndex: number) => (
+                    <Polygon
+                      fill={segment.fill}
+                      key={`${index}-${segmentIndex}`}
+                      points={segment.points}
+                      stroke={segment.stroke}
+                      strokeWidth={1.2}
+                    />
+                  ))
+                : (
+                    <Polygon
+                      fill={shape.fill}
+                      key={index}
+                      points={shape.points}
+                      stroke={shape.stroke}
+                      strokeWidth={1.2}
+                    />
+                  )
           )
         )}
 
         <PlotPath color={THEME.function} paths={functionPaths} thickness={3.25} />
 
-        <Line stroke={THEME.bounds} strokeDasharray="6 6" strokeWidth={2} x1={boundA.x} x2={boundA.x} y1={0} y2={graphHeight} />
-        <Line stroke={THEME.bounds} strokeDasharray="6 6" strokeWidth={2} x1={boundB.x} x2={boundB.x} y1={0} y2={graphHeight} />
+        {viewMode === 'riemann' || integralKind === 'definite' ? (
+          <>
+            <Line stroke={THEME.bounds} strokeDasharray="6 6" strokeWidth={2} x1={boundA.x} x2={boundA.x} y1={0} y2={graphHeight} />
+            <Line stroke={THEME.bounds} strokeDasharray="6 6" strokeWidth={2} x1={boundB.x} x2={boundB.x} y1={0} y2={graphHeight} />
+          </>
+        ) : null}
       </Svg>
 
       <View style={styles.graphLegend}>
@@ -347,7 +520,7 @@ function IntegralGraph({
         <View style={styles.legendItem}>
           <View style={[styles.legendSwatch, { backgroundColor: THEME.approximationStroke }]} />
           <ThemedText lightColor={THEME.mutedInk} style={styles.legendText}>
-            Somme
+            {viewMode === 'integral' ? 'Aire' : 'Somme'}
           </ThemedText>
         </View>
         <View style={styles.legendItem}>
@@ -358,16 +531,20 @@ function IntegralGraph({
         </View>
       </View>
 
-      <View style={[styles.boundPill, { left: clamp(boundA.x - 18, 8, graphWidth - 38) }]}>
-        <ThemedText lightColor={THEME.ink} style={styles.boundText}>
-          a
-        </ThemedText>
-      </View>
-      <View style={[styles.boundPill, { left: clamp(boundB.x - 18, 8, graphWidth - 38) }]}>
-        <ThemedText lightColor={THEME.ink} style={styles.boundText}>
-          b
-        </ThemedText>
-      </View>
+      {viewMode === 'riemann' || integralKind === 'definite' ? (
+        <>
+          <View style={[styles.boundPill, { left: clamp(boundA.x - 18, 8, graphWidth - 38) }]}>
+            <ThemedText lightColor={THEME.ink} style={styles.boundText}>
+              a
+            </ThemedText>
+          </View>
+          <View style={[styles.boundPill, { left: clamp(boundB.x - 18, 8, graphWidth - 38) }]}>
+            <ThemedText lightColor={THEME.ink} style={styles.boundText}>
+              b
+            </ThemedText>
+          </View>
+        </>
+      ) : null}
     </View>
   );
 }
@@ -466,8 +643,10 @@ export function IntegralsSimulation() {
   const [functionIndex, setFunctionIndex] = useState(0);
   const [a, setA] = useState(-2);
   const [b, setB] = useState(2);
+  const [integralKind, setIntegralKind] = useState<IntegralKind>('definite');
   const [n, setN] = useState(10);
   const [method, setMethod] = useState<MethodKey>('midpoint');
+  const [viewMode, setViewMode] = useState<ViewMode>('riemann');
   const { width } = useWindowDimensions();
 
   const horizontalPadding = width >= 1200 ? 12 : 16;
@@ -501,15 +680,38 @@ export function IntegralsSimulation() {
                 width: contentWidth,
               },
             ]}>
+            <View style={[styles.graphColumn, { width: graphWidth }]}>
+              <View style={styles.panel}>
+                <View style={styles.modeGrid}>
+                  <Pressable
+                    onPress={() => setViewMode('integral')}
+                    style={[styles.modeButton, viewMode === 'integral' ? styles.functionButtonActive : undefined]}>
+                    <ThemedText lightColor="#000000" style={styles.methodText}>
+                      Integrale
+                    </ThemedText>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setViewMode('riemann')}
+                    style={[styles.modeButton, viewMode === 'riemann' ? styles.functionButtonActive : undefined]}>
+                    <ThemedText lightColor="#000000" style={styles.methodText}>
+                      Somme de Riemann
+                    </ThemedText>
+                  </Pressable>
+                </View>
+              </View>
+
             <IntegralGraph
               a={a}
               activeFunction={activeFunction}
               b={b}
               graphHeight={graphHeight}
               graphWidth={graphWidth}
+              integralKind={integralKind}
               method={method}
               n={n}
+              viewMode={viewMode}
             />
+            </View>
 
             <View style={[styles.sidebar, { paddingRight: isWide ? 44 : 0, width: sideWidth }]}>
               <View style={styles.formulaCard}>
@@ -520,6 +722,30 @@ export function IntegralsSimulation() {
                   size="md"
                 />
               </View>
+
+              {viewMode === 'integral' ? (
+                <View style={styles.typeCard}>
+                  <ThemedText lightColor={THEME.mutedInk} style={styles.errorLabel}>
+                    Type d integrale
+                  </ThemedText>
+                  <View style={styles.modeGrid}>
+                    <Pressable
+                      onPress={() => setIntegralKind('definite')}
+                      style={[styles.modeButton, integralKind === 'definite' ? styles.functionButtonActive : undefined]}>
+                      <ThemedText lightColor="#000000" style={styles.methodText}>
+                        Definie
+                      </ThemedText>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setIntegralKind('indefinite')}
+                      style={[styles.modeButton, integralKind === 'indefinite' ? styles.functionButtonActive : undefined]}>
+                      <ThemedText lightColor="#000000" style={styles.methodText}>
+                        Indefinie
+                      </ThemedText>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : null}
 
               <View style={styles.panel}>
                 <View style={styles.controlHeader}>
@@ -548,23 +774,6 @@ export function IntegralsSimulation() {
                   })}
                 </View>
 
-                <View style={styles.methodGrid}>
-                  {METHODS.map((entry) => {
-                    const isActive = method === entry.key;
-
-                    return (
-                      <Pressable
-                        key={entry.key}
-                        onPress={() => setMethod(entry.key)}
-                        style={[styles.methodButton, isActive ? styles.methodButtonActive : undefined]}>
-                        <ThemedText lightColor="#000000" style={styles.methodText}>
-                          {entry.label}
-                        </ThemedText>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-
                 <View style={styles.derivativeFormulaCard}>
                   <ThemedText lightColor={THEME.mutedInk} style={styles.derivativeFormulaLabel}>
                     Primitive
@@ -574,43 +783,83 @@ export function IntegralsSimulation() {
                 </View>
               </View>
 
-              <View style={styles.panel}>
-                <NumericSlider label="Borne a" max={b - 0.5} min={DOMAIN.xMin} onChange={setA} step={0.1} value={a} />
-                <NumericSlider label="Borne b" max={DOMAIN.xMax} min={a + 0.5} onChange={setB} step={0.1} value={b} />
-                <NumericSlider integer label="Rectangles n" max={100} min={1} onChange={setN} step={1} value={n} />
-              </View>
+              {viewMode === 'riemann' ? (
+                <View style={styles.panel}>
+                  <View style={styles.controlHeader}>
+                    <ThemedText lightColor={THEME.mutedInk} style={styles.label}>
+                      Methode
+                    </ThemedText>
+                  </View>
+                  <View style={styles.methodGrid}>
+                    {METHODS.map((entry) => {
+                      const isActive = method === entry.key;
+
+                      return (
+                        <Pressable
+                          key={entry.key}
+                          onPress={() => setMethod(entry.key)}
+                          style={[styles.methodButton, isActive ? styles.methodButtonActive : undefined]}>
+                          <ThemedText lightColor="#000000" style={styles.methodText}>
+                            {entry.label}
+                          </ThemedText>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              ) : null}
+
+              {viewMode === 'riemann' || integralKind === 'definite' ? (
+                <View style={styles.panel}>
+                  {viewMode === 'riemann' || integralKind === 'definite' ? (
+                    <>
+                      <NumericSlider label="Borne a" max={b - 0.5} min={DOMAIN.xMin} onChange={setA} step={0.1} value={a} />
+                      <NumericSlider label="Borne b" max={DOMAIN.xMax} min={a + 0.5} onChange={setB} step={0.1} value={b} />
+                    </>
+                  ) : null}
+                  {viewMode === 'riemann' ? (
+                    <NumericSlider integer label="Rectangles n" max={100} min={1} onChange={setN} step={1} value={n} />
+                  ) : null}
+                </View>
+              ) : null}
 
               <View style={[styles.statsGrid, { flexDirection: isCompact ? 'column' : 'row' }]}>
-                <View style={styles.statCard}>
-                  <View style={styles.statFormulaWrap}>
-                    <ThemedText lightColor={THEME.mutedInk} style={styles.statCaption}>
-                      Somme de Riemann
+                {viewMode === 'riemann' ? (
+                  <View style={styles.statCard}>
+                    <View style={styles.statFormulaWrap}>
+                      <ThemedText lightColor={THEME.mutedInk} style={styles.statCaption}>
+                        Somme de Riemann
+                      </ThemedText>
+                    </View>
+                    <ThemedText lightColor={THEME.ink} style={styles.statValue}>
+                      {approximation.toFixed(4)}
                     </ThemedText>
                   </View>
-                  <ThemedText lightColor={THEME.ink} style={styles.statValue}>
-                    {approximation.toFixed(4)}
-                  </ThemedText>
-                </View>
-                <View style={styles.statCard}>
-                  <View style={styles.statFormulaWrap}>
-                    <ThemedText lightColor={THEME.mutedInk} style={styles.statCaption}>
-                      Valeur exacte
+                ) : null}
+                {!(viewMode === 'integral' && integralKind === 'indefinite') ? (
+                  <View style={styles.statCard}>
+                    <View style={styles.statFormulaWrap}>
+                      <ThemedText lightColor={THEME.mutedInk} style={styles.statCaption}>
+                        Valeur
+                      </ThemedText>
+                    </View>
+                    <ThemedText lightColor={THEME.ink} style={styles.statValue}>
+                      {exact.toFixed(4)}
                     </ThemedText>
                   </View>
-                  <ThemedText lightColor={THEME.ink} style={styles.statValue}>
-                    {exact.toFixed(4)}
-                  </ThemedText>
-                </View>
+                ) : null}
               </View>
 
-              <View style={styles.errorCard}>
-                <ThemedText lightColor={THEME.mutedInk} style={styles.errorLabel}>
-                  Erreur
-                </ThemedText>
-                <ThemedText lightColor={THEME.ink} style={styles.errorValue}>
-                  {error.toFixed(5)}
-                </ThemedText>
-              </View>
+              {viewMode === 'riemann' ? (
+                <View style={styles.errorCard}>
+                  <ThemedText lightColor={THEME.mutedInk} style={styles.errorLabel}>
+                    Erreur
+                  </ThemedText>
+                  <ThemedText lightColor={THEME.ink} style={styles.errorValue}>
+                    {error.toFixed(5)}
+                  </ThemedText>
+                </View>
+              ) : null}
             </View>
           </View>
         </ScrollView>
@@ -647,6 +896,9 @@ const styles = StyleSheet.create({
   workspace: {
     alignItems: 'flex-start',
     gap: 20,
+  },
+  graphColumn: {
+    gap: 16,
   },
   sidebar: {
     gap: 16,
@@ -775,6 +1027,21 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
   },
+  modeGrid: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modeButton: {
+    alignItems: 'center',
+    backgroundColor: THEME.surface,
+    borderColor: THEME.grid,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    height: 42,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
   methodButton: {
     alignItems: 'center',
     backgroundColor: THEME.surface,
@@ -893,6 +1160,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     gap: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    width: '100%',
+  },
+  typeCard: {
+    alignItems: 'center',
+    backgroundColor: THEME.panel,
+    borderColor: THEME.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 10,
     paddingHorizontal: 16,
     paddingVertical: 12,
     width: '100%',
