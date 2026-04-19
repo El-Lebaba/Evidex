@@ -7,13 +7,15 @@ type FormulaRendererProps = {
   fallback: string;
   math: string;
   centered?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 };
 
 const FONT_SIZE = {
   sm: 16,
   md: 18,
   lg: 20,
+  xl: 36,
+  xxl: 44,
 } as const;
 
 export function FormulaRenderer({
@@ -23,7 +25,7 @@ export function FormulaRenderer({
 }: FormulaRendererProps) {
   return (
     <ThemedText
-      lightColor="#243B53"
+      lightColor="#000000"
       style={[
         styles.fallback,
         centered ? styles.centered : undefined,
@@ -36,9 +38,9 @@ export function FormulaRenderer({
 
 const styles = StyleSheet.create({
   fallback: {
-    color: '#243B53',
+    color: '#000000',
     fontFamily: 'monospace',
-    fontWeight: '700',
+    fontWeight: '900',
   },
   centered: {
     textAlign: 'center',
