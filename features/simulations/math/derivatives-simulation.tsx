@@ -50,11 +50,12 @@ const FUNCTIONS: MathFunction[] = [
 const DOMAIN: Domain = { xMin: -5, xMax: 5, yMin: -4, yMax: 4 };
 const TRACK_MIN = -4;
 const TRACK_MAX = 4;
+const SIMULATION_PAGE_BACKGROUND = '#EAE3D2';
 const THEME = {
   background: "#E9ECE4",
   panel: "#DDE4D5",
   surface: "#F3F1E7",
-  border: "#A8B59A",
+  border: "#243B53",
 
   ink: "#243B53",
   mutedInk: "#6E7F73",
@@ -462,9 +463,11 @@ export function DerivativesSimulation() {
 
 const styles = StyleSheet.create({
   safeArea: {
+    backgroundColor: SIMULATION_PAGE_BACKGROUND,
     flex: 1,
   },
   container: {
+    backgroundColor: SIMULATION_PAGE_BACKGROUND,
     flex: 1,
   },
   content: {
@@ -500,9 +503,9 @@ const styles = StyleSheet.create({
   },
   slopePill: {
     backgroundColor: THEME.surface,
-    borderColor: THEME.grid,
+    borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     paddingHorizontal: 8,
     paddingVertical: 4,
     position: 'absolute',
@@ -515,9 +518,9 @@ const styles = StyleSheet.create({
   },
   graphLegend: {
     backgroundColor: THEME.surface,
-    borderColor: THEME.grid,
+    borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     bottom: 12,
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -557,7 +560,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.panel,
     borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     gap: 18,
     padding: 16,
     width: '100%',
@@ -592,9 +595,9 @@ const styles = StyleSheet.create({
   functionButton: {
     alignItems: 'center',
     backgroundColor: THEME.surface,
-    borderColor: THEME.grid,
+    borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     flexBasis: '30%',
     flexGrow: 1,
     height: 48,
@@ -619,9 +622,9 @@ const styles = StyleSheet.create({
   },
   derivativeFormulaCard: {
     backgroundColor: THEME.surface,
-    borderColor: THEME.grid,
+    borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     gap: 4,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -658,9 +661,9 @@ const styles = StyleSheet.create({
   },
   sliderTrack: {
     backgroundColor: THEME.surface,
-    borderColor: THEME.grid,
+    borderColor: THEME.border,
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: 1.5,
     height: 30,
     justifyContent: 'center',
     overflow: 'hidden',
@@ -690,9 +693,9 @@ const styles = StyleSheet.create({
   stepButton: {
     alignItems: 'center',
     backgroundColor: THEME.surface,
-    borderColor: THEME.grid,
+    borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     height: 34,
     justifyContent: 'center',
     paddingHorizontal: 18,
@@ -711,7 +714,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.panel,
     borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     flex: 1,
     gap: 6,
     padding: 18,
