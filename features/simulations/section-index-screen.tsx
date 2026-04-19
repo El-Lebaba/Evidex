@@ -2,7 +2,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Href, Link } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-  DimensionValue,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { FloatingMathSymbols } from '@/features/simulations/core/floating-math-symbols';
 import {
   SIMULATION_CATALOG,
   SimulationEntry,
@@ -28,17 +28,17 @@ type SectionIndexScreenProps = {
 type MathFilter = 'all' | 'ready' | 'soon' | 'calcul' | 'analyse' | 'algebre';
 
 const MATH_THEME = {
-  background: '#243B53',
+  background: '#EEF5ED',
   card: '#F3F1E7',
-  cardAlt: '#E9ECE4',
+  cardAlt: '#E3E5D2',
   cardSoft: '#DDE4D5',
-  chip: 'rgba(167, 184, 158, 0.35)',
-  chipActive: 'rgba(124, 207, 191, 0.26)',
-  coral: '#D97B6C',
+  chip: 'rgba(168, 181, 154, 0.34)',
+  chipActive: 'rgba(168, 181, 154, 0.72)',
+  coral: '#AAB18E',
   coralSoft: 'rgba(217, 123, 108, 0.24)',
-  gold: '#D8A94A',
-  mint: '#7CCFBF',
-  blue: '#7EA6E0',
+  gold: '#8D9771',
+  mint: '#C0D6C2',
+  blue: '#A8B59A',
   ink: '#243B53',
   mutedInk: '#6E7F73',
   line: '#B7C7B0',
@@ -58,10 +58,9 @@ function getMathCardLayout(screenWidth: number) {
   const containerWidth = Math.min(screenWidth, 980);
   const innerWidth = containerWidth - 40;
   const isTwoColumns = innerWidth >= 760;
-  const gridGap = 16;
+  const gridGap = 22;
 
   return {
-    cardWidth: (isTwoColumns ? (innerWidth - gridGap) / 2 : innerWidth) as DimensionValue,
     containerWidth,
     gridGap,
     isTwoColumns,
@@ -97,7 +96,7 @@ function MathSectionScreen({ entries, title }: { entries: SimulationEntry[]; tit
 
   const normalizedQuery = query.trim().toLowerCase();
   const featuredEntry = entries.find((entry) => entry.featured) ?? entries[0];
-  const { cardWidth, containerWidth, gridGap, isTwoColumns } = getMathCardLayout(width);
+  const { containerWidth, gridGap, isTwoColumns } = getMathCardLayout(width);
 
   const filteredEntries = useMemo(
     () =>
@@ -116,21 +115,23 @@ function MathSectionScreen({ entries, title }: { entries: SimulationEntry[]; tit
   return (
     <SafeAreaView style={styles.safeArea}>
       <ThemedView lightColor={MATH_THEME.background} style={styles.mathSafeArea}>
+        <FloatingMathSymbols showGlow={false} style={styles.pageBackground} />
+
         <ScrollView contentContainerStyle={styles.mathScrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.mathContainer}>
             <View style={styles.mathHero}>
               <View style={styles.heroBadge}>
-                <MaterialCommunityIcons color={MATH_THEME.gold} name="school-outline" size={16} />
-                <ThemedText lightColor={MATH_THEME.card} style={styles.heroBadgeText}>
+                <MaterialCommunityIcons color="#243B53" name="school-outline" size={16} />
+                <ThemedText darkColor="#243B53" lightColor="#243B53" style={styles.heroBadgeText}>
                   Espace d etude
                 </ThemedText>
               </View>
 
-              <ThemedText lightColor={MATH_THEME.card} style={styles.heroTitle}>
+              <ThemedText lightColor={MATH_THEME.ink} style={styles.heroTitle}>
                 {title}
               </ThemedText>
 
-              <ThemedText lightColor={MATH_THEME.cardSoft} style={styles.heroSubtitle}>
+              <ThemedText lightColor={MATH_THEME.mutedInk} style={styles.heroSubtitle}>
                 Explore tes simulations dans une interface plus claire, plus douce et pensee pour reviser efficacement.
               </ThemedText>
 
@@ -160,7 +161,7 @@ function MathSectionScreen({ entries, title }: { entries: SimulationEntry[]; tit
                         pressed || hovered ? styles.filterChipPressed : null,
                       ]}>
                       <ThemedText
-                        lightColor={isActive ? MATH_THEME.ink : MATH_THEME.card}
+                        lightColor={isActive ? '#243B53' : '#5A6A58'}
                         style={[styles.filterChipText, isActive ? styles.filterChipTextActive : null]}>
                         {filter.label}
                       </ThemedText>
@@ -248,65 +249,66 @@ function MathSectionScreen({ entries, title }: { entries: SimulationEntry[]; tit
                         !isTwoColumns ? styles.cardRowSingle : null,
                       ]}>
                       {row.map((entry) => (
-                        <Link href={entry.href as Href} key={entry.href} asChild>
-                          <Pressable
-                            style={({ pressed, hovered }) => [
-                              styles.mathCard,
-                              { width: cardWidth },
-                              pressed || hovered ? styles.mathCardPressed : null,
-                            ]}>
-                            <View style={styles.mathCardTop}>
-                              <View style={styles.iconShell}>
-                                <MaterialCommunityIcons
-                                  color={MATH_THEME.coral}
-                                  name={(entry.icon ?? 'book-open-variant') as keyof typeof MaterialCommunityIcons.glyphMap}
-                                  size={22}
-                                />
-                              </View>
+                        <View key={entry.href} style={styles.cardSlot}>
+                          <Link href={entry.href as Href} asChild>
+                            <Pressable
+                              style={({ pressed, hovered }) => [
+                                styles.mathCard,
+                                pressed || hovered ? styles.mathCardPressed : null,
+                              ]}>
+                              <View style={styles.mathCardTop}>
+                                <View style={styles.iconShell}>
+                                  <MaterialCommunityIcons
+                                    color={MATH_THEME.coral}
+                                    name={(entry.icon ?? 'book-open-variant') as keyof typeof MaterialCommunityIcons.glyphMap}
+                                    size={22}
+                                  />
+                                </View>
 
-                              <View style={styles.cardStatusRow}>
-                                <View
-                                  style={[
-                                    styles.statusBadge,
-                                    entry.status === 'ready' ? styles.statusReady : styles.statusSoon,
-                                  ]}>
-                                  <ThemedText
-                                    lightColor={entry.status === 'ready' ? MATH_THEME.ink : MATH_THEME.coral}
-                                    style={styles.statusText}>
-                                    {entry.status === 'ready' ? 'Disponible' : 'Bientot'}
-                                  </ThemedText>
+                                <View style={styles.cardStatusRow}>
+                                  <View
+                                    style={[
+                                      styles.statusBadge,
+                                      entry.status === 'ready' ? styles.statusReady : styles.statusSoon,
+                                    ]}>
+                                    <ThemedText
+                                      lightColor="#243B53"
+                                      style={styles.statusText}>
+                                      {entry.status === 'ready' ? 'Disponible' : 'Bientot'}
+                                    </ThemedText>
+                                  </View>
                                 </View>
                               </View>
-                            </View>
 
-                            <ThemedText lightColor={MATH_THEME.ink} style={styles.cardTitle}>
-                              {entry.title}
-                            </ThemedText>
+                              <ThemedText lightColor={MATH_THEME.ink} style={styles.cardTitle}>
+                                {entry.title}
+                              </ThemedText>
 
-                            <ThemedText lightColor={MATH_THEME.mutedInk} numberOfLines={3} style={styles.cardDescription}>
-                              {entry.description ?? 'Simulation interactive a ouvrir depuis cette fiche.'}
-                            </ThemedText>
+                              <ThemedText lightColor={MATH_THEME.mutedInk} numberOfLines={3} style={styles.cardDescription}>
+                                {entry.description ?? 'Simulation interactive a ouvrir depuis cette fiche.'}
+                              </ThemedText>
 
-                            <View style={styles.cardFooter}>
-                              <View style={styles.categoryBadge}>
-                                <ThemedText lightColor={MATH_THEME.ink} style={styles.categoryText}>
-                                  {entry.category === 'calcul'
-                                    ? 'Calcul'
-                                    : entry.category === 'analyse'
-                                      ? 'Analyse'
-                                      : entry.category === 'algebre'
-                                        ? 'Algebre'
-                                        : 'A venir'}
-                                </ThemedText>
+                              <View style={styles.cardFooter}>
+                                <View style={styles.categoryBadge}>
+                                  <ThemedText lightColor={MATH_THEME.ink} style={styles.categoryText}>
+                                    {entry.category === 'calcul'
+                                      ? 'Calcul'
+                                      : entry.category === 'analyse'
+                                        ? 'Analyse'
+                                        : entry.category === 'algebre'
+                                          ? 'Algebre'
+                                          : 'A venir'}
+                                  </ThemedText>
+                                </View>
+
+                                <MaterialCommunityIcons color={MATH_THEME.coral} name="arrow-right" size={20} />
                               </View>
-
-                              <MaterialCommunityIcons color={MATH_THEME.coral} name="arrow-right" size={20} />
-                            </View>
-                          </Pressable>
-                        </Link>
+                            </Pressable>
+                          </Link>
+                        </View>
                       ))}
 
-                      {isTwoColumns && row.length === 1 ? <View style={{ width: cardWidth }} /> : null}
+                      {isTwoColumns && row.length === 1 ? <View style={styles.cardSlot} /> : null}
                     </View>
                   ))}
                 </View>
@@ -386,6 +388,12 @@ const styles = StyleSheet.create({
   },
   mathSafeArea: {
     flex: 1,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  pageBackground: {
+    backgroundColor: '#EEF5ED',
+    opacity: 1,
   },
   mathScrollContent: {
     paddingBottom: 36,
@@ -403,20 +411,28 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   mathHero: {
-    backgroundColor: 'rgba(167, 184, 158, 0.12)',
-    borderColor: 'rgba(124, 207, 191, 0.26)',
+    backgroundColor: '#F3F1E7',
+    borderColor: '#A8B59A',
     borderRadius: 26,
-    borderWidth: 1,
+    borderWidth: 2,
     gap: 14,
     overflow: 'hidden',
     paddingHorizontal: 22,
     paddingVertical: 24,
+    position: 'relative',
+    shadowColor: '#243B53',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    zIndex: 0,
   },
   heroBadge: {
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(217, 123, 108, 0.24)',
+    backgroundColor: '#DDE4D5',
     borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#A8B59A',
     flexDirection: 'row',
     gap: 8,
     paddingHorizontal: 12,
@@ -428,28 +444,30 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   heroTitle: {
+    color: '#243B53',
     fontSize: 36,
     fontWeight: '800',
     lineHeight: 42,
   },
   heroSubtitle: {
+    color: '#4E6254',
     fontSize: 16,
     lineHeight: 24,
     maxWidth: 760,
   },
   searchShell: {
     alignItems: 'center',
-    backgroundColor: MATH_THEME.card,
-    borderColor: MATH_THEME.line,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#AAB18E',
     borderRadius: 18,
-    borderWidth: 1,
+    borderWidth: 2,
     flexDirection: 'row',
     gap: 10,
     minHeight: 54,
     paddingHorizontal: 16,
   },
   searchInput: {
-    color: MATH_THEME.ink,
+    color: '#243B53',
     flex: 1,
     fontSize: 16,
     paddingVertical: 0,
@@ -459,42 +477,44 @@ const styles = StyleSheet.create({
     paddingRight: 4,
   },
   filterChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    backgroundColor: '#F3F1E7',
+    borderColor: '#A8B59A',
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: 1.5,
     minHeight: 40,
     paddingHorizontal: 15,
     paddingVertical: 10,
   },
   filterChipActive: {
-    backgroundColor: MATH_THEME.chipActive,
-    borderColor: MATH_THEME.mint,
+    backgroundColor: '#AAB18E',
+    borderColor: '#8D9771',
   },
   filterChipPressed: {
     opacity: 0.82,
     transform: [{ translateY: 1 }],
   },
   filterChipText: {
+    color: '#5A6A58',
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 18,
   },
   filterChipTextActive: {
+    color: '#243B53',
     fontWeight: '800',
   },
   featuredCard: {
-    backgroundColor: MATH_THEME.cardAlt,
-    borderColor: MATH_THEME.line,
+    backgroundColor: '#E3E5D2',
+    borderColor: '#A8B59A',
     borderRadius: 26,
-    borderWidth: 1,
+    borderWidth: 1.5,
     overflow: 'hidden',
     paddingHorizontal: 22,
     paddingVertical: 22,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.12,
-    shadowRadius: 30,
+    shadowOpacity: 0.1,
+    shadowRadius: 24,
     width: '100%',
   },
   featuredCardPressed: {
@@ -511,22 +531,27 @@ const styles = StyleSheet.create({
   },
   featuredPill: {
     alignSelf: 'flex-start',
-    backgroundColor: MATH_THEME.chip,
+    backgroundColor: '#DDE4D5',
     borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#A8B59A',
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   featuredPillText: {
+    color: '#243B53',
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 18,
   },
   featuredTitle: {
+    color: '#243B53',
     fontSize: 28,
     fontWeight: '800',
     lineHeight: 34,
   },
   featuredDescription: {
+    color: '#4E6254',
     fontSize: 15,
     lineHeight: 23,
     maxWidth: 720,
@@ -554,8 +579,10 @@ const styles = StyleSheet.create({
   primaryAction: {
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: MATH_THEME.coral,
+    backgroundColor: '#AAB18E',
     borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#8D9771',
     justifyContent: 'center',
     minHeight: 44,
     minWidth: 96,
@@ -563,6 +590,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   primaryActionText: {
+    color: '#243B53',
     fontSize: 15,
     fontWeight: '800',
     lineHeight: 18,
@@ -572,11 +600,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   sectionTitle: {
+    color: '#243B53',
     fontSize: 22,
     fontWeight: '800',
     lineHeight: 28,
   },
   sectionSubtitle: {
+    color: '#5C6F5E',
     fontSize: 14,
     lineHeight: 20,
   },
@@ -605,6 +635,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   cardRow: {
+    alignItems: 'stretch',
     flexDirection: 'row',
     justifyContent: 'flex-start',
     width: '100%',
@@ -612,22 +643,26 @@ const styles = StyleSheet.create({
   cardRowSingle: {
     justifyContent: 'center',
   },
+  cardSlot: {
+    flex: 1,
+  },
   mathCard: {
-    backgroundColor: MATH_THEME.card,
-    borderColor: MATH_THEME.line,
+    backgroundColor: '#F3F1E7',
+    borderColor: '#A8B59A',
     borderRadius: 22,
-    borderWidth: 1,
+    borderWidth: 1.5,
     gap: 14,
     height: 246,
+    width: '100%',
     paddingHorizontal: 20,
     paddingVertical: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
+    shadowColor: '#243B53',
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
-    shadowRadius: 18,
+    shadowRadius: 14,
   },
   mathCardPressed: {
-    borderColor: MATH_THEME.coral,
+    borderColor: '#8D9771',
     transform: [{ translateY: 2 }],
   },
   mathCardTop: {
@@ -637,10 +672,10 @@ const styles = StyleSheet.create({
   },
   iconShell: {
     alignItems: 'center',
-    backgroundColor: MATH_THEME.cardAlt,
+    backgroundColor: '#DDE4D5',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: MATH_THEME.line,
+    borderColor: '#A8B59A',
     height: 48,
     justifyContent: 'center',
     width: 48,
@@ -656,22 +691,25 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   statusReady: {
-    backgroundColor: MATH_THEME.chipActive,
+    backgroundColor: '#C0D6C2',
   },
   statusSoon: {
-    backgroundColor: MATH_THEME.coralSoft,
+    backgroundColor: '#E3E5D2',
   },
   statusText: {
+    color: '#243B53',
     fontSize: 12,
     fontWeight: '800',
     lineHeight: 16,
   },
   cardTitle: {
+    color: '#243B53',
     fontSize: 22,
     fontWeight: '800',
     lineHeight: 28,
   },
   cardDescription: {
+    color: '#4E6254',
     flex: 1,
     fontSize: 14,
     lineHeight: 21,
@@ -683,12 +721,15 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
   },
   categoryBadge: {
-    backgroundColor: MATH_THEME.chip,
+    backgroundColor: '#DDE4D5',
     borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#A8B59A',
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   categoryText: {
+    color: '#243B53',
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,

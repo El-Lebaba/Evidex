@@ -71,6 +71,8 @@ type GraphShape =
       stroke: string;
     };
 
+const SIMULATION_PAGE_BACKGROUND = '#EAE3D2';
+
 const FUNCTIONS: IntegralFunction[] = [
   {
     exact: (a, b) => (b ** 2 - a ** 2) / 2,
@@ -137,7 +139,7 @@ const THEME = {
   approximationNegative: 'rgba(217, 123, 108, 0.24)',
   approximationNegativeStroke: '#D97B6C',
   background: '#E9ECE4',
-  border: '#A8B59A',
+  border: '#243B53',
   bounds: '#D8A94A',
   function: '#7CCFBF',
   grid: '#B7C7B0',
@@ -880,9 +882,11 @@ export function IntegralsSimulation() {
 
 const styles = StyleSheet.create({
   safeArea: {
+    backgroundColor: SIMULATION_PAGE_BACKGROUND,
     flex: 1,
   },
   container: {
+    backgroundColor: SIMULATION_PAGE_BACKGROUND,
     flex: 1,
   },
   content: {
@@ -907,7 +911,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.surface,
     borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     paddingHorizontal: 16,
     paddingVertical: 12,
     width: '100%',
@@ -916,14 +920,14 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.panel,
     borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     overflow: 'hidden',
   },
   graphLegend: {
     backgroundColor: THEME.surface,
-    borderColor: THEME.grid,
+    borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     bottom: 12,
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -957,9 +961,9 @@ const styles = StyleSheet.create({
   boundPill: {
     alignItems: 'center',
     backgroundColor: THEME.surface,
-    borderColor: THEME.bounds,
+    borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     bottom: 12,
     height: 24,
     justifyContent: 'center',
@@ -975,7 +979,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.panel,
     borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     gap: 18,
     padding: 16,
     width: '100%',
@@ -1003,9 +1007,9 @@ const styles = StyleSheet.create({
   functionButtonWide: {
     alignItems: 'center',
     backgroundColor: THEME.surface,
-    borderColor: THEME.grid,
+    borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     flexBasis: '47%',
     flexGrow: 1,
     height: 48,
@@ -1034,9 +1038,9 @@ const styles = StyleSheet.create({
   modeButton: {
     alignItems: 'center',
     backgroundColor: THEME.surface,
-    borderColor: THEME.grid,
+    borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     flex: 1,
     height: 42,
     justifyContent: 'center',
@@ -1045,9 +1049,9 @@ const styles = StyleSheet.create({
   methodButton: {
     alignItems: 'center',
     backgroundColor: THEME.surface,
-    borderColor: THEME.grid,
+    borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     flexBasis: '47%',
     flexGrow: 1,
     height: 40,
@@ -1065,9 +1069,9 @@ const styles = StyleSheet.create({
   },
   derivativeFormulaCard: {
     backgroundColor: THEME.surface,
-    borderColor: THEME.grid,
+    borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     gap: 4,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -1097,9 +1101,9 @@ const styles = StyleSheet.create({
   },
   sliderTrack: {
     backgroundColor: THEME.surface,
-    borderColor: THEME.grid,
+    borderColor: THEME.border,
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: 1.5,
     height: 30,
     justifyContent: 'center',
     overflow: 'hidden',
@@ -1130,7 +1134,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.panel,
     borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     flex: 1,
     gap: 6,
     padding: 18,
@@ -1158,7 +1162,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.surface,
     borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     gap: 4,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -1169,7 +1173,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.panel,
     borderColor: THEME.border,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     gap: 10,
     paddingHorizontal: 16,
     paddingVertical: 12,
