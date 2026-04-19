@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
   GestureResponderEvent,
   PanResponder,
+  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   TextInput,
   useWindowDimensions,
@@ -16,6 +17,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { DefinitionPopover } from '@/features/simulations/core/definition-popover';
 import { FormulaRenderer } from '@/features/simulations/core/formula-renderer';
+import {
+  SimulationScreenHeader,
+  SIMULATION_HEADER_CONTENT_GAP,
+  SIMULATION_HEADER_TOTAL_HEIGHT,
+} from '@/features/simulations/core/simulation-screen-header';
 
 type IntegralFunction = {
   exact: (a: number, b: number) => number;
@@ -72,6 +78,15 @@ type GraphShape =
     };
 
 const SIMULATION_PAGE_BACKGROUND = '#EAE3D2';
+
+const WEB_SLIDER_INTERACTION_STYLE =
+  Platform.OS === 'web'
+    ? ({
+        cursor: 'ew-resize',
+        touchAction: 'none',
+        userSelect: 'none',
+      } as any)
+    : undefined;
 
 const FUNCTIONS: IntegralFunction[] = [
   {
@@ -132,6 +147,7 @@ const METHODS: { key: MethodKey; label: string }[] = [
 ];
 
 const DOMAIN: Domain = { xMax: 4, xMin: -4, yMax: 5, yMin: -3 };
+const BOUND_GAP = 0.1;
 const THEME = {
   accent: '#D97B6C',
   approximation: 'rgba(124, 207, 191, 0.26)',
@@ -249,11 +265,40 @@ function calculateApproximation(
     const xi = a + index * dx;
 
     if (method === 'trapezoid') {
-      total += ((fn(xi) + fn(xi + dx)) / 2) * dx;
+      const yLeft = fn(xi);
+      const yRight = fn(xi + dx);
+
+      if (yLeft === 0 || yRight === 0 || yLeft * yRight >= 0) {
+        total += ((Math.abs(yLeft) + Math.abs(yRight)) / 2) * dx;
+        continue;
+      }
+
+      const splitRatio = Math.abs(yLeft) / (Math.abs(yLeft) + Math.abs(yRight));
+      const leftWidth = dx * splitRatio;
+      const rightWidth = dx - leftWidth;
+
+      total += (Math.abs(yLeft) * leftWidth) / 2;
+      total += (Math.abs(yRight) * rightWidth) / 2;
       continue;
     }
 
-    total += fn(evaluateSample(method, xi, dx)) * dx;
+    total += Math.abs(fn(evaluateSample(method, xi, dx))) * dx;
+  }
+
+  return total;
+}
+
+function calculateReferenceArea(fn: (x: number) => number, a: number, b: number, steps = 3200) {
+  const dx = (b - a) / steps;
+  let total = 0;
+
+  for (let index = 0; index < steps; index += 1) {
+    const xLeft = a + index * dx;
+    const xRight = xLeft + dx;
+    const yLeft = Math.abs(fn(xLeft));
+    const yRight = Math.abs(fn(xRight));
+
+    total += ((yLeft + yRight) / 2) * dx;
   }
 
   return total;
@@ -552,6 +597,8 @@ function IntegralGraph({
 }
 
 function NumericSlider({
+  displayMax,
+  displayMin,
   integer = false,
   label,
   max,
@@ -560,6 +607,8 @@ function NumericSlider({
   step,
   value,
 }: {
+  displayMax?: number;
+  displayMin?: number;
   integer?: boolean;
   label: string;
   max: number;
@@ -579,6 +628,9 @@ function NumericSlider({
     return integer ? Math.round(clampedValue) : Number(clampedValue.toFixed(2));
   };
 
+  const visualMin = displayMin ?? min;
+  const visualMax = displayMax ?? max;
+
   const commitTypedValue = () => {
     const normalized = typedValue.replace(',', '.').trim();
     const nextValue = Number(normalized);
@@ -597,7 +649,7 @@ function NumericSlider({
     event.currentTarget.measure((_x, _y, measuredWidth, _height, pageX) => {
       const position = clamp(event.nativeEvent.pageX - pageX, 0, measuredWidth);
       const ratio = measuredWidth === 0 ? 0 : position / measuredWidth;
-      const rawValue = min + ratio * (max - min);
+      const rawValue = visualMin + ratio * (visualMax - visualMin);
       const snappedValue = normalizeValue(Math.round(rawValue / step) * step);
       onChange(snappedValue);
     });
@@ -606,15 +658,19 @@ function NumericSlider({
   const panResponder = useMemo(
     () =>
       PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponderCapture: () => true,
         onMoveShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponderCapture: () => true,
         onPanResponderGrant: setFromEvent,
         onPanResponderMove: setFromEvent,
-        onStartShouldSetPanResponder: () => true,
+        onPanResponderTerminationRequest: () => false,
+        onShouldBlockNativeResponder: () => true,
       }),
-    [max, min, onChange, step]
+    [onChange, step, visualMax, visualMin]
   );
 
-  const percent = ((value - min) / (max - min || 1)) * 100;
+  const percent = ((value - visualMin) / (visualMax - visualMin || 1)) * 100;
 
   return (
     <View style={styles.sliderBlock}>
@@ -633,9 +689,9 @@ function NumericSlider({
           value={typedValue}
         />
       </View>
-      <View {...panResponder.panHandlers} style={styles.sliderTrack}>
+      <View {...panResponder.panHandlers} style={[styles.sliderTrack, WEB_SLIDER_INTERACTION_STYLE]}>
         <View style={[styles.sliderFill, { width: `${percent}%` }]} />
-        <View style={[styles.sliderThumb, { left: `${percent}%` }]} />
+        <View style={[styles.sliderThumb, WEB_SLIDER_INTERACTION_STYLE, { left: `${percent}%` }]} />
       </View>
     </View>
   );
@@ -649,6 +705,7 @@ export function IntegralsSimulation() {
   const [n, setN] = useState(10);
   const [method, setMethod] = useState<MethodKey>('midpoint');
   const [viewMode, setViewMode] = useState<ViewMode>('riemann');
+  const scrollY = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
 
   const horizontalPadding = width >= 1200 ? 12 : 16;
@@ -662,14 +719,47 @@ export function IntegralsSimulation() {
   const sideWidth = isWide ? contentWidth - graphWidth - 20 : contentWidth;
 
   const activeFunction = FUNCTIONS[functionIndex];
-  const exact = activeFunction.exact(a, b);
+  const exact = calculateReferenceArea(activeFunction.fn, a, b);
   const approximation = calculateApproximation(activeFunction.fn, a, b, n, method);
   const error = Math.abs(approximation - exact);
+  const headerTranslateY = scrollY.interpolate({
+    inputRange: [0, 120],
+    outputRange: [0, -SIMULATION_HEADER_TOTAL_HEIGHT],
+    extrapolate: 'clamp',
+  });
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 60, 120],
+    outputRange: [1, 0.9, 0],
+    extrapolate: 'clamp',
+  });
+  const handleSetA = (nextA: number) => {
+    setA(clamp(nextA, DOMAIN.xMin, b - BOUND_GAP));
+  };
+  const handleSetB = (nextB: number) => {
+    setB(clamp(nextB, a + BOUND_GAP, DOMAIN.xMax));
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ThemedView lightColor={THEME.background} style={styles.container}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Animated.View
+          style={[
+            styles.headerOverlay,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            },
+          ]}>
+          <SimulationScreenHeader title="Integrales" />
+        </Animated.View>
+        <Animated.ScrollView
+          contentContainerStyle={styles.content}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}>
           <View
             style={[
               styles.workspace,
@@ -815,8 +905,26 @@ export function IntegralsSimulation() {
                 <View style={styles.panel}>
                   {viewMode === 'riemann' || integralKind === 'definite' ? (
                     <>
-                      <NumericSlider label="Borne a" max={b - 0.5} min={DOMAIN.xMin} onChange={setA} step={0.1} value={a} />
-                      <NumericSlider label="Borne b" max={DOMAIN.xMax} min={a + 0.5} onChange={setB} step={0.1} value={b} />
+                      <NumericSlider
+                        displayMax={DOMAIN.xMax}
+                        displayMin={DOMAIN.xMin}
+                        label="Borne a"
+                        max={b - BOUND_GAP}
+                        min={DOMAIN.xMin}
+                        onChange={handleSetA}
+                        step={0.1}
+                        value={a}
+                      />
+                      <NumericSlider
+                        displayMax={DOMAIN.xMax}
+                        displayMin={DOMAIN.xMin}
+                        label="Borne b"
+                        max={DOMAIN.xMax}
+                        min={a + BOUND_GAP}
+                        onChange={handleSetB}
+                        step={0.1}
+                        value={b}
+                      />
                     </>
                   ) : null}
                   {viewMode === 'riemann' ? (
@@ -864,7 +972,7 @@ export function IntegralsSimulation() {
               ) : null}
             </View>
           </View>
-        </ScrollView>
+        </Animated.ScrollView>
       </ThemedView>
       <DefinitionPopover
         body={[
@@ -889,13 +997,20 @@ const styles = StyleSheet.create({
     backgroundColor: SIMULATION_PAGE_BACKGROUND,
     flex: 1,
   },
+  headerOverlay: {
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 10,
+  },
   content: {
     alignItems: 'center',
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingBottom: 28,
     paddingHorizontal: 12,
-    paddingTop: 20,
+    paddingTop: SIMULATION_HEADER_TOTAL_HEIGHT + SIMULATION_HEADER_CONTENT_GAP,
   },
   workspace: {
     alignItems: 'flex-start',
