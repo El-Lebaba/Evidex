@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
   GestureResponderEvent,
   PanResponder,
+  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   TextInput,
   useWindowDimensions,
@@ -16,6 +17,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { DefinitionPopover } from '@/features/simulations/core/definition-popover';
 import { FormulaRenderer } from '@/features/simulations/core/formula-renderer';
+import {
+  SimulationScreenHeader,
+  SIMULATION_HEADER_CONTENT_GAP,
+  SIMULATION_HEADER_TOTAL_HEIGHT,
+} from '@/features/simulations/core/simulation-screen-header';
 
 type MathFunction = {
   derivativeLatex: string;
@@ -71,6 +77,15 @@ const THEME = {
   tangent: "#D8A94A",
   point: "#D97B6C"
 };
+
+const WEB_SLIDER_INTERACTION_STYLE =
+  Platform.OS === 'web'
+    ? ({
+        cursor: 'ew-resize',
+        touchAction: 'none',
+        userSelect: 'none',
+      } as any)
+    : undefined;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -291,9 +306,13 @@ function XSlider({
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponderCapture: () => true,
         onMoveShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponderCapture: () => true,
         onPanResponderGrant: setFromEvent,
         onPanResponderMove: setFromEvent,
+        onPanResponderTerminationRequest: () => false,
+        onShouldBlockNativeResponder: () => true,
       }),
     [onChange]
   );
@@ -317,9 +336,9 @@ function XSlider({
           value={typedValue}
         />
       </View>
-      <View {...panResponder.panHandlers} style={styles.sliderTrack}>
+      <View {...panResponder.panHandlers} style={[styles.sliderTrack, WEB_SLIDER_INTERACTION_STYLE]}>
         <View style={[styles.sliderFill, { width: `${percent}%` }]} />
-        <View style={[styles.sliderThumb, { left: `${percent}%` }]} />
+        <View style={[styles.sliderThumb, WEB_SLIDER_INTERACTION_STYLE, { left: `${percent}%` }]} />
       </View>
       <View style={styles.stepperRow}>
         <Pressable onPress={() => onChange(clamp(Number((value - 0.1).toFixed(2)), TRACK_MIN, TRACK_MAX))} style={styles.stepButton}>
@@ -340,6 +359,7 @@ function XSlider({
 export function DerivativesSimulation() {
   const [functionIndex, setFunctionIndex] = useState(0);
   const [x0, setX0] = useState(1);
+  const scrollY = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
   const horizontalPadding = width >= 1200 ? 12 : 16;
   const contentWidth = width - horizontalPadding * 2;
@@ -353,11 +373,38 @@ export function DerivativesSimulation() {
   const activeFunction = FUNCTIONS[functionIndex];
   const y0 = activeFunction.fn(x0);
   const slope = activeFunction.dfn(x0);
+  const headerTranslateY = scrollY.interpolate({
+    inputRange: [0, 120],
+    outputRange: [0, -SIMULATION_HEADER_TOTAL_HEIGHT],
+    extrapolate: 'clamp',
+  });
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 60, 120],
+    outputRange: [1, 0.9, 0],
+    extrapolate: 'clamp',
+  });
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ThemedView lightColor={THEME.background} style={styles.container}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Animated.View
+          style={[
+            styles.headerOverlay,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+            },
+          ]}>
+          <SimulationScreenHeader title="Derivees" />
+        </Animated.View>
+        <Animated.ScrollView
+          contentContainerStyle={styles.content}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}>
           <View
             style={[
               styles.workspace,
@@ -445,7 +492,7 @@ export function DerivativesSimulation() {
               </View>
             </View>
           </View>
-        </ScrollView>
+        </Animated.ScrollView>
       </ThemedView>
       <DefinitionPopover
         body={[
@@ -470,13 +517,20 @@ const styles = StyleSheet.create({
     backgroundColor: SIMULATION_PAGE_BACKGROUND,
     flex: 1,
   },
+  headerOverlay: {
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 10,
+  },
   content: {
     alignItems: 'center',
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingBottom: 28,
     paddingHorizontal: 12,
-    paddingTop: 20,
+    paddingTop: SIMULATION_HEADER_TOTAL_HEIGHT + SIMULATION_HEADER_CONTENT_GAP,
   },
   workspace: {
     alignItems: 'flex-start',

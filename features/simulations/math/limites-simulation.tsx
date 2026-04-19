@@ -1,5 +1,5 @@
 import { LineSimulationScreen } from '@/features/simulations/core/line-simulation-screen';
 
-export function Math3Simulation() {
-  return <LineSimulationScreen title="Math 3" />;
+export function LimitesSimulation() {
+  return <LineSimulationScreen title="Limites" />;
 }

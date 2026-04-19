@@ -25,7 +25,7 @@ type SectionIndexScreenProps = {
   title: string;
 };
 
-type MathFilter = 'all' | 'ready' | 'soon' | 'calcul' | 'analyse' | 'algebre';
+type DashboardFilter = string;
 
 const MATH_THEME = {
   background: '#EEF5ED',
@@ -45,25 +45,65 @@ const MATH_THEME = {
   sage: '#A8B59A',
 };
 
-const MATH_FILTERS: Array<{ label: string; value: MathFilter }> = [
-  { label: 'Tous', value: 'all' },
-  { label: 'Actifs', value: 'ready' },
-  { label: 'Calcul', value: 'calcul' },
-  { label: 'Analyse', value: 'analyse' },
-  { label: 'Algebre', value: 'algebre' },
-  { label: 'A venir', value: 'soon' },
-];
+const DASHBOARD_CONFIG: Record<
+  'math' | 'physics',
+  {
+    categoryLabels: Record<string, string>;
+    filters: Array<{ label: string; value: DashboardFilter }>;
+    subtitle: string;
+    title: string;
+  }
+> = {
+  math: {
+    categoryLabels: {
+      'a-venir': 'A venir',
+      algebre: 'Algebre',
+      analyse: 'Analyse',
+      calcul: 'Calcul',
+    },
+    filters: [
+      { label: 'Actifs', value: 'ready' },
+      { label: 'Calcul', value: 'calcul' },
+      { label: 'Analyse', value: 'analyse' },
+      { label: 'Algebre', value: 'algebre' },
+      { label: 'A venir', value: 'soon' },
+    ],
+    subtitle: 'Explore tes simulations dans une interface plus claire, plus douce et pensee pour reviser efficacement.',
+    title: 'Math Simulations',
+  },
+  physics: {
+    categoryLabels: {
+      'a-venir': 'A venir',
+      electricite: 'Electricite',
+      energie: 'Energie',
+      mecanique: 'Mecanique',
+      ondes: 'Ondes',
+    },
+    filters: [
+      { label: 'Actifs', value: 'ready' },
+      { label: 'Mecanique', value: 'mecanique' },
+      { label: 'Ondes', value: 'ondes' },
+      { label: 'Electricite', value: 'electricite' },
+      { label: 'Energie', value: 'energie' },
+      { label: 'A venir', value: 'soon' },
+    ],
+    subtitle: 'Retrouve tes simulations de physique dans le meme espace organise, lisible et facile a parcourir.',
+    title: 'Physics Simulations',
+  },
+};
 
 function getMathCardLayout(screenWidth: number) {
   const containerWidth = Math.min(screenWidth, 980);
   const innerWidth = containerWidth - 40;
   const isTwoColumns = innerWidth >= 760;
   const gridGap = 22;
+  const rowGap = 34;
 
   return {
     containerWidth,
     gridGap,
     isTwoColumns,
+    rowGap,
   };
 }
 
@@ -77,11 +117,7 @@ function chunkEntries<T>(items: T[], chunkSize: number) {
   return rows;
 }
 
-function matchesMathFilter(entry: SimulationEntry, filter: MathFilter) {
-  if (filter === 'all') {
-    return true;
-  }
-
+function matchesDashboardFilter(entry: SimulationEntry, filter: DashboardFilter) {
   if (filter === 'ready' || filter === 'soon') {
     return entry.status === filter;
   }
@@ -89,28 +125,45 @@ function matchesMathFilter(entry: SimulationEntry, filter: MathFilter) {
   return entry.category === filter;
 }
 
-function MathSectionScreen({ entries, title }: { entries: SimulationEntry[]; title: string }) {
+function DashboardSectionScreen({
+  config,
+  entries,
+}: {
+  config: (typeof DASHBOARD_CONFIG)['math'] | (typeof DASHBOARD_CONFIG)['physics'];
+  entries: SimulationEntry[];
+}) {
   const { width } = useWindowDimensions();
   const [query, setQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<MathFilter>('all');
+  const [activeFilters, setActiveFilters] = useState<DashboardFilter[]>([]);
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
   const normalizedQuery = query.trim().toLowerCase();
-  const featuredEntry = entries.find((entry) => entry.featured) ?? entries[0];
-  const { containerWidth, gridGap, isTwoColumns } = getMathCardLayout(width);
+  const { containerWidth, gridGap, isTwoColumns, rowGap } = getMathCardLayout(width);
 
   const filteredEntries = useMemo(
     () =>
       entries.filter((entry) => {
         const searchable = `${entry.title} ${entry.description ?? ''}`.toLowerCase();
 
-        return matchesMathFilter(entry, activeFilter) && searchable.includes(normalizedQuery);
+        const matchesSelectedFilters =
+          activeFilters.length === 0 || activeFilters.some((filter) => matchesDashboardFilter(entry, filter));
+
+        return matchesSelectedFilters && searchable.includes(normalizedQuery);
       }),
-    [activeFilter, entries, normalizedQuery]
+    [activeFilters, entries, normalizedQuery]
   );
   const cardRows = useMemo(
     () => chunkEntries(filteredEntries, isTwoColumns ? 2 : 1),
     [filteredEntries, isTwoColumns]
   );
+
+  const toggleFilter = (filter: DashboardFilter) => {
+    setActiveFilters((currentFilters) =>
+      currentFilters.includes(filter)
+        ? currentFilters.filter((currentFilter) => currentFilter !== filter)
+        : [...currentFilters, filter]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -128,11 +181,11 @@ function MathSectionScreen({ entries, title }: { entries: SimulationEntry[]; tit
               </View>
 
               <ThemedText lightColor={MATH_THEME.ink} style={styles.heroTitle}>
-                {title}
+                {config.title}
               </ThemedText>
 
               <ThemedText lightColor={MATH_THEME.mutedInk} style={styles.heroSubtitle}>
-                Explore tes simulations dans une interface plus claire, plus douce et pensee pour reviser efficacement.
+                {config.subtitle}
               </ThemedText>
 
               <View style={styles.searchShell}>
@@ -147,76 +200,68 @@ function MathSectionScreen({ entries, title }: { entries: SimulationEntry[]; tit
                 />
               </View>
 
-              <ScrollView contentContainerStyle={styles.filterRow} horizontal showsHorizontalScrollIndicator={false}>
-                {MATH_FILTERS.map((filter) => {
-                  const isActive = activeFilter === filter.value;
+              <View style={styles.filterWrap}>
+                <Pressable
+                  onPress={() => setIsFilterMenuOpen((currentValue) => !currentValue)}
+                  style={({ pressed, hovered }) => [
+                    styles.filterButton,
+                    isFilterMenuOpen ? styles.filterButtonOpen : null,
+                    pressed || hovered ? styles.filterChipPressed : null,
+                  ]}>
+                  <View style={styles.filterButtonContent}>
+                    <MaterialCommunityIcons color="#243B53" name="filter-variant" size={18} />
+                    <ThemedText darkColor="#243B53" lightColor="#243B53" style={styles.filterButtonText}>
+                      Filtre
+                    </ThemedText>
+                    {activeFilters.length > 0 ? (
+                      <View style={styles.filterCountBadge}>
+                        <ThemedText darkColor="#243B53" lightColor="#243B53" style={styles.filterCountText}>
+                          {activeFilters.length}
+                        </ThemedText>
+                      </View>
+                    ) : null}
+                  </View>
+                  <MaterialCommunityIcons
+                    color="#243B53"
+                    name={isFilterMenuOpen ? 'chevron-up' : 'chevron-down'}
+                    size={18}
+                  />
+                </Pressable>
 
-                  return (
-                    <Pressable
-                      key={filter.value}
-                      onPress={() => setActiveFilter(filter.value)}
-                      style={({ pressed, hovered }) => [
-                        styles.filterChip,
-                        isActive ? styles.filterChipActive : null,
-                        pressed || hovered ? styles.filterChipPressed : null,
-                      ]}>
-                      <ThemedText
-                        lightColor={isActive ? '#243B53' : '#5A6A58'}
-                        style={[styles.filterChipText, isActive ? styles.filterChipTextActive : null]}>
-                        {filter.label}
-                      </ThemedText>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
+                {isFilterMenuOpen ? (
+                  <View style={styles.filterDropdown}>
+                    <View style={styles.filterOptionGrid}>
+                      {config.filters.map((filter) => {
+                        const isActive = activeFilters.includes(filter.value);
+
+                        return (
+                          <Pressable
+                            key={filter.value}
+                            onPress={() => toggleFilter(filter.value)}
+                            style={({ pressed, hovered }) => [
+                              styles.filterOption,
+                              isActive ? styles.filterOptionActive : null,
+                              pressed || hovered ? styles.filterChipPressed : null,
+                            ]}>
+                            <View style={[styles.filterCheck, isActive ? styles.filterCheckActive : null]}>
+                              {isActive ? <MaterialCommunityIcons color="#243B53" name="check" size={14} /> : null}
+                            </View>
+                            <ThemedText
+                              darkColor={isActive ? '#243B53' : '#5A6A58'}
+                              lightColor={isActive ? '#243B53' : '#5A6A58'}
+                              style={[styles.filterOptionText, isActive ? styles.filterOptionTextActive : null]}>
+                              {filter.label}
+                            </ThemedText>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ) : null}
+              </View>
             </View>
 
             <View style={[styles.contentColumn, { width: containerWidth - 40 }]}>
-              {featuredEntry ? (
-                <Link href={featuredEntry.href as Href} asChild>
-                  <Pressable style={({ pressed, hovered }) => [styles.featuredCard, pressed || hovered ? styles.featuredCardPressed : null]}>
-                    <View style={styles.featuredContent}>
-                      <View style={styles.featuredHeader}>
-                        <View style={styles.featuredPill}>
-                          <ThemedText lightColor={MATH_THEME.ink} style={styles.featuredPillText}>
-                            Simulation mise en avant
-                          </ThemedText>
-                        </View>
-
-                        <MaterialCommunityIcons
-                          color={MATH_THEME.coral}
-                          name={(featuredEntry.icon ?? 'function') as keyof typeof MaterialCommunityIcons.glyphMap}
-                          size={24}
-                        />
-                      </View>
-
-                      <ThemedText lightColor={MATH_THEME.ink} style={styles.featuredTitle}>
-                        {featuredEntry.title}
-                      </ThemedText>
-
-                      <ThemedText lightColor={MATH_THEME.mutedInk} style={styles.featuredDescription}>
-                        {featuredEntry.description ?? 'Simulation principale pour commencer rapidement.'}
-                      </ThemedText>
-
-                      <View style={[styles.featuredFooter, !isTwoColumns ? styles.featuredFooterStack : null]}>
-                        <View style={styles.featuredMeta}>
-                          <MaterialCommunityIcons color={MATH_THEME.mint} name="star-four-points-outline" size={16} />
-                          <ThemedText lightColor={MATH_THEME.ink} style={styles.featuredMetaText}>
-                            Ideal pour lancer la session
-                          </ThemedText>
-                        </View>
-
-                        <View style={styles.primaryAction}>
-                          <ThemedText lightColor={MATH_THEME.card} style={styles.primaryActionText}>
-                            Ouvrir
-                          </ThemedText>
-                        </View>
-                      </View>
-                    </View>
-                  </Pressable>
-                </Link>
-              ) : null}
-
               <View style={styles.sectionHeader}>
                 <View>
                   <ThemedText lightColor={MATH_THEME.card} style={styles.sectionTitle}>
@@ -239,7 +284,7 @@ function MathSectionScreen({ entries, title }: { entries: SimulationEntry[]; tit
                   </ThemedText>
                 </View>
               ) : (
-                <View style={[styles.cardGrid, { rowGap: gridGap }]}>
+                <View style={[styles.cardGrid, { rowGap }]}>
                   {cardRows.map((row, rowIndex) => (
                     <View
                       key={`row-${rowIndex}`}
@@ -291,13 +336,7 @@ function MathSectionScreen({ entries, title }: { entries: SimulationEntry[]; tit
                               <View style={styles.cardFooter}>
                                 <View style={styles.categoryBadge}>
                                   <ThemedText lightColor={MATH_THEME.ink} style={styles.categoryText}>
-                                    {entry.category === 'calcul'
-                                      ? 'Calcul'
-                                      : entry.category === 'analyse'
-                                        ? 'Analyse'
-                                        : entry.category === 'algebre'
-                                          ? 'Algebre'
-                                          : 'A venir'}
+                                    {config.categoryLabels[entry.category ?? 'a-venir'] ?? 'A venir'}
                                   </ThemedText>
                                 </View>
 
@@ -349,8 +388,8 @@ function renderDefaultScreen(title: string, entries: SimulationEntry[]) {
 export function SectionIndexScreen({ section, title }: SectionIndexScreenProps) {
   const entries = SIMULATION_CATALOG[section];
 
-  if (section === 'math') {
-    return <MathSectionScreen entries={entries} title="Math Simulations" />;
+  if (section === 'math' || section === 'physics') {
+    return <DashboardSectionScreen config={DASHBOARD_CONFIG[section]} entries={entries} />;
   }
 
   return renderDefaultScreen(title, entries);
@@ -472,128 +511,118 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 0,
   },
-  filterRow: {
+  filterWrap: {
+    alignSelf: 'flex-start',
     gap: 10,
-    paddingRight: 4,
+    width: '100%',
   },
-  filterChip: {
+  filterButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
     backgroundColor: '#F3F1E7',
     borderColor: '#A8B59A',
-    borderRadius: 999,
+    borderRadius: 14,
     borderWidth: 1.5,
-    minHeight: 40,
-    paddingHorizontal: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 46,
+    minWidth: 136,
+    paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  filterChipActive: {
+  filterButtonOpen: {
+    borderColor: '#243B53',
+  },
+  filterButtonContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterButtonText: {
+    color: '#243B53',
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  filterCountBadge: {
+    alignItems: 'center',
+    backgroundColor: '#DDE4D5',
+    borderColor: '#A8B59A',
+    borderRadius: 999,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minWidth: 22,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  filterCountText: {
+    color: '#243B53',
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 16,
+  },
+  filterDropdown: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F3F1E7',
+    borderColor: '#A8B59A',
+    borderRadius: 18,
+    borderWidth: 1.5,
+    padding: 12,
+    shadowColor: '#243B53',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    width: '100%',
+  },
+  filterOptionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  filterOption: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#B7C7B0',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 44,
+    minWidth: 140,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  filterOptionActive: {
+    backgroundColor: '#DDE4D5',
+    borderColor: '#243B53',
+  },
+  filterCheck: {
+    alignItems: 'center',
+    backgroundColor: '#F3F1E7',
+    borderColor: '#A8B59A',
+    borderRadius: 6,
+    borderWidth: 1.5,
+    height: 18,
+    justifyContent: 'center',
+    width: 18,
+  },
+  filterCheckActive: {
     backgroundColor: '#AAB18E',
-    borderColor: '#8D9771',
+    borderColor: '#243B53',
   },
-  filterChipPressed: {
-    opacity: 0.82,
-    transform: [{ translateY: 1 }],
-  },
-  filterChipText: {
+  filterOptionText: {
     color: '#5A6A58',
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 18,
   },
-  filterChipTextActive: {
+  filterOptionTextActive: {
     color: '#243B53',
     fontWeight: '800',
   },
-  featuredCard: {
-    backgroundColor: '#E3E5D2',
-    borderColor: '#A8B59A',
-    borderRadius: 26,
-    borderWidth: 1.5,
-    overflow: 'hidden',
-    paddingHorizontal: 22,
-    paddingVertical: 22,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.1,
-    shadowRadius: 24,
-    width: '100%',
-  },
-  featuredCardPressed: {
-    opacity: 0.96,
-    transform: [{ translateY: 2 }],
-  },
-  featuredContent: {
-    gap: 14,
-  },
-  featuredHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  featuredPill: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#DDE4D5',
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#A8B59A',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  featuredPillText: {
-    color: '#243B53',
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
-  featuredTitle: {
-    color: '#243B53',
-    fontSize: 28,
-    fontWeight: '800',
-    lineHeight: 34,
-  },
-  featuredDescription: {
-    color: '#4E6254',
-    fontSize: 15,
-    lineHeight: 23,
-    maxWidth: 720,
-  },
-  featuredFooter: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
-  },
-  featuredFooterStack: {
-    alignItems: 'flex-start',
-  },
-  featuredMeta: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  featuredMetaText: {
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
-  primaryAction: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#AAB18E',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#8D9771',
-    justifyContent: 'center',
-    minHeight: 44,
-    minWidth: 96,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  primaryActionText: {
-    color: '#243B53',
-    fontSize: 15,
-    fontWeight: '800',
-    lineHeight: 18,
+  filterChipPressed: {
+    opacity: 0.82,
+    transform: [{ translateY: 1 }],
   },
   sectionHeader: {
     alignItems: 'flex-start',
