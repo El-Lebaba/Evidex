@@ -491,7 +491,7 @@ export function FourierSimulation() {
               transform: [{ translateY: headerTranslateY }],
             },
           ]}>
-          <SimulationScreenHeader title="Fourier" />
+          <SimulationScreenHeader title="Fourier" type="math"/>
         </Animated.View>
 
         <Animated.ScrollView

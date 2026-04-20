@@ -566,7 +566,7 @@ export function LimitesSimulation() {
               transform: [{ translateY: headerTranslateY }],
             },
           ]}>
-          <SimulationScreenHeader title="Limites" />
+          <SimulationScreenHeader title="Limites" type="math"/>
         </Animated.View>
         <Animated.ScrollView
           contentContainerStyle={styles.content}

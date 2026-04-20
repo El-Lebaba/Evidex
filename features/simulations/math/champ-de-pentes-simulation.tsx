@@ -423,7 +423,7 @@ export function ChampDePentesSimulation() {
               transform: [{ translateY: headerTranslateY }],
             },
           ]}>
-          <SimulationScreenHeader title="Champ de pentes" />
+          <SimulationScreenHeader title="Champ de pentes" type="math"/>
         </Animated.View>
 
         <Animated.ScrollView
