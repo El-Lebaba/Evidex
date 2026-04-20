@@ -478,7 +478,7 @@ function ApproachSlider({
         onStartShouldSetPanResponder: () => true,
         onStartShouldSetPanResponderCapture: () => true,
       }),
-    [onChange]
+    [setFromEvent]
   );
 
   const percent = ((value - APPROACH_MIN) / (APPROACH_MAX - APPROACH_MIN || 1)) * 100;

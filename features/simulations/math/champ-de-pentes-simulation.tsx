@@ -144,14 +144,14 @@ function SlopeFieldGraph({
   y0: number;
 }) {
   const lineSegments = useMemo(() => {
-    const segments: Array<{
+    const segments: {
       color: string;
       opacity: number;
       x1: number;
       x2: number;
       y1: number;
       y2: number;
-    }> = [];
+    }[] = [];
     const dx = (DOMAIN.xMax - DOMAIN.xMin) / density;
     const dy = (DOMAIN.yMax - DOMAIN.yMin) / density;
     const segLen = Math.min(dx, dy) * 0.7;

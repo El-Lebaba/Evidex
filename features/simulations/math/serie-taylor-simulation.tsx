@@ -670,7 +670,7 @@ function TermsSlider({
         onStartShouldSetPanResponder: () => true,
         onStartShouldSetPanResponderCapture: () => true,
       }),
-    [onChange]
+    [setFromEvent]
   );
 
   const percent = ((value - ORDER_MIN) / (ORDER_MAX - ORDER_MIN || 1)) * 100;
