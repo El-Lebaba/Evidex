@@ -75,7 +75,7 @@ export default function TopBar({ darkMode = false, onSettingsClick, user }: TopB
             </Pressable>
           </Link>
 
-          <Link href="/(tabs)/home/home edit" asChild>
+          <Link href="/(tabs)/home/home" asChild>
             <Pressable style={styles.logoButton}>
               <Image
                 resizeMode="contain"
