@@ -43,32 +43,25 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <View style={styles.heroTopRow}>
-            <View>
-              <Text style={styles.eyebrow}>Accueil Evidex</Text>
-              <Text style={styles.heroTitle}>Ton espace</Text>
-              <Text style={styles.heroTitle}>d&apos;apprentissage</Text>
-            </View>
             <Pressable onPress={() => router.push('/(tabs)/profile')} style={styles.accountChip}>
               <MaterialIcons name="person-outline" size={18} color={palette.ink} />
               <Text style={styles.accountText}>Profil</Text>
             </Pressable>
           </View>
 
-          <Text style={styles.heroCopy}>
-            Trouve rapidement le bon point d&apos;entree pour tes cours et tes simulations, dans
-            un espace plus clair et plus simple.
-          </Text>
+          <View style={styles.heroTextBlock}>
+            <Text style={styles.eyebrow}>Accueil Evidex</Text>
+            <Text style={styles.heroTitle}>Ton espace</Text>
+            <Text style={styles.heroTitle}>d&apos;apprentissage</Text>
+          </View>
 
           <View style={styles.logoStage}>
             <View style={styles.logoAura} />
-            <View style={styles.logoCard}>
-              <Image resizeMode="contain" source={homeLogo} style={styles.logoImage} />
-            </View>
+            <Image resizeMode="contain" source={homeLogo} style={styles.logoImage} />
           </View>
         </View>
 
         <View style={styles.featuresSection}>
-          <Text style={styles.sectionLabel}>Choisis ton point de depart</Text>
           <View style={styles.cardsGrid}>
             {featureCards.map((card) => {
               const isDisabled = !card.onPress;
@@ -129,31 +122,38 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   heroTopRow: {
-    alignItems: 'flex-start',
+    alignItems: 'flex-end',
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
+  },
+  heroTextBlock: {
+    alignItems: 'center',
+    marginTop: 20,
   },
   eyebrow: {
     color: 'rgba(25,25,31,0.55)',
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '800',
     letterSpacing: 0.8,
-    marginBottom: 10,
+    marginBottom: 12,
+    textAlign: 'center',
     textTransform: 'uppercase',
   },
   heroTitle: {
     color: palette.ink,
-    fontSize: 35,
+    fontSize: 44,
     fontWeight: '900',
-    lineHeight: 38,
+    lineHeight: 46,
+    textAlign: 'center',
   },
   heroCopy: {
     color: 'rgba(32,36,43,0.78)',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    lineHeight: 23,
-    marginTop: 18,
-    maxWidth: 360,
+    lineHeight: 25,
+    marginTop: 20,
+    maxWidth: 420,
+    textAlign: 'center',
   },
   accountChip: {
     alignItems: 'center',
@@ -174,52 +174,28 @@ const styles = StyleSheet.create({
   logoStage: {
     alignItems: 'center',
     alignSelf: 'center',
-    height: 260,
+    height: 170,
     justifyContent: 'center',
-    marginTop: 72,
+    marginTop: 92,
     position: 'relative',
     width: '100%',
   },
   logoAura: {
     backgroundColor: 'rgba(255,255,255,0.18)',
     borderRadius: 180,
-    height: 240,
+    height: 200,
     position: 'absolute',
     top: 10,
     width: 240,
   },
-  logoCard: {
-    alignItems: 'center',
-    backgroundColor: palette.white,
-    borderColor: 'rgba(188,133,89,0.18)',
-    borderRadius: 42,
-    borderWidth: 1,
-    elevation: 5,
-    height: 174,
-    justifyContent: 'center',
-    paddingHorizontal: 26,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    width: '88%',
-  },
   logoImage: {
-    height: 96,
-    width: '100%',
+    height: 124,
+    width: '90%',
   },
   featuresSection: {
     alignItems: 'center',
-    marginTop: -82,
+    marginTop: -96,
     paddingHorizontal: 16,
-  },
-  sectionLabel: {
-    color: palette.slate,
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    marginBottom: 14,
-    textTransform: 'uppercase',
   },
   cardsGrid: {
     flexDirection: 'row',
@@ -235,15 +211,15 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     borderWidth: 1,
     elevation: 2,
-    minHeight: 280,
-    paddingBottom: 18,
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    minHeight: 350,
+    paddingBottom: 22,
+    paddingHorizontal: 18,
+    paddingTop: 18,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
     shadowRadius: 14,
-    width: 164,
+    width: 208,
   },
   cardDisabled: {
     opacity: 0.84,
@@ -254,15 +230,15 @@ const styles = StyleSheet.create({
   cardMedia: {
     alignItems: 'center',
     borderRadius: 20,
-    height: 148,
+    height: 186,
     justifyContent: 'center',
   },
   cardIconWrap: {
     alignItems: 'center',
     borderRadius: 18,
-    height: 72,
+    height: 92,
     justifyContent: 'center',
-    width: 72,
+    width: 92,
   },
   cardText: {
     alignItems: 'center',
@@ -273,15 +249,15 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: palette.ink,
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: '900',
     textAlign: 'center',
   },
   cardSubtitle: {
     color: palette.slate,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
-    marginTop: 4,
+    marginTop: 8,
     textAlign: 'center',
   },
   cardFooter: {
@@ -295,7 +271,7 @@ const styles = StyleSheet.create({
   },
   cardFooterText: {
     color: palette.slate,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '800',
   },
 });
