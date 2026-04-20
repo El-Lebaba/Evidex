@@ -395,7 +395,7 @@ export function DerivativesSimulation() {
               transform: [{ translateY: headerTranslateY }],
             },
           ]}>
-          <SimulationScreenHeader title="Derivees" />
+          <SimulationScreenHeader title="Derivees" type="math"/>
         </Animated.View>
         <Animated.ScrollView
           contentContainerStyle={styles.content}

@@ -12,11 +12,12 @@ import {
 
 type LineSimulationScreenProps = {
   title: string;
+  type: string;
 };
 
 const SIMULATION_PAGE_BACKGROUND = '#EAE3D2';
 
-export function LineSimulationScreen({ title }: LineSimulationScreenProps) {
+export function LineSimulationScreen({ title, type}: LineSimulationScreenProps) {
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerTranslateY = scrollY.interpolate({
     inputRange: [0, 120],
@@ -40,7 +41,7 @@ export function LineSimulationScreen({ title }: LineSimulationScreenProps) {
               transform: [{ translateY: headerTranslateY }],
             },
           ]}>
-          <SimulationScreenHeader title={title} />
+          <SimulationScreenHeader title={title} type={type} />
         </Animated.View>
         <Animated.ScrollView
           contentContainerStyle={styles.scrollContent}
