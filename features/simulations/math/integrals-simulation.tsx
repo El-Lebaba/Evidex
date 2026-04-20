@@ -750,7 +750,7 @@ export function IntegralsSimulation() {
               transform: [{ translateY: headerTranslateY }],
             },
           ]}>
-          <SimulationScreenHeader title="Integrales" />
+          <SimulationScreenHeader title="Integrales" type="math"/>
         </Animated.View>
         <Animated.ScrollView
           contentContainerStyle={styles.content}

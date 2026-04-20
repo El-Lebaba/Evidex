@@ -24,17 +24,18 @@ export default function IntroScreen() {
   const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
+    const animationtiming = 1150;
     const heartbeat = Animated.loop(
       Animated.sequence([
         Animated.parallel([
           Animated.timing(scale, {
-            duration: 1150,
+            duration: animationtiming,
             easing: Easing.inOut(Easing.ease),
             toValue: 1.06,
             useNativeDriver: true,
           }),
           Animated.timing(opacity, {
-            duration: 1150,
+            duration: animationtiming,
             easing: Easing.inOut(Easing.ease),
             toValue: 1,
             useNativeDriver: true,
@@ -42,13 +43,13 @@ export default function IntroScreen() {
         ]),
         Animated.parallel([
           Animated.timing(scale, {
-            duration: 1150,
+            duration: animationtiming,
             easing: Easing.inOut(Easing.ease),
             toValue: 1,
             useNativeDriver: true,
           }),
           Animated.timing(opacity, {
-            duration: 1150,
+            duration: animationtiming,
             easing: Easing.inOut(Easing.ease),
             toValue: 0.92,
             useNativeDriver: true,
@@ -64,50 +65,48 @@ export default function IntroScreen() {
     };
   }, [opacity, scale]);
 
+  //animation entrer écran d'acceuil
   const handleStart = () => {
     if (isLeaving) {
       return;
     }
-
     setIsLeaving(true);
-
+    const animationtiming = 900;
     Animated.parallel([
       Animated.timing(screenTranslateY, {
-        duration: 900,
+        duration: animationtiming,
         easing: Easing.inOut(Easing.cubic),
         toValue: -120,
         useNativeDriver: true,
       }),
       Animated.timing(screenOpacity, {
-        duration: 850,
+        duration: animationtiming,
         easing: Easing.inOut(Easing.ease),
         toValue: 0,
         useNativeDriver: true,
       }),
       Animated.timing(curtainTranslateY, {
-        duration: 900,
+        duration: animationtiming,
         easing: Easing.inOut(Easing.cubic),
         toValue: 0,
         useNativeDriver: true,
       }),
     ]).start(() => {
-      router.replace('/(tabs)/home');
+      router.replace('/(tabs)/home/home edit');
     });
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.stage}>
-        <Animated.View
-          style={[
+        <Animated.View style={[
             styles.container,
             {
               opacity: screenOpacity,
               transform: [{ translateY: screenTranslateY }],
             },
           ]}>
-          <FloatingMathSymbols />
-
+          <FloatingMathSymbols/>
           <Pressable onPress={handleStart} style={styles.pressable}>
             <Animated.View
               style={[
@@ -124,7 +123,6 @@ export default function IntroScreen() {
               />
             </Animated.View>
           </Pressable>
-
           <Text style={styles.hint}>click logo to start</Text>
         </Animated.View>
 
@@ -171,13 +169,14 @@ const styles = StyleSheet.create({
     elevation: 4,
     height: 230,
     justifyContent: 'center',
+    maxWidth: 390,
     paddingHorizontal: 24,
     paddingVertical: 34,
     shadowColor: '#000000',
     shadowOffset: { height: 10, width: 0 },
     shadowOpacity: 0.08,
     shadowRadius: 20,
-    width: 390,
+    width: '100%',
   },
   logo: {
     height: 138,

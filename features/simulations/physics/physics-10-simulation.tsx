@@ -1,5 +1,5 @@
 import { LineSimulationScreen } from '@/features/simulations/core/line-simulation-screen';
 
 export function Physics10Simulation() {
-  return <LineSimulationScreen title="Physics 10" />;
+  return <LineSimulationScreen title="Physics 10" type="physics"/>;
 }

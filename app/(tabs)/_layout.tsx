@@ -1,18 +1,44 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
+import { db } from '@/db/mainData';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    function refreshSettings() {
+      setDarkMode(db.getSettings().darkMode);
+    }
+
+    db.init();
+    refreshSettings();
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('evidex_settings_changed', refreshSettings);
+      return () => window.removeEventListener('evidex_settings_changed', refreshSettings);
+    }
+  }, []);
+
+  const tabBackground = darkMode ? '#1F2A32' : undefined;
+  const tabBorder = darkMode ? '#9DB2C0' : undefined;
+  const activeTint = darkMode ? '#8FB7EE' : Colors[colorScheme ?? 'light'].tint;
+  const inactiveTint = darkMode ? '#B7C7B0' : Colors[colorScheme ?? 'light'].tabIconDefault;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: activeTint,
+        tabBarInactiveTintColor: inactiveTint,
+        tabBarStyle: {
+          backgroundColor: tabBackground,
+          borderTopColor: tabBorder,
+        },
         headerShown: false,
         tabBarButton: HapticTab,
       }}>

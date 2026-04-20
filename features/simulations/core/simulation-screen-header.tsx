@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 
 type SimulationScreenHeaderProps = {
   title: string;
+  type: string;
 };
 
 export const SIMULATION_HEADER_TOP_SHADE_HEIGHT = 58;
@@ -15,13 +16,15 @@ export const SIMULATION_HEADER_TOTAL_HEIGHT =
   SIMULATION_HEADER_TOP_SHADE_HEIGHT + SIMULATION_HEADER_BAR_HEIGHT;
 export const SIMULATION_HEADER_CONTENT_GAP = 44;
 
-export function SimulationScreenHeader({ title }: SimulationScreenHeaderProps) {
+export function SimulationScreenHeader({ title, type }: SimulationScreenHeaderProps) {
   return (
     <View style={styles.headerShell}>
       <View style={styles.topShade} />
       <View style={styles.header}>
         <View style={styles.leftGroup}>
-          <Pressable onPress={() => router.push('/(tabs)/math')} style={styles.backButton}>
+          <Pressable onPress={() => router.push(
+              type === 'math' ? '/(tabs)/math' : type === 'physics' ? '/(tabs)/physics' :'/(tabs)/java-programming'
+          )} style={styles.backButton}>
             <MaterialCommunityIcons color="#243B53" name="arrow-left" size={20} />
           </Pressable>
           <View style={styles.titleGroup}>
