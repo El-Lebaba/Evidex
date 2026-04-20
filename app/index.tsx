@@ -1,10 +1,11 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FloatingMathSymbols } from '@/features/simulations/core/floating-math-symbols';
+
+const introLogo = require('@/assets/images/evidexe-logo.png');
 
 const palette = {
   charcoal: '#19191F',
@@ -92,7 +93,7 @@ export default function IntroScreen() {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      router.replace('/(tabs)/home/home');
+      router.replace('/(tabs)/home');
     });
   };
 
@@ -117,8 +118,8 @@ export default function IntroScreen() {
                 },
               ]}>
               <Image
-                contentFit="contain"
-                source={require('@/assets/images/evidexe-logo.png')}
+                resizeMode="contain"
+                source={introLogo}
                 style={styles.logo}
               />
             </Animated.View>
@@ -159,9 +160,12 @@ const styles = StyleSheet.create({
   pressable: {
     alignItems: 'center',
     justifyContent: 'center',
+    maxWidth: 390,
+    width: '100%',
   },
   logoShell: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     backgroundColor: palette.white,
     borderColor: 'rgba(188, 133, 89, 0.14)',
     borderRadius: 40,
@@ -169,7 +173,6 @@ const styles = StyleSheet.create({
     elevation: 4,
     height: 230,
     justifyContent: 'center',
-    maxWidth: 390,
     paddingHorizontal: 24,
     paddingVertical: 34,
     shadowColor: '#000000',

@@ -75,7 +75,7 @@ export default function TopBar({ darkMode = false, onSettingsClick, user }: TopB
             </Pressable>
           </Link>
 
-          <Link href="/(tabs)/home/home" asChild>
+          <Link href="/(tabs)/home" asChild>
             <Pressable style={styles.logoButton}>
               <Image
                 resizeMode="contain"
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     justifyContent: 'space-between',
-    minHeight: 64,
+    minHeight: 100,
     paddingHorizontal: 16,
   },
   iconButton: {
@@ -194,13 +194,13 @@ const styles = StyleSheet.create({
   },
   logoButton: {
     alignItems: 'center',
-    height: 44,
+    height: 66,
     justifyContent: 'center',
-    maxWidth: 120,
-    width: 120,
+    maxWidth: 190,
+    width: 190,
   },
   logoImage: {
-    height: 40,
+    height: 60,
     width: '100%',
   },
   profileArea: {

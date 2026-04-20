@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, Animated } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CoursesPanel, { Course } from '@/components/home/CoursesPanel';
@@ -8,7 +8,7 @@ import SettingsPanel, { AppSettings } from '@/components/home/SettingsPanel';
 import TopBar from '@/components/home/TopBar';
 import XPPanel, { UserInfo } from '@/components/home/XPPanel';
 import { db } from '@/db/mainData';
-import {FloatingMathSymbols} from "@/features/simulations/core/floating-math-symbols";
+import { FloatingMathSymbols } from '@/features/simulations/core/floating-math-symbols';
 
 const lightColors = {
   background: '#E9ECE4',
@@ -36,7 +36,7 @@ const darkColors = {
 
 const colors = lightColors;
 
-export default function EvidexHome() {
+export default function EvidexProfile() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [user, setUser] = useState<UserInfo>({ xp: 0, level: 1 });
   const [settings, setSettings] = useState<AppSettings>({
@@ -47,7 +47,6 @@ export default function EvidexHome() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
-    // Load saved data once when the page opens.
     db.init();
     setCourses(db.getCourses());
     setUser(db.getUser());
@@ -69,18 +68,18 @@ export default function EvidexHome() {
 
   const activeCount = courses.filter((course) => !course.completed).length;
   const completedCount = courses.filter((course) => course.completed).length;
-  const colors = settings.darkMode ? darkColors : lightColors;
+  const theme = settings.darkMode ? darkColors : lightColors;
 
   const stats = [
-    { label: 'cours actifs', value: activeCount, color: colors.green },
-    { label: 'cours termines', value: completedCount, color: colors.red },
-    { label: 'Niveau', value: user.level, color: colors.blue },
-    { label: 'XP total', value: user.xp, color: colors.yellow },
+    { label: 'cours actifs', value: activeCount, color: theme.green },
+    { label: 'cours termines', value: completedCount, color: theme.red },
+    { label: 'niveau', value: user.level, color: theme.blue },
+    { label: 'xp total', value: user.xp, color: theme.yellow },
   ];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={[styles.page, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <View style={[styles.page, { backgroundColor: theme.background }]}>
         <TopBar
           darkMode={settings.darkMode}
           onSettingsClick={() => setSettingsOpen(true)}
@@ -90,22 +89,21 @@ export default function EvidexHome() {
           open={settingsOpen}
           onClose={() => setSettingsOpen(false)}
           settings={settings}
-            onSave={saveSettings}
+          onSave={saveSettings}
         />
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Main dashboard columns */}
           <View style={styles.cardsGrid}>
-            <PanelBox accentColor={colors.blue} colors={colors}>
+            <PanelBox accentColor={theme.blue} colors={theme}>
               <FlashcardsPanel darkMode={settings.darkMode} />
             </PanelBox>
-            <PanelBox accentColor={colors.green} colors={colors}>
+            <PanelBox accentColor={theme.green} colors={theme}>
               <CoursesPanel
                 courses={courses}
                 darkMode={settings.darkMode}
                 onCourseUpdate={refreshCourses}
               />
             </PanelBox>
-            <PanelBox accentColor={colors.yellow} colors={colors}>
+            <PanelBox accentColor={theme.yellow} colors={theme}>
               <XPPanel
                 darkMode={settings.darkMode}
                 user={user}
@@ -113,7 +111,6 @@ export default function EvidexHome() {
               />
             </PanelBox>
           </View>
-          {/* Quick numbers at the bottom */}
           <View style={styles.statsGrid}>
             {stats.map((stat) => (
               <View
@@ -121,30 +118,30 @@ export default function EvidexHome() {
                 style={[
                   styles.statCard,
                   {
-                    backgroundColor: colors.surface,
-                    borderColor: `${colors.border}30`,
+                    backgroundColor: theme.surface,
+                    borderColor: `${theme.border}30`,
                   },
-                ]}
-              >
+                ]}>
                 <Text style={[styles.statValue, { color: stat.color }]}>
                   {stat.value}
                 </Text>
-                <Text style={[styles.statLabel, { color: colors.muted }]}>
+                <Text style={[styles.statLabel, { color: theme.muted }]}>
                   {stat.label}
                 </Text>
               </View>
             ))}
           </View>
         </ScrollView>
-        <Animated.View style={[
-          {
-            opacity: new Animated.Value(1),
-            transform: [{ translateY: new Animated.Value(0) }],
-          },
-        ]}>
+        <Animated.View
+          style={[
+            {
+              opacity: new Animated.Value(1),
+              transform: [{ translateY: new Animated.Value(0) }],
+            },
+          ]}>
           <FloatingMathSymbols
             showGlow={!settings.darkMode}
-            style={{ backgroundColor: colors.background, opacity: 1 }}
+            style={{ backgroundColor: theme.background, opacity: 1 }}
           />
         </Animated.View>
       </View>
@@ -152,9 +149,11 @@ export default function EvidexHome() {
   );
 }
 
+type ThemeColors = typeof lightColors;
+
 type PanelBoxProps = {
   accentColor: string;
-  colors: typeof lightColors;
+  colors: ThemeColors;
   children: React.ReactNode;
 };
 
@@ -167,8 +166,7 @@ function PanelBox({ accentColor, colors, children }: PanelBoxProps) {
           backgroundColor: colors.surface,
           borderColor: `${colors.border}30`,
         },
-      ]}
-    >
+      ]}>
       <View style={[styles.panelAccent, { backgroundColor: accentColor }]} />
       {children}
     </View>
@@ -198,9 +196,9 @@ const styles = StyleSheet.create({
     borderColor: '#243B5330',
     borderRadius: 10,
     borderWidth: 1,
+    flexBasis: 300,
     flexGrow: 1,
     flexShrink: 1,
-    flexBasis: 300,
     minHeight: 520,
     overflow: 'hidden',
     padding: 16,
@@ -223,8 +221,8 @@ const styles = StyleSheet.create({
     borderColor: '#243B5330',
     borderRadius: 10,
     borderWidth: 1,
-    flexGrow: 1,
     flexBasis: 150,
+    flexGrow: 1,
     padding: 16,
   },
   statValue: {
