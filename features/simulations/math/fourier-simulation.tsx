@@ -290,8 +290,8 @@ function PhasorGraph({
     const centerX = graphWidth * 0.22;
     const centerY = graphHeight / 2;
     const scale = Math.min(graphWidth, graphHeight) * 0.16;
-    const circles: Array<{ cx: number; cy: number; r: number }> = [];
-    const segments: Array<{ color: string; x1: number; x2: number; y1: number; y2: number }> = [];
+    const circles: { cx: number; cy: number; r: number }[] = [];
+    const segments: { color: string; x1: number; x2: number; y1: number; y2: number }[] = [];
 
     let x = centerX;
     let y = centerY;
@@ -491,7 +491,7 @@ export function FourierSimulation() {
               transform: [{ translateY: headerTranslateY }],
             },
           ]}>
-          <SimulationScreenHeader title="Fourier" />
+          <SimulationScreenHeader title="Fourier" type="math"/>
         </Animated.View>
 
         <Animated.ScrollView
