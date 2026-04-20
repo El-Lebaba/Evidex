@@ -2,11 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import CoursesPanel, { Course } from '@/components/home edit/CoursesPanel';
-import FlashcardsPanel from '@/components/home edit/FlashcardsPanel';
-import SettingsPanel, { AppSettings } from '@/components/home edit/SettingsPanel';
-import TopBar from '@/components/home edit/TopBar';
-import XPPanel, { UserInfo } from '@/components/home edit/XPPanel';
+import CoursesPanel, { Course } from '@/components/home/CoursesPanel';
+import FlashcardsPanel from '@/components/home/FlashcardsPanel';
+import SettingsPanel, { AppSettings } from '@/components/home/SettingsPanel';
+import TopBar from '@/components/home/TopBar';
+import XPPanel, { UserInfo } from '@/components/home/XPPanel';
 import { db } from '@/db/mainData';
 import {FloatingMathSymbols} from "@/features/simulations/core/floating-math-symbols";
 

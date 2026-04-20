@@ -92,7 +92,7 @@ export default function IntroScreen() {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      router.replace('/(tabs)/home/home edit');
+      router.replace('/(tabs)/home/home');
     });
   };
 

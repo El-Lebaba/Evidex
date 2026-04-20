@@ -670,7 +670,7 @@ function TermsSlider({
         onStartShouldSetPanResponder: () => true,
         onStartShouldSetPanResponderCapture: () => true,
       }),
-    [onChange]
+    [setFromEvent]
   );
 
   const percent = ((value - ORDER_MIN) / (ORDER_MAX - ORDER_MIN || 1)) * 100;
@@ -757,7 +757,7 @@ export function SerieTaylorSimulation() {
               transform: [{ translateY: headerTranslateY }],
             },
           ]}>
-          <SimulationScreenHeader title="Serie de Taylor" />
+          <SimulationScreenHeader title="Serie de Taylor" type="math"/>
         </Animated.View>
         <Animated.ScrollView
           contentContainerStyle={styles.content}
