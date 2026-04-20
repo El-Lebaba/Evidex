@@ -57,19 +57,38 @@ const DASHBOARD_CONFIG: Record<
   math: {
     categoryLabels: {
       'a-venir': 'A venir',
-      algebre: 'Algebre',
       analyse: 'Analyse',
       calcul: 'Calcul',
+      'equations diff': 'Eq diff',
+      fonctions: 'Fonctions',
+      geometrie: 'Geometrie',
+      approximations: 'Approximations',
+      riemann: 'Riemann',
+      signaux: 'Signaux',
+      series: 'Series',
+      trigonometrie: 'Trigonometrie',
+      visualisation: 'Visualisation',
+      vecteurs: 'Vecteurs',
+      aires: 'Aires',
+      derivees: 'Derivees',
+      comportement: 'Comportement',
+      convergence: 'Convergence',
     },
     filters: [
       { label: 'Actifs', value: 'ready' },
       { label: 'Calcul', value: 'calcul' },
       { label: 'Analyse', value: 'analyse' },
-      { label: 'Algebre', value: 'algebre' },
+      { label: 'Fonctions', value: 'fonctions' },
+      { label: 'Series', value: 'series' },
+      { label: 'Signaux', value: 'signaux' },
+      { label: 'Eq diff', value: 'equations diff' },
+      { label: 'Geometrie', value: 'geometrie' },
+      { label: 'Vecteurs', value: 'vecteurs' },
+      { label: 'Visualisation', value: 'visualisation' },
       { label: 'A venir', value: 'soon' },
     ],
     subtitle: 'Explore tes simulations dans une interface plus claire, plus douce et pensee pour reviser efficacement.',
-    title: 'Math Simulations',
+    title: 'Simulation de Math',
   },
   physics: {
     categoryLabels: {
@@ -88,7 +107,7 @@ const DASHBOARD_CONFIG: Record<
       { label: 'A venir', value: 'soon' },
     ],
     subtitle: 'Retrouve tes simulations de physique dans le meme espace organise, lisible et facile a parcourir.',
-    title: 'Physics Simulations',
+    title: 'Simulation de Physique',
   },
 };
 
@@ -122,7 +141,7 @@ function matchesDashboardFilter(entry: SimulationEntry, filter: DashboardFilter)
     return entry.status === filter;
   }
 
-  return entry.category === filter;
+  return entry.tags?.includes(filter) ?? false;
 }
 
 function DashboardSectionScreen({
@@ -334,10 +353,14 @@ function DashboardSectionScreen({
                               </ThemedText>
 
                               <View style={styles.cardFooter}>
-                                <View style={styles.categoryBadge}>
-                                  <ThemedText lightColor={MATH_THEME.ink} style={styles.categoryText}>
-                                    {config.categoryLabels[entry.category ?? 'a-venir'] ?? 'A venir'}
-                                  </ThemedText>
+                                <View style={styles.categoryRow}>
+                                  {(entry.tags?.length ? entry.tags : ['a-venir']).slice(0, 3).map((tag) => (
+                                    <View key={`${entry.href}-${tag}`} style={styles.categoryBadge}>
+                                      <ThemedText lightColor={MATH_THEME.ink} style={styles.categoryText}>
+                                        {config.categoryLabels[tag] ?? tag}
+                                      </ThemedText>
+                                    </View>
+                                  ))}
                                 </View>
 
                                 <MaterialCommunityIcons color={MATH_THEME.coral} name="arrow-right" size={20} />
@@ -748,6 +771,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 'auto',
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    flexShrink: 1,
+    flexWrap: 'wrap',
+    gap: 6,
+    marginRight: 10,
   },
   categoryBadge: {
     backgroundColor: '#DDE4D5',
