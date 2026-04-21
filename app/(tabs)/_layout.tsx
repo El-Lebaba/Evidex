@@ -19,7 +19,7 @@ export default function TabLayout() {
     db.init();
     refreshSettings();
 
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
       window.addEventListener('evidex_settings_changed', refreshSettings);
       return () => window.removeEventListener('evidex_settings_changed', refreshSettings);
     }
