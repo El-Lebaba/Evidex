@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "npx expo start -c --tunnel",
+    "startlocal": "npx expo start -c",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
