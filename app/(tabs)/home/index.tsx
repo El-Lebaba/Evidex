@@ -1,8 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Href, router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -13,6 +10,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  type ViewStyle,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -134,14 +132,13 @@ const sectionCards = [
   },
 ];
 
+type AnimatedHeroStyle = Animated.WithAnimatedObject<ViewStyle>;
+
 type HeroSlideProps = {
   slideWidth: number;
   isCompact: boolean;
   driftProgress: Animated.Value;
-  animatedStyle: {
-    opacity: Animated.AnimatedInterpolation<number>;
-    transform: { translateY?: Animated.AnimatedInterpolation<number>; scale?: Animated.AnimatedInterpolation<number> }[];
-  };
+  animatedStyle: AnimatedHeroStyle;
 };
 
 export default function HomeScreen() {
@@ -237,10 +234,6 @@ export default function HomeScreen() {
     currentTranslateX.current = nextX;
   }, [heroTranslateX, slideWidth]);
 
-  const courseCardWidth = expandProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: isCompact ? [158, 126] : [208, 176],
-  });
   const simulationCardWidth = expandProgress.interpolate({
     inputRange: [0, 1],
     outputRange: isCompact ? [158, 186] : [208, 240],
