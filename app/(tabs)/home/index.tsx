@@ -1,8 +1,21 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  Easing,
+  Image,
+  PanResponder,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { db } from '@/db/mainData';
 
 const palette = {
   charcoal: '#19191F',
@@ -10,63 +23,86 @@ const palette = {
   cream: '#EEF5ED',
   creamDark: '#DFE9DC',
   sage: '#B8C7B1',
+  sageDeep: '#AABBA1',
   ink: '#20242B',
   slate: '#536165',
   blue: '#7EA6E0',
   yellow: '#D8A94A',
+  green: '#7CCFBF',
   white: '#FFFFFF',
 };
 
 const homeLogo = require('@/assets/images/evidexe-logo.png');
+const studyingBoy = require('@/assets/images/studying-boy-hq.png');
 
-const heroBubbles = [
-  { height: 92, left: -20, opacity: 0.24, top: 120, width: 92 },
-  { height: 74, left: 22, opacity: 0.2, top: 174, width: 74 },
-  { height: 56, left: 70, opacity: 0.22, top: 70, width: 56 },
-  { height: 44, left: 106, opacity: 0.24, top: 124, width: 44 },
-  { height: 36, left: 126, opacity: 0.26, top: 52, width: 36 },
-  { height: 30, left: 148, opacity: 0.28, top: 98, width: 30 },
-  { height: 26, left: 170, opacity: 0.3, top: 150, width: 26 },
-  { height: 34, left: 110, opacity: 0.24, top: 210, width: 34 },
-  { height: 24, left: 138, opacity: 0.28, top: 250, width: 24 },
-  { height: 18, left: 164, opacity: 0.32, top: 294, width: 18 },
-  { height: 14, left: 184, opacity: 0.36, top: 340, width: 14 },
-  { height: 12, left: 152, opacity: 0.38, top: 382, width: 12 },
-  { height: 20, left: 90, opacity: 0.26, top: 320, width: 20 },
-  { height: 16, left: 72, opacity: 0.32, top: 270, width: 16 },
-  { height: 12, left: 48, opacity: 0.36, top: 232, width: 12 },
-  { height: 108, right: -28, opacity: 0.24, top: 112, width: 108 },
-  { height: 80, right: 18, opacity: 0.2, top: 168, width: 80 },
-  { height: 58, right: 72, opacity: 0.22, top: 66, width: 58 },
-  { height: 42, right: 112, opacity: 0.24, top: 120, width: 42 },
-  { height: 36, right: 132, opacity: 0.26, top: 42, width: 36 },
-  { height: 30, right: 156, opacity: 0.28, top: 92, width: 30 },
-  { height: 26, right: 180, opacity: 0.3, top: 146, width: 26 },
-  { height: 34, right: 116, opacity: 0.24, top: 206, width: 34 },
-  { height: 24, right: 146, opacity: 0.28, top: 248, width: 24 },
-  { height: 18, right: 170, opacity: 0.32, top: 292, width: 18 },
-  { height: 14, right: 190, opacity: 0.36, top: 336, width: 14 },
-  { height: 12, right: 158, opacity: 0.38, top: 378, width: 12 },
-  { height: 20, right: 96, opacity: 0.26, top: 314, width: 20 },
-  { height: 16, right: 78, opacity: 0.32, top: 266, width: 16 },
-  { height: 12, right: 54, opacity: 0.36, top: 228, width: 12 },
-  { height: 26, left: 200, opacity: 0.26, top: 74, width: 26 },
-  { height: 18, left: 218, opacity: 0.32, top: 126, width: 18 },
-  { height: 14, left: 232, opacity: 0.36, top: 182, width: 14 },
-  { height: 12, left: 240, opacity: 0.38, top: 238, width: 12 },
-  { height: 12, right: 238, opacity: 0.38, top: 238, width: 12 },
-  { height: 14, right: 232, opacity: 0.36, top: 182, width: 14 },
-  { height: 18, right: 218, opacity: 0.32, top: 126, width: 18 },
-  { height: 26, right: 200, opacity: 0.26, top: 74, width: 26 },
-  { height: 12, left: 28, opacity: 0.34, top: 38, width: 12 },
-  { height: 14, left: 18, opacity: 0.3, top: 284, width: 14 },
-  { height: 16, left: 34, opacity: 0.28, top: 430, width: 16 },
-  { height: 12, left: 96, opacity: 0.32, top: 458, width: 12 },
-  { height: 12, right: 26, opacity: 0.34, top: 36, width: 12 },
-  { height: 14, right: 18, opacity: 0.3, top: 280, width: 14 },
-  { height: 16, right: 30, opacity: 0.28, top: 432, width: 16 },
-  { height: 12, right: 98, opacity: 0.32, top: 456, width: 12 },
-];
+type BubbleSpec = {
+  height: number;
+  left: number;
+  opacity: number;
+  top: number;
+  width: number;
+};
+
+function seededValue(seed: number) {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function intersects(x: number, y: number, size: number, rect: { x: number; y: number; width: number; height: number }) {
+  return x < rect.x + rect.width && x + size > rect.x && y < rect.y + rect.height && y + size > rect.y;
+}
+
+function createHeroBubbles(panelWidth: number, isCompact: boolean): BubbleSpec[] {
+  const panelHeight = isCompact ? 570 : 620;
+  const safePadding = isCompact ? 14 : 18;
+  const bubbleCount = isCompact ? 24 : 28;
+  const maxBubble = isCompact ? 76 : 108;
+  const minBubble = isCompact ? 14 : 18;
+  const exclusionZones = isCompact
+    ? [
+        { x: panelWidth * 0.16, y: 120, width: panelWidth * 0.68, height: 250 },
+        { x: panelWidth - 110, y: 14, width: 100, height: 64 },
+      ]
+    : [
+        { x: panelWidth * 0.18, y: 150, width: panelWidth * 0.64, height: 260 },
+        { x: panelWidth - 126, y: 14, width: 112, height: 64 },
+      ];
+
+  const bubbles: BubbleSpec[] = [];
+
+  for (let index = 0; index < bubbleCount; index += 1) {
+    let placed = false;
+
+    for (let attempt = 0; attempt < 60 && !placed; attempt += 1) {
+      const seed = index * 71 + attempt * 17 + panelWidth;
+      const size = Math.round(minBubble + seededValue(seed) * (maxBubble - minBubble));
+      const x = Math.round(safePadding + seededValue(seed + 1) * (panelWidth - size - safePadding * 2));
+      const y = Math.round(safePadding + seededValue(seed + 2) * (panelHeight - size - safePadding * 2));
+      const opacity = 0.14 + seededValue(seed + 3) * 0.16;
+      const blocked = exclusionZones.some((zone) => intersects(x, y, size, zone));
+
+      if (!blocked) {
+        bubbles.push({
+          height: size,
+          left: x,
+          opacity,
+          top: y,
+          width: size,
+        });
+        placed = true;
+      }
+    }
+  }
+
+  return bubbles;
+}
+
+function createSlideBubbles(panelWidth: number, isCompact: boolean, seedOffset: number) {
+  return createHeroBubbles(panelWidth + seedOffset, isCompact).map((bubble, index) => ({
+    ...bubble,
+    left: Math.max(0, Math.min(panelWidth - bubble.width, bubble.left + ((index % 3) - 1) * 6)),
+  }));
+}
 
 const sectionCards = [
   {
@@ -95,10 +131,45 @@ const sectionCards = [
   },
 ];
 
+type HeroSlideProps = {
+  slideWidth: number;
+  isCompact: boolean;
+  driftProgress: Animated.Value;
+  animatedStyle: {
+    opacity: Animated.AnimatedInterpolation<number>;
+    transform: { translateY?: Animated.AnimatedInterpolation<number>; scale?: Animated.AnimatedInterpolation<number> }[];
+  };
+};
+
 export default function HomeScreen() {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 480;
+  const slideWidth = Math.max(width - (isCompact ? 24 : 44), 280);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [simulationsExpanded, setSimulationsExpanded] = useState(false);
+  const [revealAnchorY, setRevealAnchorY] = useState(0);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [userLevel, setUserLevel] = useState(1);
+  const [userXp, setUserXp] = useState(0);
+  const [activeCourses, setActiveCourses] = useState(0);
+
   const expandProgress = useRef(new Animated.Value(0)).current;
+  const heroTranslateX = useRef(new Animated.Value(0)).current;
+  const bubbleDrift = useRef(new Animated.Value(0)).current;
+  const scrollRef = useRef<ScrollView | null>(null);
+  const autoAdvanceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragStartX = useRef(0);
+  const currentHeroIndex = useRef(0);
+  const currentTranslateX = useRef(0);
+
+  useEffect(() => {
+    db.init();
+    const user = db.getUser();
+    const courses = db.getCourses();
+    setUserLevel(user.level);
+    setUserXp(user.xp);
+    setActiveCourses(courses.filter((course) => !course.completed).length);
+  }, []);
 
   useEffect(() => {
     Animated.timing(expandProgress, {
@@ -109,114 +180,252 @@ export default function HomeScreen() {
     }).start();
   }, [expandProgress, simulationsExpanded]);
 
+  useEffect(() => {
+    if (!simulationsExpanded) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      scrollRef.current?.scrollTo({
+        animated: true,
+        y: Math.max(revealAnchorY + 180, 0),
+      });
+    }, 180);
+    return () => clearTimeout(timer);
+  }, [revealAnchorY, simulationsExpanded]);
+
+  useEffect(() => {
+    const listenerId = heroTranslateX.addListener(({ value }) => {
+      currentTranslateX.current = value;
+    });
+
+    return () => {
+      heroTranslateX.removeListener(listenerId);
+    };
+  }, [heroTranslateX]);
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bubbleDrift, {
+          duration: 3600,
+          easing: Easing.inOut(Easing.sin),
+          toValue: 1,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bubbleDrift, {
+          duration: 3600,
+          easing: Easing.inOut(Easing.sin),
+          toValue: 0,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
+  }, [bubbleDrift]);
+
+  useEffect(() => {
+    const nextX = -(currentHeroIndex.current * slideWidth);
+    heroTranslateX.setValue(nextX);
+    currentTranslateX.current = nextX;
+  }, [heroTranslateX, slideWidth]);
+
   const courseCardWidth = expandProgress.interpolate({
     inputRange: [0, 1],
-    outputRange: [208, 176],
+    outputRange: isCompact ? [158, 126] : [208, 176],
   });
-
   const simulationCardWidth = expandProgress.interpolate({
     inputRange: [0, 1],
-    outputRange: [208, 240],
+    outputRange: isCompact ? [158, 186] : [208, 240],
   });
-
   const courseCardOpacity = expandProgress.interpolate({
     inputRange: [0, 1],
     outputRange: [0.84, 0.56],
   });
-
   const detailHeight = expandProgress.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 520],
+    outputRange: [0, isCompact ? 1120 : 520],
   });
-
   const detailOpacity = expandProgress.interpolate({
     inputRange: [0, 0.35, 1],
     outputRange: [0, 0.2, 1],
   });
-
   const detailTranslateY = expandProgress.interpolate({
     inputRange: [0, 1],
     outputRange: [-24, 0],
   });
-
   const simulationCardLift = expandProgress.interpolate({
     inputRange: [0, 1],
     outputRange: [0, -8],
   });
 
+  function toggleSimulations() {
+    setSimulationsExpanded((current) => !current);
+  }
+
+  function getSlideAnimatedStyle(index: number) {
+    const inputRange = [-(index + 1) * slideWidth, -index * slideWidth, -(index - 1) * slideWidth];
+    return {
+      opacity: heroTranslateX.interpolate({
+        inputRange,
+        outputRange: [0.32, 1, 0.32],
+        extrapolate: 'clamp',
+      }),
+      transform: [
+        {
+          translateY: heroTranslateX.interpolate({
+            inputRange,
+            outputRange: [16, 0, 16],
+            extrapolate: 'clamp',
+          }),
+        },
+        {
+          scale: heroTranslateX.interpolate({
+            inputRange,
+            outputRange: [0.96, 1, 0.96],
+            extrapolate: 'clamp',
+          }),
+        },
+      ],
+    };
+  }
+
+  const animateToSlide = useCallback((targetIndex: number) => {
+    const clampedIndex = Math.max(0, Math.min(2, targetIndex));
+    currentHeroIndex.current = clampedIndex;
+    setHeroIndex(clampedIndex);
+    Animated.spring(heroTranslateX, {
+      damping: 22,
+      mass: 0.9,
+      stiffness: 190,
+      toValue: -clampedIndex * slideWidth,
+      useNativeDriver: true,
+    }).start();
+  }, [heroTranslateX, slideWidth]);
+
+  const scheduleAutoAdvance = useCallback(
+    (nextIndex: number) => {
+      if (autoAdvanceTimeout.current) {
+        clearTimeout(autoAdvanceTimeout.current);
+      }
+      autoAdvanceTimeout.current = setTimeout(() => {
+        const targetIndex = (nextIndex + 1) % 3;
+        animateToSlide(targetIndex);
+      }, 15000);
+    },
+    [animateToSlide],
+  );
+
+  useEffect(() => {
+    scheduleAutoAdvance(heroIndex);
+    return () => {
+      if (autoAdvanceTimeout.current) {
+        clearTimeout(autoAdvanceTimeout.current);
+      }
+    };
+  }, [heroIndex, scheduleAutoAdvance]);
+
+  const heroPanResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dx) > 6 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
+      onPanResponderGrant: () => {
+        if (autoAdvanceTimeout.current) {
+          clearTimeout(autoAdvanceTimeout.current);
+        }
+        dragStartX.current = currentTranslateX.current;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const nextX = dragStartX.current + gestureState.dx;
+        const minX = -(2 * slideWidth);
+        heroTranslateX.setValue(Math.max(minX - 48, Math.min(48, nextX)));
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const threshold = slideWidth * 0.18;
+        const baseIndex = currentHeroIndex.current;
+        let nextIndex = baseIndex;
+
+        if (gestureState.dx <= -threshold || gestureState.vx <= -0.45) {
+          nextIndex = Math.min(baseIndex + 1, 2);
+        } else if (gestureState.dx >= threshold || gestureState.vx >= 0.45) {
+          nextIndex = Math.max(baseIndex - 1, 0);
+        } else {
+          nextIndex = Math.round(Math.abs(currentTranslateX.current) / slideWidth);
+        }
+
+        animateToSlide(nextIndex);
+      },
+      onPanResponderTerminate: () => {
+        animateToSlide(currentHeroIndex.current);
+      },
+    }),
+  ).current;
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
-          {heroBubbles.map((bubble, index) => (
-            <View
-              key={`bubble-${index}`}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.heroShell}>
+          <View {...heroPanResponder.panHandlers} style={styles.heroViewport}>
+            <Animated.View
               style={[
-                styles.heroBubble,
+                styles.heroTrack,
                 {
-                  height: bubble.height,
-                  left: bubble.left,
-                  opacity: bubble.opacity,
-                  right: bubble.right,
-                  top: bubble.top,
-                  width: bubble.width,
+                  transform: [{ translateX: heroTranslateX }],
+                  width: slideWidth * 3,
                 },
-              ]}
-            />
-          ))}
-
-          <View style={styles.heroTopRow}>
-            <Pressable onPress={() => router.push('/(tabs)/profile')} style={styles.accountChip}>
-              <MaterialIcons name="person-outline" size={18} color={palette.ink} />
-              <Text style={styles.accountText}>Profil</Text>
-            </Pressable>
+              ]}>
+              <HeroBrandSlide animatedStyle={getSlideAnimatedStyle(0)} driftProgress={bubbleDrift} isCompact={isCompact} slideWidth={slideWidth} />
+              <HeroAboutSlide animatedStyle={getSlideAnimatedStyle(1)} driftProgress={bubbleDrift} isCompact={isCompact} slideWidth={slideWidth} />
+              <HeroProfileSlide
+                activeCourses={activeCourses}
+                animatedStyle={getSlideAnimatedStyle(2)}
+                driftProgress={bubbleDrift}
+                isCompact={isCompact}
+                level={userLevel}
+                slideWidth={slideWidth}
+                xp={userXp}
+              />
+            </Animated.View>
           </View>
 
-          <View style={styles.heroTextBlock}>
-            <Text style={styles.eyebrow}>Accueil Evidex</Text>
-            <Text style={styles.heroTitle}>Ton espace</Text>
-            <Text style={styles.heroTitle}>d&apos;apprentissage</Text>
-          </View>
-
-          <View style={styles.logoStage}>
-            <View style={styles.logoAura} />
-            <View style={styles.sideBadgeLeft}>
-              <MaterialIcons name="auto-graph" size={28} color={palette.charcoal} />
-              <Text style={styles.sideBadgeText}>XP</Text>
-            </View>
-            <Image resizeMode="contain" source={homeLogo} style={styles.logoImage} />
-            <View style={styles.sideBadgeRight}>
-              <MaterialIcons name="science" size={28} color={palette.charcoal} />
-              <Text style={styles.sideBadgeText}>Lab</Text>
-            </View>
-            <View style={styles.sideAccentLeft} />
-            <View style={styles.sideAccentRight} />
+          <View style={styles.heroDotsTop}>
+            {[0, 1, 2].map((index) => (
+              <View key={`dot-${index}`} style={[styles.heroDot, heroIndex === index ? styles.heroDotActive : null]} />
+            ))}
           </View>
         </View>
 
-        <View style={styles.featuresSection}>
-          <View style={styles.cardsGrid}>
+        <View style={[styles.featuresSection, isCompact ? styles.featuresSectionCompact : null]}>
+          <View style={[styles.cardsGrid, isCompact ? styles.cardsGridCompact : null]}>
             <Animated.View style={[styles.cardWrap, { opacity: courseCardOpacity, width: courseCardWidth }]}>
               <Pressable
                 onHoverIn={() => setHoveredCard('cours')}
                 onHoverOut={() => setHoveredCard((current) => (current === 'cours' ? null : current))}
                 style={({ hovered }) => [
                   styles.card,
+                  isCompact ? styles.cardCompact : null,
                   styles.cardDisabled,
                   hovered && !simulationsExpanded ? styles.cardHovered : null,
                   hoveredCard === 'simulations' && !simulationsExpanded ? styles.cardDimmed : null,
                 ]}>
-                <View style={[styles.cardMedia, { backgroundColor: `${palette.yellow}20` }]}>
-                  <View style={[styles.cardIconWrap, { backgroundColor: palette.yellow }]}>
+                <View style={[styles.cardMedia, isCompact ? styles.cardMediaCompact : null, { backgroundColor: `${palette.yellow}20` }]}>
+                  <View style={[styles.cardIconWrap, isCompact ? styles.cardIconWrapCompact : null, { backgroundColor: palette.yellow }]}>
                     <MaterialIcons name="menu-book" size={34} color={palette.ink} />
                   </View>
                 </View>
-                <View style={styles.cardText}>
-                  <Text style={styles.cardTitle}>Cours</Text>
-                  <Text style={styles.cardSubtitle}>Bientot disponible</Text>
+                <View style={[styles.cardText, isCompact ? styles.cardTextCompact : null]}>
+                  <Text style={[styles.cardTitle, isCompact ? styles.cardTitleCompact : null]}>Cours</Text>
+                  <Text style={[styles.cardSubtitle, isCompact ? styles.cardSubtitleCompact : null]}>Bientot disponible</Text>
                 </View>
-                <View style={styles.cardFooter}>
-                  <Text style={styles.cardFooterText}>Bientot</Text>
+                <View style={[styles.cardFooter, isCompact ? styles.cardFooterCompact : null]}>
+                  <Text style={[styles.cardFooterText, isCompact ? styles.cardFooterTextCompact : null]}>Bientot</Text>
                   <MaterialIcons name="schedule" size={22} color={palette.slate} />
                 </View>
               </Pressable>
@@ -225,38 +434,34 @@ export default function HomeScreen() {
             <Animated.View
               style={[
                 styles.cardWrap,
-                {
-                  transform: [{ translateY: simulationCardLift }],
-                  width: simulationCardWidth,
-                },
+                { transform: [{ translateY: simulationCardLift }], width: simulationCardWidth },
               ]}>
               <Pressable
                 onHoverIn={() => setHoveredCard('simulations')}
                 onHoverOut={() => setHoveredCard((current) => (current === 'simulations' ? null : current))}
-                onPress={() => setSimulationsExpanded((current) => !current)}
+                onPress={toggleSimulations}
                 style={({ hovered, pressed }) => [
                   styles.card,
+                  isCompact ? styles.cardCompact : null,
                   styles.simulationCard,
                   simulationsExpanded ? styles.simulationCardExpanded : null,
                   hovered && !simulationsExpanded ? styles.cardHovered : null,
                   hoveredCard === 'cours' && !simulationsExpanded ? styles.cardDimmed : null,
                   pressed ? styles.cardPressed : null,
                 ]}>
-                <View style={[styles.cardMedia, { backgroundColor: `${palette.blue}20` }]}>
-                  <View style={[styles.cardIconWrap, { backgroundColor: palette.blue }]}>
+                <View style={[styles.cardMedia, isCompact ? styles.cardMediaCompact : null, { backgroundColor: `${palette.blue}20` }]}>
+                  <View style={[styles.cardIconWrap, isCompact ? styles.cardIconWrapCompact : null, { backgroundColor: palette.blue }]}>
                     <MaterialIcons name="bolt" size={34} color={palette.ink} />
                   </View>
                 </View>
-                <View style={styles.cardText}>
-                  <Text style={styles.cardTitle}>Simulations</Text>
-                  <Text style={styles.cardSubtitle}>
+                <View style={[styles.cardText, isCompact ? styles.cardTextCompact : null]}>
+                  <Text style={[styles.cardTitle, isCompact ? styles.cardTitleCompact : null]}>Simulations</Text>
+                  <Text style={[styles.cardSubtitle, isCompact ? styles.cardSubtitleCompact : null]}>
                     {simulationsExpanded ? 'Choisis une section' : 'Explorer les sections'}
                   </Text>
                 </View>
-                <View style={styles.cardFooter}>
-                  <Text style={styles.cardFooterText}>
-                    {simulationsExpanded ? 'Refermer' : 'Ouvrir'}
-                  </Text>
+                <View style={[styles.cardFooter, isCompact ? styles.cardFooterCompact : null]}>
+                  <Text style={[styles.cardFooterText, isCompact ? styles.cardFooterTextCompact : null]}>{simulationsExpanded ? 'Refermer' : 'Ouvrir'}</Text>
                   <MaterialIcons
                     name={simulationsExpanded ? 'expand-less' : 'chevron-right'}
                     size={22}
@@ -268,38 +473,37 @@ export default function HomeScreen() {
           </View>
 
           <Animated.View
+            onLayout={(event) => setRevealAnchorY(event.nativeEvent.layout.y)}
             style={[
               styles.sectionReveal,
-              {
-                height: detailHeight,
-                opacity: detailOpacity,
-                transform: [{ translateY: detailTranslateY }],
-              },
+              isCompact ? styles.sectionRevealCompact : null,
+              { height: detailHeight, opacity: detailOpacity, transform: [{ translateY: detailTranslateY }] },
             ]}>
-            <View style={styles.sectionPanel}>
-              <View style={styles.sectionPanelHeader}>
-                <Text style={styles.sectionEyebrow}>Simulations</Text>
-                <Text style={styles.sectionTitle}>Choisis ta section</Text>
+            <View style={[styles.sectionPanel, isCompact ? styles.sectionPanelCompact : null]}>
+              <View style={[styles.sectionPanelHeader, isCompact ? styles.sectionPanelHeaderCompact : null]}>
+                <Text style={[styles.sectionEyebrow, isCompact ? styles.sectionEyebrowCompact : null]}>Simulations</Text>
+                <Text style={[styles.sectionTitle, isCompact ? styles.sectionTitleCompact : null]}>Choisis ta section</Text>
               </View>
 
-              <View style={styles.sectionCardsGrid}>
+              <View style={[styles.sectionCardsGrid, isCompact ? styles.sectionCardsGridCompact : null]}>
                 {sectionCards.map((card) => (
                   <Pressable
                     key={card.key}
                     onPress={() => router.push(card.href)}
                     style={({ hovered, pressed }) => [
                       styles.sectionCard,
+                      isCompact ? styles.sectionCardCompact : null,
                       pressed || hovered ? styles.sectionCardPressed : null,
                     ]}>
-                    <View style={[styles.sectionCardMedia, { backgroundColor: `${card.accent}20` }]}>
-                      <View style={[styles.sectionCardIcon, { backgroundColor: card.accent }]}>
+                    <View style={[styles.sectionCardMedia, isCompact ? styles.sectionCardMediaCompact : null, { backgroundColor: `${card.accent}20` }]}>
+                      <View style={[styles.sectionCardIcon, isCompact ? styles.sectionCardIconCompact : null, { backgroundColor: card.accent }]}>
                         <MaterialIcons name={card.icon as never} size={42} color={palette.ink} />
                       </View>
                     </View>
-                    <Text style={styles.sectionCardTitle}>{card.title}</Text>
-                    <Text style={styles.sectionCardSubtitle}>{card.subtitle}</Text>
-                    <View style={styles.sectionCardFooter}>
-                      <Text style={styles.sectionCardFooterText}>Entrer</Text>
+                    <Text style={[styles.sectionCardTitle, isCompact ? styles.sectionCardTitleCompact : null]}>{card.title}</Text>
+                    <Text style={[styles.sectionCardSubtitle, isCompact ? styles.sectionCardSubtitleCompact : null]}>{card.subtitle}</Text>
+                    <View style={[styles.sectionCardFooter, isCompact ? styles.sectionCardFooterCompact : null]}>
+                      <Text style={[styles.sectionCardFooterText, isCompact ? styles.sectionCardFooterTextCompact : null]}>Entrer</Text>
                       <MaterialIcons name="chevron-right" size={24} color={palette.slate} />
                     </View>
                   </Pressable>
@@ -313,39 +517,250 @@ export default function HomeScreen() {
   );
 }
 
+function HeroBrandSlide({ animatedStyle, driftProgress, isCompact, slideWidth }: HeroSlideProps) {
+  const bubbles = createSlideBubbles(slideWidth - 12, isCompact, 0);
+
+  return (
+    <Animated.View style={[styles.heroSlide, { width: slideWidth }, animatedStyle]}>
+      <View style={[styles.heroPanel, isCompact ? styles.heroPanelCompact : null]}>
+        {bubbles.map((bubble, index) => (
+          <Animated.View
+            key={`brand-bubble-${index}`}
+            style={[
+              styles.heroBubbleWrap,
+              {
+                left: bubble.left,
+                top: bubble.top,
+                transform: [
+                  {
+                    translateX: driftProgress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-((index % 4) + 2) * 2, ((index % 4) + 2) * 2],
+                    }),
+                  },
+                  {
+                    translateY: driftProgress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-((index % 5) + 2) * 2, ((index % 5) + 2) * 2],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.heroBubble,
+                { height: bubble.height, opacity: bubble.opacity, width: bubble.width },
+              ]}
+            />
+          </Animated.View>
+        ))}
+        <View style={styles.heroTopRow}>
+          <Pressable onPress={() => router.push('/(tabs)/profile')} style={[styles.accountChip, isCompact ? styles.accountChipCompact : null]}>
+            <MaterialIcons name="person-outline" size={18} color={palette.ink} />
+            <Text style={styles.accountText}>Profil</Text>
+          </Pressable>
+        </View>
+        <View style={[styles.heroTextBlock, isCompact ? styles.heroTextBlockCompact : null]}>
+          <Text style={[styles.eyebrow, isCompact ? styles.eyebrowCompact : null]}>Accueil Evidex</Text>
+          <Text style={[styles.heroTitle, isCompact ? styles.heroTitleCompact : null]}>Ton espace</Text>
+          <Text style={[styles.heroTitle, isCompact ? styles.heroTitleCompact : null]}>d&apos;apprentissage</Text>
+        </View>
+        <View style={[styles.logoStage, isCompact ? styles.logoStageCompact : null]}>
+          <View style={[styles.logoAura, isCompact ? styles.logoAuraCompact : null]} />
+          <Image resizeMode="contain" source={homeLogo} style={[styles.logoImage, isCompact ? styles.logoImageCompact : null]} />
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
+function HeroAboutSlide({ animatedStyle, driftProgress, isCompact, slideWidth }: HeroSlideProps) {
+  const bubbles = createSlideBubbles(slideWidth - 12, isCompact, 37);
+
+  return (
+    <Animated.View style={[styles.heroSlide, { width: slideWidth }, animatedStyle]}>
+      <View style={[styles.heroPanel, styles.heroPanelVariant, isCompact ? styles.heroPanelCompact : null]}>
+        {bubbles.map((bubble, index) => (
+          <Animated.View
+            key={`about-bubble-${index}`}
+            style={[
+              styles.heroBubbleWrap,
+              {
+                left: bubble.left,
+                top: bubble.top,
+                transform: [
+                  {
+                    translateX: driftProgress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-((index % 3) + 2) * 2, ((index % 3) + 2) * 2],
+                    }),
+                  },
+                  {
+                    translateY: driftProgress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-((index % 4) + 2) * 2, ((index % 4) + 2) * 2],
+                    }),
+                  },
+                ],
+              },
+            ]}>
+            <View style={[styles.heroBubble, { height: bubble.height, opacity: bubble.opacity, width: bubble.width }]} />
+          </Animated.View>
+        ))}
+        <View style={[styles.aboutLayout, isCompact ? styles.aboutLayoutCompact : null]}>
+          <View style={[styles.aboutCopyBlock, isCompact ? styles.aboutCopyBlockCompact : null]}>
+            <Text style={[styles.eyebrow, isCompact ? styles.eyebrowCompact : null]}>A propos</Text>
+            <Text style={[styles.aboutTitle, isCompact ? styles.aboutTitleCompact : null]}>Evidex rassemble cours, progression et simulations.</Text>
+            <Text style={[styles.aboutText, isCompact ? styles.aboutTextCompact : null]}>
+              Un seul espace pour apprendre, tester des idees et suivre ce qui compte vraiment dans ton parcours.
+            </Text>
+            <View style={[styles.aboutHighlights, isCompact ? styles.aboutHighlightsCompact : null]}>
+              <View style={styles.aboutChip}>
+                <MaterialIcons name="menu-book" size={18} color={palette.charcoal} />
+                <Text style={styles.aboutChipText}>Cours</Text>
+              </View>
+              <View style={styles.aboutChip}>
+                <MaterialIcons name="bolt" size={18} color={palette.charcoal} />
+                <Text style={styles.aboutChipText}>Simulations</Text>
+              </View>
+            </View>
+          </View>
+          <View style={[styles.studyImageShell, isCompact ? styles.studyImageShellCompact : null]}>
+            <View style={[styles.studyGlow, isCompact ? styles.studyGlowCompact : null]} />
+            <Image resizeMode="cover" source={studyingBoy} style={[styles.studyImage, isCompact ? styles.studyImageCompact : null]} />
+          </View>
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
+type HeroProfileSlideProps = HeroSlideProps & {
+  activeCourses: number;
+  level: number;
+  xp: number;
+};
+
+function HeroProfileSlide({ activeCourses, animatedStyle, driftProgress, isCompact, level, slideWidth, xp }: HeroProfileSlideProps) {
+  const bubbles = createSlideBubbles(slideWidth - 12, isCompact, 91);
+
+  return (
+    <Animated.View style={[styles.heroSlide, { width: slideWidth }, animatedStyle]}>
+      <View style={[styles.heroPanel, styles.heroPanelVariant, isCompact ? styles.heroPanelCompact : null]}>
+        {bubbles.map((bubble, index) => (
+          <Animated.View
+            key={`profile-bubble-${index}`}
+            style={[
+              styles.heroBubbleWrap,
+              {
+                left: bubble.left,
+                top: bubble.top,
+                transform: [
+                  {
+                    translateX: driftProgress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-((index % 3) + 2) * 2, ((index % 3) + 2) * 2],
+                    }),
+                  },
+                  {
+                    translateY: driftProgress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-((index % 4) + 2) * 2, ((index % 4) + 2) * 2],
+                    }),
+                  },
+                ],
+              },
+            ]}>
+            <View style={[styles.heroBubble, { height: bubble.height, opacity: bubble.opacity, width: bubble.width }]} />
+          </Animated.View>
+        ))}
+        <View style={[styles.profileHeroHeader, isCompact ? styles.profileHeroHeaderCompact : null]}>
+          <Text style={[styles.eyebrow, isCompact ? styles.eyebrowCompact : null]}>Profil en bref</Text>
+          <Text style={[styles.profileHeroTitle, isCompact ? styles.profileHeroTitleCompact : null]}>Un apercu rapide de ta progression</Text>
+        </View>
+        <View style={[styles.profilePreviewCard, isCompact ? styles.profilePreviewCardCompact : null]}>
+          <View style={styles.profileBadgeRow}>
+            <View style={styles.profileAvatar}>
+              <MaterialIcons name="person" size={24} color={palette.white} />
+            </View>
+            <View>
+              <Text style={[styles.profileName, isCompact ? styles.profileNameCompact : null]}>Tony</Text>
+              <Text style={styles.profileTag}>Compte Evidex</Text>
+            </View>
+          </View>
+          <View style={[styles.profileStatsGrid, isCompact ? styles.profileStatsGridCompact : null]}>
+            <View style={styles.profileStatCard}>
+              <Text style={[styles.profileStatValue, { color: palette.blue }]}>{level}</Text>
+              <Text style={styles.profileStatLabel}>Niveau</Text>
+            </View>
+            <View style={styles.profileStatCard}>
+              <Text style={[styles.profileStatValue, { color: palette.yellow }]}>{xp}</Text>
+              <Text style={styles.profileStatLabel}>XP</Text>
+            </View>
+            <View style={styles.profileStatCard}>
+              <Text style={[styles.profileStatValue, { color: palette.green }]}>{activeCourses}</Text>
+              <Text style={styles.profileStatLabel}>Cours actifs</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
 const styles = StyleSheet.create({
-  safeArea: {
-    backgroundColor: palette.cream,
-    flex: 1,
+  safeArea: { backgroundColor: palette.cream, flex: 1 },
+  content: { backgroundColor: palette.cream, paddingBottom: 56 },
+  heroShell: { backgroundColor: palette.cream, paddingHorizontal: 22, paddingTop: 8, position: 'relative' },
+  heroViewport: { overflow: 'hidden' },
+  heroTrack: {
+    flexDirection: 'row',
+    userSelect: 'none',
   },
-  content: {
-    backgroundColor: palette.cream,
-    paddingBottom: 56,
-  },
-  hero: {
+  heroSlide: { paddingRight: 12 },
+  heroPanel: {
     backgroundColor: palette.sage,
+    borderRadius: 38,
     minHeight: 620,
     overflow: 'hidden',
     paddingHorizontal: 22,
     paddingTop: 18,
     position: 'relative',
   },
+  heroPanelVariant: { backgroundColor: palette.sageDeep },
+  heroPanelCompact: {
+    borderRadius: 28,
+    minHeight: 570,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
   heroBubble: {
     backgroundColor: 'rgba(255,255,255,0.42)',
     borderColor: 'rgba(255,255,255,0.3)',
     borderRadius: 999,
     borderWidth: 1,
+  },
+  heroBubbleWrap: {
     position: 'absolute',
   },
-  heroTopRow: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  heroTextBlock: {
+  heroTopRow: { alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'flex-end' },
+  heroTextBlock: { alignItems: 'center', marginTop: 20 },
+  heroTextBlockCompact: { marginTop: 44 },
+  heroDotsTop: {
     alignItems: 'center',
-    marginTop: 20,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 24,
+    zIndex: 5,
   },
+  heroDot: { backgroundColor: 'rgba(32,36,43,0.18)', borderRadius: 999, height: 8, width: 8 },
+  heroDotActive: { backgroundColor: palette.charcoal, width: 24 },
   eyebrow: {
     color: 'rgba(25,25,31,0.55)',
     fontSize: 15,
@@ -355,12 +770,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textTransform: 'uppercase',
   },
-  heroTitle: {
-    color: palette.ink,
-    fontSize: 44,
-    fontWeight: '900',
-    lineHeight: 46,
-    textAlign: 'center',
+  eyebrowCompact: {
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  heroTitle: { color: palette.ink, fontSize: 44, fontWeight: '900', lineHeight: 46, textAlign: 'center' },
+  heroTitleCompact: {
+    fontSize: 28,
+    lineHeight: 31,
+    maxWidth: 280,
   },
   accountChip: {
     alignItems: 'center',
@@ -373,10 +791,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  accountText: {
-    color: palette.ink,
-    fontSize: 14,
-    fontWeight: '800',
+  accountText: { color: palette.ink, fontSize: 14, fontWeight: '800' },
+  accountChipCompact: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   logoStage: {
     alignItems: 'center',
@@ -387,6 +805,10 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: '100%',
   },
+  logoStageCompact: {
+    height: 200,
+    marginTop: 26,
+  },
   logoAura: {
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 220,
@@ -395,78 +817,168 @@ const styles = StyleSheet.create({
     top: 2,
     width: 320,
   },
-  sideBadgeLeft: {
+  logoAuraCompact: {
+    borderRadius: 160,
+    height: 196,
+    width: 250,
+  },
+  logoImage: { height: 164, width: '96%' },
+  logoImageCompact: {
+    height: 108,
+    width: '82%',
+  },
+  aboutLayout: {
     alignItems: 'center',
-    backgroundColor: 'rgba(238,245,237,0.78)',
-    borderColor: 'rgba(25,25,31,0.08)',
-    borderRadius: 22,
-    borderWidth: 1,
-    gap: 4,
-    left: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    position: 'absolute',
-    top: 54,
-    transform: [{ rotate: '-7deg' }],
-  },
-  sideBadgeRight: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(188,133,89,0.2)',
-    borderColor: 'rgba(25,25,31,0.08)',
-    borderRadius: 22,
-    borderWidth: 1,
-    gap: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    position: 'absolute',
-    right: 6,
-    top: 52,
-    transform: [{ rotate: '8deg' }],
-  },
-  sideBadgeText: {
-    color: palette.charcoal,
-    fontSize: 13,
-    fontWeight: '900',
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-  },
-  sideAccentLeft: {
-    backgroundColor: 'rgba(188,133,89,0.28)',
-    borderRadius: 999,
-    height: 10,
-    left: 84,
-    position: 'absolute',
-    top: 198,
-    width: 52,
-  },
-  sideAccentRight: {
-    backgroundColor: 'rgba(32,36,43,0.14)',
-    borderRadius: 999,
-    height: 10,
-    position: 'absolute',
-    right: 86,
-    top: 196,
-    width: 60,
-  },
-  logoImage: {
-    height: 164,
-    width: '96%',
-  },
-  featuresSection: {
-    alignItems: 'center',
-    marginTop: -120,
-    paddingHorizontal: 16,
-  },
-  cardsGrid: {
-    alignItems: 'flex-end',
+    flex: 1,
     flexDirection: 'row',
-    gap: 16,
+    gap: 8,
+    justifyContent: 'space-between',
+    paddingBottom: 36,
+    paddingTop: 42,
+  },
+  aboutLayoutCompact: {
+    alignItems: 'stretch',
+    flexDirection: 'column',
+    gap: 18,
+    justifyContent: 'flex-start',
+    paddingBottom: 28,
+    paddingTop: 52,
+  },
+  aboutCopyBlock: { flex: 0.9, maxWidth: 360, paddingLeft: 10 },
+  aboutCopyBlockCompact: {
+    flex: 0,
+    maxWidth: '100%',
+    paddingLeft: 0,
+  },
+  aboutTitle: { color: palette.ink, fontSize: 34, fontWeight: '900', lineHeight: 40 },
+  aboutTitleCompact: {
+    fontSize: 26,
+    lineHeight: 31,
+    textAlign: 'center',
+  },
+  aboutText: { color: 'rgba(32,36,43,0.76)', fontSize: 17, fontWeight: '600', lineHeight: 25, marginTop: 16 },
+  aboutTextCompact: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  aboutHighlights: { flexDirection: 'row', gap: 10, marginTop: 20 },
+  aboutHighlightsCompact: {
     justifyContent: 'center',
+    marginTop: 16,
+  },
+  aboutChip: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderColor: 'rgba(32,36,43,0.08)',
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  aboutChipText: { color: palette.charcoal, fontSize: 14, fontWeight: '800' },
+  studyImageShell: {
+    alignItems: 'flex-end',
+    alignSelf: 'stretch',
+    borderColor: 'rgba(255,255,255,0.76)',
+    borderRadius: 24,
+    borderWidth: 3,
+    flex: 1.15,
+    justifyContent: 'center',
+    minWidth: 320,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  studyImageShellCompact: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    borderRadius: 22,
+    flex: 0,
+    height: 230,
+    minWidth: 0,
+    overflow: 'hidden',
     width: '100%',
   },
-  cardWrap: {
-    overflow: 'visible',
+  studyGlow: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 220,
+    height: 320,
+    position: 'absolute',
+    right: 18,
+    width: 320,
   },
+  studyGlowCompact: {
+    height: 220,
+    right: undefined,
+    width: 220,
+  },
+  studyImage: {
+    height: '100%',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.14,
+    shadowRadius: 22,
+    width: '100%',
+  },
+  studyImageCompact: {
+    height: '100%',
+    width: '100%',
+  },
+  profileHeroHeader: { alignItems: 'center', paddingTop: 46 },
+  profileHeroHeaderCompact: { paddingTop: 54 },
+  profileHeroTitle: { color: palette.ink, fontSize: 34, fontWeight: '900', lineHeight: 40, maxWidth: 520, textAlign: 'center' },
+  profileHeroTitleCompact: {
+    fontSize: 26,
+    lineHeight: 31,
+    maxWidth: 280,
+  },
+  profilePreviewCard: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderColor: 'rgba(32,36,43,0.08)',
+    borderRadius: 30,
+    borderWidth: 1,
+    marginTop: 34,
+    maxWidth: 560,
+    padding: 22,
+    width: '100%',
+  },
+  profilePreviewCardCompact: {
+    marginBottom: 28,
+    marginTop: 20,
+    padding: 16,
+  },
+  profileBadgeRow: { alignItems: 'center', flexDirection: 'row', gap: 14 },
+  profileAvatar: { alignItems: 'center', backgroundColor: palette.blue, borderRadius: 24, height: 48, justifyContent: 'center', width: 48 },
+  profileName: { color: palette.ink, fontSize: 18, fontWeight: '900' },
+  profileNameCompact: {
+    fontSize: 16,
+  },
+  profileTag: { color: palette.slate, fontSize: 13, fontWeight: '700', marginTop: 2 },
+  profileStatsGrid: { flexDirection: 'row', gap: 12, marginTop: 20 },
+  profileStatsGridCompact: {
+    flexDirection: 'column',
+    gap: 10,
+    marginTop: 14,
+  },
+  profileStatCard: { alignItems: 'center', backgroundColor: palette.cream, borderColor: '#E2DACB', borderRadius: 20, borderWidth: 1, flex: 1, padding: 18 },
+  profileStatValue: { fontSize: 30, fontWeight: '900' },
+  profileStatLabel: { color: palette.slate, fontSize: 13, fontWeight: '800', marginTop: 6, textAlign: 'center' },
+  featuresSection: { alignItems: 'center', marginTop: -120, paddingHorizontal: 16 },
+  featuresSectionCompact: {
+    marginTop: 28,
+    paddingHorizontal: 12,
+  },
+  cardsGrid: { alignItems: 'flex-end', flexDirection: 'row', gap: 16, justifyContent: 'center', width: '100%' },
+  cardsGridCompact: {
+    alignItems: 'stretch',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  cardWrap: { overflow: 'visible' },
   card: {
     alignItems: 'stretch',
     backgroundColor: palette.cream,
@@ -484,171 +996,117 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     width: '100%',
   },
-  cardDisabled: {
-    opacity: 0.84,
+  cardCompact: {
+    minHeight: 272,
+    paddingBottom: 14,
+    paddingHorizontal: 12,
+    paddingTop: 12,
   },
-  simulationCard: {
-    borderColor: 'rgba(126,166,224,0.3)',
+  cardDisabled: { opacity: 0.84 },
+  simulationCard: { borderColor: 'rgba(126,166,224,0.3)' },
+  simulationCardExpanded: { shadowOpacity: 0.14, shadowRadius: 22 },
+  cardHovered: { opacity: 1, transform: [{ scale: 1.06 }] },
+  cardDimmed: { opacity: 0.62, transform: [{ scale: 0.93 }] },
+  cardPressed: { transform: [{ scale: 1.02 }] },
+  cardMedia: { alignItems: 'center', borderRadius: 20, height: 186, justifyContent: 'center' },
+  cardMediaCompact: {
+    height: 122,
   },
-  simulationCardExpanded: {
-    shadowOpacity: 0.14,
-    shadowRadius: 22,
+  cardIconWrap: { alignItems: 'center', borderRadius: 18, height: 92, justifyContent: 'center', width: 92 },
+  cardIconWrapCompact: {
+    borderRadius: 16,
+    height: 64,
+    width: 64,
   },
-  cardHovered: {
-    opacity: 1,
-    transform: [{ scale: 1.06 }],
+  cardText: { alignItems: 'center', flex: 1, justifyContent: 'center', paddingHorizontal: 4, paddingTop: 18 },
+  cardTextCompact: {
+    paddingHorizontal: 0,
+    paddingTop: 10,
   },
-  cardDimmed: {
-    opacity: 0.62,
-    transform: [{ scale: 0.93 }],
+  cardTitle: { color: palette.ink, fontSize: 30, fontWeight: '900', textAlign: 'center' },
+  cardTitleCompact: {
+    fontSize: 18,
+    lineHeight: 22,
   },
-  cardPressed: {
-    transform: [{ scale: 1.02 }],
+  cardSubtitle: { color: palette.slate, fontSize: 16, fontWeight: '700', marginTop: 8, textAlign: 'center' },
+  cardSubtitleCompact: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 6,
   },
-  cardMedia: {
-    alignItems: 'center',
-    borderRadius: 20,
-    height: 186,
-    justifyContent: 'center',
+  cardFooter: { alignItems: 'center', borderTopColor: '#E2DACB', borderTopWidth: 1, flexDirection: 'row', gap: 6, justifyContent: 'center', paddingTop: 14 },
+  cardFooterCompact: {
+    paddingTop: 10,
   },
-  cardIconWrap: {
-    alignItems: 'center',
-    borderRadius: 18,
-    height: 92,
-    justifyContent: 'center',
-    width: 92,
+  cardFooterText: { color: palette.slate, fontSize: 16, fontWeight: '800' },
+  cardFooterTextCompact: {
+    fontSize: 13,
   },
-  cardText: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-    paddingTop: 18,
+  sectionReveal: { marginTop: 18, overflow: 'hidden', width: '100%' },
+  sectionRevealCompact: {
+    marginTop: 12,
   },
-  cardTitle: {
-    color: palette.ink,
-    fontSize: 30,
-    fontWeight: '900',
-    textAlign: 'center',
-  },
-  cardSubtitle: {
-    color: palette.slate,
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  cardFooter: {
-    alignItems: 'center',
-    borderTopColor: '#E2DACB',
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'center',
+  sectionPanel: { backgroundColor: 'rgba(255,255,255,0.55)', borderColor: 'rgba(184,199,177,0.5)', borderRadius: 34, borderWidth: 1, paddingBottom: 22, paddingHorizontal: 18, paddingTop: 20 },
+  sectionPanelCompact: {
+    borderRadius: 24,
+    paddingBottom: 16,
+    paddingHorizontal: 12,
     paddingTop: 14,
   },
-  cardFooterText: {
-    color: palette.slate,
-    fontSize: 16,
-    fontWeight: '800',
+  sectionPanelHeader: { alignItems: 'center', marginBottom: 18 },
+  sectionPanelHeaderCompact: {
+    marginBottom: 12,
   },
-  sectionReveal: {
-    marginTop: 18,
-    overflow: 'hidden',
+  sectionEyebrow: { color: palette.slate, fontSize: 13, fontWeight: '900', letterSpacing: 0.6, textTransform: 'uppercase' },
+  sectionEyebrowCompact: {
+    fontSize: 11,
+  },
+  sectionTitle: { color: palette.ink, fontSize: 28, fontWeight: '900', marginTop: 8, textAlign: 'center' },
+  sectionTitleCompact: {
+    fontSize: 22,
+    marginTop: 4,
+  },
+  sectionCardsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, justifyContent: 'center' },
+  sectionCardsGridCompact: {
+    gap: 12,
+  },
+  sectionCard: { backgroundColor: palette.cream, borderColor: '#E2DACB', borderRadius: 30, borderWidth: 1, minHeight: 330, paddingBottom: 20, paddingHorizontal: 18, paddingTop: 18, shadowColor: '#000000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 18, width: 250 },
+  sectionCardCompact: {
+    minHeight: 250,
+    paddingBottom: 14,
+    paddingHorizontal: 14,
+    paddingTop: 14,
     width: '100%',
   },
-  sectionPanel: {
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    borderColor: 'rgba(184,199,177,0.5)',
-    borderRadius: 34,
-    borderWidth: 1,
-    paddingBottom: 22,
-    paddingHorizontal: 18,
-    paddingTop: 20,
+  sectionCardPressed: { transform: [{ scale: 1.02 }] },
+  sectionCardMedia: { alignItems: 'center', borderRadius: 24, height: 170, justifyContent: 'center' },
+  sectionCardMediaCompact: {
+    height: 120,
   },
-  sectionPanelHeader: {
-    alignItems: 'center',
-    marginBottom: 18,
+  sectionCardIcon: { alignItems: 'center', borderRadius: 24, height: 110, justifyContent: 'center', width: 110 },
+  sectionCardIconCompact: {
+    borderRadius: 18,
+    height: 74,
+    width: 74,
   },
-  sectionEyebrow: {
-    color: palette.slate,
+  sectionCardTitle: { color: palette.ink, fontSize: 32, fontWeight: '900', marginTop: 22, textAlign: 'center' },
+  sectionCardTitleCompact: {
+    fontSize: 24,
+    marginTop: 14,
+  },
+  sectionCardSubtitle: { color: palette.slate, fontSize: 16, fontWeight: '700', lineHeight: 22, marginTop: 8, textAlign: 'center' },
+  sectionCardSubtitleCompact: {
     fontSize: 13,
-    fontWeight: '900',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
+    lineHeight: 18,
+    marginTop: 6,
   },
-  sectionTitle: {
-    color: palette.ink,
-    fontSize: 28,
-    fontWeight: '900',
-    marginTop: 8,
-    textAlign: 'center',
+  sectionCardFooter: { alignItems: 'center', borderTopColor: '#E2DACB', borderTopWidth: 1, flexDirection: 'row', gap: 8, justifyContent: 'center', marginTop: 20, paddingTop: 14 },
+  sectionCardFooterCompact: {
+    marginTop: 14,
+    paddingTop: 10,
   },
-  sectionCardsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    justifyContent: 'center',
-  },
-  sectionCard: {
-    backgroundColor: palette.cream,
-    borderColor: '#E2DACB',
-    borderRadius: 30,
-    borderWidth: 1,
-    minHeight: 330,
-    paddingBottom: 20,
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    width: 250,
-  },
-  sectionCardPressed: {
-    transform: [{ scale: 1.02 }],
-  },
-  sectionCardMedia: {
-    alignItems: 'center',
-    borderRadius: 24,
-    height: 170,
-    justifyContent: 'center',
-  },
-  sectionCardIcon: {
-    alignItems: 'center',
-    borderRadius: 24,
-    height: 110,
-    justifyContent: 'center',
-    width: 110,
-  },
-  sectionCardTitle: {
-    color: palette.ink,
-    fontSize: 32,
-    fontWeight: '900',
-    marginTop: 22,
-    textAlign: 'center',
-  },
-  sectionCardSubtitle: {
-    color: palette.slate,
-    fontSize: 16,
-    fontWeight: '700',
-    lineHeight: 22,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  sectionCardFooter: {
-    alignItems: 'center',
-    borderTopColor: '#E2DACB',
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'center',
-    marginTop: 20,
-    paddingTop: 14,
-  },
-  sectionCardFooterText: {
-    color: palette.slate,
-    fontSize: 16,
-    fontWeight: '800',
+  sectionCardFooterText: { color: palette.slate, fontSize: 16, fontWeight: '800' },
+  sectionCardFooterTextCompact: {
+    fontSize: 14,
   },
 });
