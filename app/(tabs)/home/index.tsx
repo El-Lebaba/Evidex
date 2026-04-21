@@ -1,5 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { router } from 'expo-router';
+import { Href, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -109,19 +109,9 @@ export default function HomeScreen() {
     }).start();
   }, [expandProgress, simulationsExpanded]);
 
-  const courseCardWidth = expandProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [208, 176],
-  });
-
   const simulationCardWidth = expandProgress.interpolate({
     inputRange: [0, 1],
     outputRange: [208, 240],
-  });
-
-  const courseCardOpacity = expandProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.84, 0.56],
   });
 
   const detailHeight = expandProgress.interpolate({
@@ -196,13 +186,13 @@ export default function HomeScreen() {
 
         <View style={styles.featuresSection}>
           <View style={styles.cardsGrid}>
-            <Animated.View style={[styles.cardWrap, { opacity: courseCardOpacity, width: courseCardWidth }]}>
+            <Animated.View style={[styles.cardWrap, {width: simulationCardWidth}]}>
               <Pressable
                 onHoverIn={() => setHoveredCard('cours')}
                 onHoverOut={() => setHoveredCard((current) => (current === 'cours' ? null : current))}
+                onPress={() => router.push('/(tabs)/cours' as Href)}
                 style={({ hovered }) => [
                   styles.card,
-                  styles.cardDisabled,
                   hovered && !simulationsExpanded ? styles.cardHovered : null,
                   hoveredCard === 'simulations' && !simulationsExpanded ? styles.cardDimmed : null,
                 ]}>
@@ -213,11 +203,11 @@ export default function HomeScreen() {
                 </View>
                 <View style={styles.cardText}>
                   <Text style={styles.cardTitle}>Cours</Text>
-                  <Text style={styles.cardSubtitle}>Bientot disponible</Text>
+                  <Text style={styles.cardSubtitle}>Tous les cours</Text>
                 </View>
                 <View style={styles.cardFooter}>
-                  <Text style={styles.cardFooterText}>Bientot</Text>
-                  <MaterialIcons name="schedule" size={22} color={palette.slate} />
+                  <Text style={styles.cardFooterText}>Ouvrir</Text>
+                  <MaterialIcons name="chevron-right" size={22} color={palette.slate} />
                 </View>
               </Pressable>
             </Animated.View>

@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 
+import { CourseSubject } from '@/data/courses';
 import { db } from '@/db/mainData';
 
 const colors = {
@@ -45,22 +46,27 @@ const webSliderStyle =
     : undefined;
 
 export type Course = {
-  id: number;
+  id: number | string;
   name: string;
   progress: number;
   completed: boolean;
+  subject?: CourseSubject;
+  courseId?: string;
+  totalSlides?: number;
 };
 
 type CoursesPanelProps = {
   courses: Course[];
   darkMode?: boolean;
   onCourseUpdate: () => void;
+  onProgressChange?: (course: Course, nextProgress: number) => void;
 };
 
 export default function CoursesPanel({
   courses,
   darkMode = false,
   onCourseUpdate,
+  onProgressChange,
 }: CoursesPanelProps) {
   const theme = darkMode ? darkColors : colors;
   const [showAdd, setShowAdd] = useState(false);
@@ -81,6 +87,15 @@ export default function CoursesPanel({
   }
 
   function saveProgress(course: Course, nextProgress: number) {
+    if (onProgressChange) {
+      onProgressChange(course, nextProgress);
+      return;
+    }
+
+    if (typeof course.id !== 'number') {
+      return;
+    }
+
     db.updateCourse(course.id, {
       progress: nextProgress,
       completed: nextProgress >= 100,
@@ -88,7 +103,11 @@ export default function CoursesPanel({
     onCourseUpdate();
   }
 
-  function deleteCourse(id: number) {
+  function deleteCourse(id: number | string) {
+    if (typeof id !== 'number') {
+      return;
+    }
+
     db.deleteCourse(id);
     onCourseUpdate();
   }
@@ -98,13 +117,20 @@ export default function CoursesPanel({
       {/* Header and add button */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.text }]}>Cours recents</Text>
-        <Pressable
-          onPress={() => setShowAdd(!showAdd)}
-          style={[styles.addButton, { backgroundColor: theme.green }]}
-        >
-          <MaterialIcons name="add" size={17} color="white" />
-          <Text style={styles.addButtonText}>Ajouter</Text>
-        </Pressable>
+        {onProgressChange ? (
+          <View style={[styles.syncBadge, { borderColor: `${theme.border}30` }]}>
+            <MaterialIcons name="sync" size={17} color={theme.muted} />
+            <Text style={[styles.syncBadgeText, { color: theme.muted }]}>Synchro</Text>
+          </View>
+        ) : (
+          <Pressable
+            onPress={() => setShowAdd(!showAdd)}
+            style={[styles.addButton, { backgroundColor: theme.green }]}
+          >
+            <MaterialIcons name="add" size={17} color="white" />
+            <Text style={styles.addButtonText}>Ajouter</Text>
+          </Pressable>
+        )}
       </View>
 
       {/* Small form for adding a course */}
@@ -155,9 +181,11 @@ export default function CoursesPanel({
             >
               <View style={styles.courseTop}>
                 <Text style={[styles.courseName, { color: theme.text }]}>{course.name}</Text>
-                <Pressable onPress={() => deleteCourse(course.id)}>
-                  <MaterialIcons name="delete-outline" size={20} color={theme.red} />
-                </Pressable>
+                {typeof course.id === 'number' ? (
+                  <Pressable onPress={() => deleteCourse(course.id)}>
+                    <MaterialIcons name="delete-outline" size={20} color={theme.red} />
+                  </Pressable>
+                ) : null}
               </View>
 
               <ProgressSlider
@@ -350,6 +378,19 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: 'white',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  syncBadge: {
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 4,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+  },
+  syncBadgeText: {
     fontSize: 12,
     fontWeight: '800',
   },

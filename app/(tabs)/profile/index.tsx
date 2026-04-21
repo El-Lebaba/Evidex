@@ -1,3 +1,4 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useEffect, useState } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,6 +8,7 @@ import FlashcardsPanel from '@/components/home/FlashcardsPanel';
 import SettingsPanel, { AppSettings } from '@/components/home/SettingsPanel';
 import TopBar from '@/components/home/TopBar';
 import XPPanel, { UserInfo } from '@/components/home/XPPanel';
+import { getRecentLearningCourses, saveCourseProgress } from '@/data/courses';
 import { db } from '@/db/mainData';
 import { FloatingMathSymbols } from '@/features/simulations/core/floating-math-symbols';
 
@@ -48,14 +50,30 @@ export default function EvidexProfile() {
 
   useEffect(() => {
     db.init();
-    setCourses(db.getCourses());
+    setCourses(getRecentLearningCourses());
     setUser(db.getUser());
     setSettings(db.getSettings());
   }, []);
 
   const refreshCourses = useCallback(() => {
-    setCourses(db.getCourses());
+    setCourses(getRecentLearningCourses());
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshCourses();
+    }, [refreshCourses])
+  );
+
+  const updateCourseProgress = useCallback((course: Course, nextProgress: number) => {
+    if (!course.subject || !course.courseId || !course.totalSlides) {
+      return;
+    }
+
+    const nextSlide = Math.max(Math.ceil((nextProgress / 100) * course.totalSlides) - 1, 0);
+    saveCourseProgress(course.subject, course.courseId, nextSlide);
+    refreshCourses();
+  }, [refreshCourses]);
 
   const refreshUser = useCallback((updatedUser?: UserInfo) => {
     setUser(updatedUser ?? db.getUser());
@@ -101,6 +119,7 @@ export default function EvidexProfile() {
                 courses={courses}
                 darkMode={settings.darkMode}
                 onCourseUpdate={refreshCourses}
+                onProgressChange={updateCourseProgress}
               />
             </PanelBox>
             <PanelBox accentColor={theme.yellow} colors={theme}>

@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CourseCard from '@/components/cours/CourseCard';
@@ -17,17 +17,36 @@ import {
 const SUBJECTS: CourseSubject[] = ['java', 'math', 'physique'];
 
 const THEME = {
-  background: '#E9ECE4',
-  border: '#A8B59A',
-  ink: '#243B53',
-  muted: '#6E7F73',
-  panel: '#F3F1E7',
-  soft: '#DDE4D5',
+  background: '#EEF5ED',
+  border: '#E2DACB',
+  copper: '#BC8559',
+  ink: '#20242B',
+  muted: '#536165',
+  panel: '#FFFFFF',
+  sage: '#B8C7B1',
+  soft: '#DFE9DC',
+  yellow: '#D8A94A',
 };
+
+const backgroundBubbles = [
+  { height: 92, left: -24, opacity: 0.28, top: 82, width: 92 },
+  { height: 56, left: 44, opacity: 0.22, top: 154, width: 56 },
+  { height: 28, left: 132, opacity: 0.26, top: 58, width: 28 },
+  { height: 18, left: 188, opacity: 0.28, top: 214, width: 18 },
+  { height: 120, opacity: 0.22, right: -34, top: 110, width: 120 },
+  { height: 66, opacity: 0.2, right: 34, top: 226, width: 66 },
+  { height: 34, opacity: 0.24, right: 148, top: 68, width: 34 },
+  { height: 22, opacity: 0.28, right: 210, top: 178, width: 22 },
+  { height: 84, left: -18, opacity: 0.18, top: 520, width: 84 },
+  { height: 42, left: 78, opacity: 0.22, top: 650, width: 42 },
+  { height: 96, opacity: 0.18, right: -28, top: 610, width: 96 },
+  { height: 30, opacity: 0.24, right: 112, top: 520, width: 30 },
+];
 
 export default function CoursesScreen() {
   const [activeSubject, setActiveSubject] = useState<CourseSubject>('java');
   const [progressMap, setProgressMap] = useState(getCourseProgressMap);
+  const subjectMotion = useRef(new Animated.Value(1)).current;
 
   useFocusEffect(
     useCallback(() => {
@@ -36,8 +55,24 @@ export default function CoursesScreen() {
   );
 
   const courses = COURSE_SUBJECTS[activeSubject];
+  const totalSlides = useMemo(() => courses.reduce((total, course) => total + course.totalSlides, 0), [courses]);
+
+  useEffect(() => {
+    subjectMotion.setValue(0);
+    Animated.timing(subjectMotion, {
+      duration: 360,
+      easing: Easing.out(Easing.cubic),
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  }, [activeSubject, subjectMotion]);
+
+  const subjectTranslate = subjectMotion.interpolate({
+    inputRange: [0, 1],
+    outputRange: [28, 0],
+  });
+
   const subjectProgress = useMemo(() => {
-    const totalSlides = courses.reduce((total, course) => total + course.totalSlides, 0);
     const completedSlides = courses.reduce((total, course) => {
       const progressKey = `${activeSubject}:${course.id}`;
 
@@ -50,28 +85,30 @@ export default function CoursesScreen() {
     }, 0);
 
     return totalSlides === 0 ? 0 : Math.round((completedSlides / totalSlides) * 100);
-  }, [activeSubject, courses, progressMap]);
+  }, [activeSubject, courses, progressMap, totalSlides]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ThemedView lightColor={THEME.background} style={styles.page}>
+        <View pointerEvents="none" style={styles.bubbleLayer}>
+          {backgroundBubbles.map((bubble, index) => (
+            <View
+              key={`course-bubble-${index}`}
+              style={[
+                styles.bubble,
+                {
+                  height: bubble.height,
+                  left: bubble.left,
+                  opacity: bubble.opacity,
+                  right: bubble.right,
+                  top: bubble.top,
+                  width: bubble.width,
+                },
+              ]}
+            />
+          ))}
+        </View>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <View style={styles.badge}>
-              <MaterialCommunityIcons color={THEME.ink} name="book-education-outline" size={17} />
-              <ThemedText lightColor={THEME.ink} style={styles.badgeText}>
-                Espace cours
-              </ThemedText>
-            </View>
-
-            <ThemedText lightColor={THEME.ink} style={styles.title}>
-              Suivi des matieres
-            </ThemedText>
-            <ThemedText lightColor={THEME.muted} style={styles.subtitle}>
-              Choisis une matiere, ouvre un cours, puis avance avec les fleches. Cette section est separee des animations.
-            </ThemedText>
-          </View>
-
           <View style={styles.subjectTabs}>
             {SUBJECTS.map((subject) => {
               const isActive = subject === activeSubject;
@@ -82,6 +119,7 @@ export default function CoursesScreen() {
                   onPress={() => setActiveSubject(subject)}
                   style={({ pressed }) => [
                     styles.subjectButton,
+                    { borderColor: isActive ? THEME.ink : THEME.border },
                     isActive ? styles.subjectButtonActive : null,
                     pressed ? styles.pressed : null,
                   ]}>
@@ -93,41 +131,59 @@ export default function CoursesScreen() {
             })}
           </View>
 
-          <View style={styles.summaryCard}>
-            <View>
-              <ThemedText lightColor={THEME.ink} style={styles.summaryTitle}>
-                {SUBJECT_LABELS[activeSubject]}
-              </ThemedText>
-              <ThemedText lightColor={THEME.muted} style={styles.summaryText}>
-                {courses.length} cours disponibles
+          <Animated.View style={[styles.hero, { opacity: subjectMotion, transform: [{ translateY: subjectTranslate }] }]}>
+            <View style={styles.badge}>
+              <MaterialCommunityIcons color="#6357E8" name="code-tags" size={14} />
+              <ThemedText lightColor="#6357E8" style={styles.badgeText}>
+                {SUBJECT_LABELS[activeSubject]} Learning Lab
               </ThemedText>
             </View>
-            <View style={styles.summaryProgress}>
-              <ThemedText lightColor={THEME.ink} style={styles.summaryPercent}>
-                {subjectProgress}%
+
+            <ThemedText lightColor={THEME.ink} style={styles.title}>
+              Learn {SUBJECT_LABELS[activeSubject]}
+            </ThemedText>
+            <ThemedText lightColor="#6B5CFF" style={styles.titleAccent}>
+              Visually.
+            </ThemedText>
+            <ThemedText lightColor={THEME.muted} style={styles.subtitle}>
+              Interactive mini-courses with clear examples, progress tracking, and quick checkpoints.
+            </ThemedText>
+
+            <View style={styles.statsRow}>
+              <ThemedText lightColor={THEME.muted} style={styles.statText}>
+                {courses.length} mini courses
               </ThemedText>
-              <ThemedText lightColor={THEME.muted} style={styles.summaryText}>
-                progression
+              <ThemedText lightColor={THEME.muted} style={styles.statText}>
+                {totalSlides} slides
+              </ThemedText>
+              <ThemedText lightColor={THEME.muted} style={styles.statText}>
+                {subjectProgress}% done
               </ThemedText>
             </View>
-          </View>
+          </Animated.View>
 
-          <View style={styles.courseList}>
-            {courses.map((course, index) => {
-              const progressKey = `${activeSubject}:${course.id}`;
-              const currentSlide = progressKey in progressMap ? progressMap[progressKey] : -1;
+          <Animated.View style={[styles.courseSection, { opacity: subjectMotion, transform: [{ translateX: subjectTranslate }] }]}>
+            <ThemedText lightColor={THEME.muted} style={styles.sectionLabel}>
+              Mini courses
+            </ThemedText>
 
-              return (
-                <CourseCard
-                  course={course}
-                  currentSlide={currentSlide}
-                  index={index}
-                  key={course.id}
-                  subject={activeSubject}
-                />
-              );
-            })}
-          </View>
+            <View style={styles.courseList}>
+              {courses.map((course, index) => {
+                const progressKey = `${activeSubject}:${course.id}`;
+                const currentSlide = progressKey in progressMap ? progressMap[progressKey] : -1;
+
+                return (
+                  <CourseCard
+                    course={course}
+                    currentSlide={currentSlide}
+                    index={index}
+                    key={course.id}
+                    subject={activeSubject}
+                  />
+                );
+              })}
+            </View>
+          </Animated.View>
         </ScrollView>
       </ThemedView>
     </SafeAreaView>
@@ -139,35 +195,48 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   page: {
+    backgroundColor: THEME.background,
     flex: 1,
+    overflow: 'hidden',
+  },
+  bubbleLayer: {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  bubble: {
+    backgroundColor: 'rgba(255,255,255,0.58)',
+    borderColor: 'rgba(184,199,177,0.42)',
+    borderRadius: 999,
+    borderWidth: 1,
+    position: 'absolute',
   },
   scrollContent: {
     alignSelf: 'center',
-    gap: 18,
+    gap: 22,
     maxWidth: 980,
-    padding: 18,
-    paddingBottom: 34,
+    padding: 16,
+    paddingBottom: 42,
     width: '100%',
   },
-  header: {
-    backgroundColor: THEME.panel,
-    borderColor: THEME.border,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    gap: 12,
-    padding: 20,
+  hero: {
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 18,
   },
   badge: {
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: THEME.soft,
-    borderColor: THEME.border,
+    backgroundColor: '#ECEBFF',
+    borderColor: '#D6D3FF',
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: 'row',
     gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   badgeText: {
     fontSize: 13,
@@ -176,84 +245,92 @@ const styles = StyleSheet.create({
   },
   title: {
     color: THEME.ink,
-    fontSize: 34,
+    fontSize: 44,
     fontWeight: '900',
-    lineHeight: 40,
+    lineHeight: 48,
+    textAlign: 'center',
+  },
+  titleAccent: {
+    color: '#6B5CFF',
+    fontSize: 44,
+    fontWeight: '900',
+    lineHeight: 48,
+    textAlign: 'center',
   },
   subtitle: {
     color: THEME.muted,
-    fontSize: 15,
-    lineHeight: 23,
-    maxWidth: 760,
+    fontSize: 16,
+    lineHeight: 24,
+    maxWidth: 560,
+    textAlign: 'center',
   },
   subjectTabs: {
-    backgroundColor: THEME.soft,
-    borderColor: THEME.border,
-    borderRadius: 14,
-    borderWidth: 1,
+    backgroundColor: 'transparent',
     flexDirection: 'row',
-    gap: 8,
-    padding: 6,
+    gap: 12,
   },
   subjectButton: {
     alignItems: 'center',
-    borderRadius: 10,
+    backgroundColor: THEME.panel,
+    borderRadius: 20,
+    borderWidth: 1,
     flex: 1,
-    minHeight: 44,
+    minHeight: 64,
     justifyContent: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
+    shadowColor: '#000000',
+    shadowOffset: { height: 8, width: 0 },
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
   },
   subjectButtonActive: {
-    backgroundColor: THEME.panel,
-    borderColor: THEME.ink,
-    borderWidth: 1.5,
+    backgroundColor: '#111827',
+    shadowColor: '#000000',
+    shadowOffset: { height: 8, width: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
   },
   subjectText: {
     color: THEME.ink,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
-    lineHeight: 18,
+    lineHeight: 20,
   },
   subjectTextActive: {
+    color: '#FFFFFF',
     fontWeight: '900',
   },
   pressed: {
     opacity: 0.82,
     transform: [{ translateY: 1 }],
   },
-  summaryCard: {
-    alignItems: 'center',
-    backgroundColor: THEME.panel,
-    borderColor: THEME.border,
-    borderRadius: 14,
-    borderWidth: 1.5,
+  statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 16,
-    padding: 16,
+    flexWrap: 'wrap',
+    gap: 14,
+    justifyContent: 'center',
+    paddingTop: 10,
   },
-  summaryTitle: {
-    color: THEME.ink,
-    fontSize: 20,
-    fontWeight: '900',
-    lineHeight: 26,
-  },
-  summaryText: {
+  statText: {
     color: THEME.muted,
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
     lineHeight: 18,
   },
-  summaryProgress: {
-    alignItems: 'flex-end',
+  courseSection: {
+    gap: 14,
   },
-  summaryPercent: {
-    color: THEME.ink,
-    fontSize: 26,
+  sectionLabel: {
+    color: THEME.muted,
+    fontSize: 12,
     fontWeight: '900',
-    lineHeight: 31,
+    letterSpacing: 1,
+    lineHeight: 16,
+    textTransform: 'uppercase',
   },
   courseList: {
-    gap: 14,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
   },
 });

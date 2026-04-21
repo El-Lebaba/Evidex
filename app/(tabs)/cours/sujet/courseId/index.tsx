@@ -15,12 +15,13 @@ import {
 } from '@/data/courses';
 
 const THEME = {
-  background: '#E9ECE4',
-  border: '#A8B59A',
-  ink: '#243B53',
-  muted: '#6E7F73',
-  panel: '#F3F1E7',
-  soft: '#DDE4D5',
+  background: '#EEF5ED',
+  border: '#E2DACB',
+  ink: '#111827',
+  muted: '#5F6B7A',
+  panel: '#FFFFFF',
+  soft: '#DFE9DC',
+  purple: '#6B5CFF',
 };
 
 const SUBJECTS: CourseSubject[] = ['java', 'math', 'physique'];
@@ -40,6 +41,19 @@ function cleanText(value: string) {
     .replace(/Ã—/g, 'x');
 }
 
+function buildQuiz(courseTitle: string) {
+  return {
+    question: `Quel est le concept principal de ce cours?`,
+    choices: [
+      courseTitle,
+      'La configuration du profil',
+      'Le changement de theme',
+      'La navigation entre onglets',
+    ],
+    answerIndex: 0,
+  };
+}
+
 export default function CourseReaderScreen() {
   const params = useLocalSearchParams<{ courseId?: string; subject?: string }>();
   const subject = params.subject && isCourseSubject(params.subject) ? params.subject : undefined;
@@ -55,14 +69,22 @@ export default function CourseReaderScreen() {
   }, [course, courseId, subject]);
 
   const [slideIndex, setSlideIndex] = useState(initialSlide);
+  const [savedProgress, setSavedProgress] = useState(initialSlide);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
 
   useEffect(() => {
     setSlideIndex(initialSlide);
+    setSavedProgress(initialSlide);
+    setSelectedAnswer(null);
   }, [initialSlide]);
 
   useEffect(() => {
     if (subject && courseId && course) {
-      saveCourseProgress(subject, courseId, slideIndex);
+      setSavedProgress((currentSavedProgress) => {
+        const nextSavedProgress = Math.max(currentSavedProgress, slideIndex);
+        saveCourseProgress(subject, courseId, nextSavedProgress);
+        return nextSavedProgress;
+      });
     }
   }, [course, courseId, slideIndex, subject]);
 
@@ -86,9 +108,12 @@ export default function CourseReaderScreen() {
 
   const slide = course.slides[slideIndex];
   const maxSlideIndex = course.totalSlides - 1;
-  const progress = Math.round(((slideIndex + 1) / course.totalSlides) * 100);
+  const progress = Math.round(((savedProgress + 1) / course.totalSlides) * 100);
+  const isLastSlide = slideIndex === maxSlideIndex;
+  const quiz = buildQuiz(course.title);
   const canGoPrevious = slideIndex > 0;
   const canGoNext = slideIndex < maxSlideIndex;
+  const codeLines = slide.code ? cleanText(slide.code).split('\n') : [];
 
   function goPrevious() {
     setSlideIndex((currentIndex) => Math.max(currentIndex - 1, 0));
@@ -143,10 +168,61 @@ export default function CourseReaderScreen() {
             </ThemedText>
 
             {slide.code ? (
-              <View style={styles.codeBlock}>
-                <ThemedText lightColor={THEME.ink} style={styles.codeText}>
-                  {cleanText(slide.code)}
+              <View style={styles.codeWindow}>
+                <View style={styles.codeChrome}>
+                  <View style={[styles.windowDot, { backgroundColor: '#EF4444' }]} />
+                  <View style={[styles.windowDot, { backgroundColor: '#F59E0B' }]} />
+                  <View style={[styles.windowDot, { backgroundColor: '#10B981' }]} />
+                  <ThemedText lightColor="#8492A6" style={styles.fileName}>
+                    Main.java
+                  </ThemedText>
+                </View>
+                <View style={styles.codeBody}>
+                  {codeLines.map((line, index) => (
+                    <View key={`${line}-${index}`} style={styles.codeLine}>
+                      <ThemedText lightColor="#526071" style={styles.lineNumber}>
+                        {index + 1}
+                      </ThemedText>
+                      <ThemedText lightColor="#E5E7EB" style={styles.codeText}>
+                        {line}
+                      </ThemedText>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            {isLastSlide ? (
+              <View style={styles.quizCard}>
+                <ThemedText lightColor={THEME.muted} style={styles.quizKicker}>
+                  Question rapide
                 </ThemedText>
+                <ThemedText lightColor={THEME.ink} style={styles.quizQuestion}>
+                  {quiz.question}
+                </ThemedText>
+                <View style={styles.choiceList}>
+                  {quiz.choices.map((choice, index) => {
+                    const selected = selectedAnswer === index;
+                    const correct = selected && index === quiz.answerIndex;
+                    const incorrect = selected && index !== quiz.answerIndex;
+
+                    return (
+                      <Pressable
+                        key={choice}
+                        onPress={() => setSelectedAnswer(index)}
+                        style={[
+                          styles.choiceButton,
+                          selected ? styles.choiceButtonSelected : null,
+                          correct ? styles.choiceButtonCorrect : null,
+                          incorrect ? styles.choiceButtonIncorrect : null,
+                        ]}>
+                        <ThemedText lightColor={THEME.ink} style={styles.choiceText}>
+                          {choice}
+                        </ThemedText>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </View>
             ) : null}
           </View>
@@ -191,6 +267,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   page: {
+    backgroundColor: THEME.background,
     flex: 1,
   },
   emptyPage: {
@@ -233,8 +310,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: THEME.panel,
     borderColor: THEME.border,
-    borderRadius: 12,
-    borderWidth: 1.5,
+    borderRadius: 14,
+    borderWidth: 1,
     height: 46,
     justifyContent: 'center',
     width: 46,
@@ -275,13 +352,13 @@ const styles = StyleSheet.create({
   progressTrack: {
     backgroundColor: THEME.soft,
     borderColor: THEME.border,
-    borderRadius: 999,
+    borderRadius: 10,
     borderWidth: 1,
     height: 14,
     overflow: 'hidden',
   },
   progressFill: {
-    backgroundColor: '#AAB18E',
+    backgroundColor: THEME.purple,
     height: '100%',
   },
   content: {
@@ -295,9 +372,13 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.panel,
     borderColor: THEME.border,
     borderRadius: 18,
-    borderWidth: 1.5,
-    gap: 16,
-    padding: 20,
+    borderWidth: 1,
+    gap: 18,
+    padding: 22,
+    shadowColor: '#000000',
+    shadowOffset: { height: 10, width: 0 },
+    shadowOpacity: 0.07,
+    shadowRadius: 18,
   },
   slideKicker: {
     color: THEME.muted,
@@ -317,18 +398,101 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 27,
   },
-  codeBlock: {
-    backgroundColor: THEME.soft,
-    borderColor: THEME.border,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 14,
+  codeWindow: {
+    backgroundColor: '#0B1020',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  codeChrome: {
+    alignItems: 'center',
+    backgroundColor: '#172033',
+    flexDirection: 'row',
+    gap: 8,
+    minHeight: 38,
+    paddingHorizontal: 14,
+  },
+  windowDot: {
+    borderRadius: 999,
+    height: 10,
+    width: 10,
+  },
+  fileName: {
+    color: '#8492A6',
+    fontFamily: 'monospace',
+    fontSize: 12,
+    fontWeight: '800',
+    marginLeft: 8,
+  },
+  codeBody: {
+    gap: 6,
+    padding: 18,
+  },
+  codeLine: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+  lineNumber: {
+    color: '#526071',
+    fontFamily: 'monospace',
+    fontSize: 13,
+    lineHeight: 22,
+    minWidth: 22,
+    textAlign: 'right',
   },
   codeText: {
-    color: THEME.ink,
+    color: '#E5E7EB',
     fontFamily: 'monospace',
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 22,
+  },
+  quizCard: {
+    backgroundColor: '#F8FAFC',
+    borderColor: THEME.border,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 12,
+    padding: 16,
+  },
+  quizKicker: {
+    color: THEME.muted,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 16,
+    textTransform: 'uppercase',
+  },
+  quizQuestion: {
+    color: THEME.ink,
+    fontSize: 18,
+    fontWeight: '900',
+    lineHeight: 24,
+  },
+  choiceList: {
+    gap: 8,
+  },
+  choiceButton: {
+    backgroundColor: THEME.panel,
+    borderColor: THEME.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  choiceButtonSelected: {
+    borderColor: THEME.purple,
+  },
+  choiceButtonCorrect: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#16A34A',
+  },
+  choiceButtonIncorrect: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#DC2626',
+  },
+  choiceText: {
+    color: THEME.ink,
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 19,
   },
   footer: {
     alignSelf: 'center',
@@ -345,8 +509,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: THEME.panel,
     borderColor: THEME.border,
-    borderRadius: 12,
-    borderWidth: 1.5,
+    borderRadius: 14,
+    borderWidth: 1,
     flex: 1,
     flexDirection: 'row',
     gap: 8,
