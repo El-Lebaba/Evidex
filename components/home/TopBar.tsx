@@ -37,7 +37,7 @@ type TopBarProps = {
   onSettingsClick: () => void;
   user?: UserInfo;
 };
-
+7
 export default function TopBar({ darkMode = false, onSettingsClick, user }: TopBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const colors = darkMode ? darkColors : lightColors;
