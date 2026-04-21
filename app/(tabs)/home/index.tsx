@@ -16,7 +16,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { db } from '@/db/mainData';
-import { FloatingMathSymbols } from '@/features/simulations/core/floating-math-symbols';
 
 const palette = {
   charcoal: '#19191F',
@@ -399,8 +398,8 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={styles.featuresSection}>
-          <View style={styles.cardsGrid}>
+        <View style={[styles.featuresSection, isCompact ? styles.featuresSectionCompact : null]}>
+          <View style={[styles.cardsGrid, isCompact ? styles.cardsGridCompact : null]}>
             <Animated.View style={[styles.cardWrap, { transform: [{ translateY: simulationCardLift }], width: cardWidth }]}>
               <Pressable
                 onPress={() => togglePanel('cours')}
@@ -687,15 +686,15 @@ function HeroProfileSlide({ activeCourses, animatedStyle, driftProgress, isCompa
             </View>
           </View>
           <View style={[styles.profileStatsGrid, isCompact ? styles.profileStatsGridCompact : null]}>
-            <View style={styles.profileStatCard}>
+            <View style={[styles.profileStatCard, isCompact ? styles.profileStatCardCompact : null]}>
               <Text style={[styles.profileStatValue, { color: palette.blue }]}>{level}</Text>
               <Text style={styles.profileStatLabel}>Niveau</Text>
             </View>
-            <View style={styles.profileStatCard}>
+            <View style={[styles.profileStatCard, isCompact ? styles.profileStatCardCompact : null]}>
               <Text style={[styles.profileStatValue, { color: palette.yellow }]}>{xp}</Text>
               <Text style={styles.profileStatLabel}>XP</Text>
             </View>
-            <View style={styles.profileStatCard}>
+            <View style={[styles.profileStatCard, isCompact ? styles.profileStatCardCompact : null]}>
               <Text style={[styles.profileStatValue, { color: palette.green }]}>{activeCourses}</Text>
               <Text style={styles.profileStatLabel}>Cours actifs</Text>
             </View>
@@ -719,7 +718,8 @@ const styles = StyleSheet.create({
   heroPanel: {
     backgroundColor: palette.sage,
     borderRadius: 38,
-    minHeight: 620,
+    height: 680,
+    minHeight: 680,
     overflow: 'hidden',
     paddingHorizontal: 22,
     paddingTop: 18,
@@ -728,7 +728,8 @@ const styles = StyleSheet.create({
   heroPanelVariant: { backgroundColor: palette.sageDeep },
   heroPanelCompact: {
     borderRadius: 28,
-    minHeight: 570,
+    height: 640,
+    minHeight: 640,
     paddingHorizontal: 16,
     paddingTop: 16,
   },
@@ -961,11 +962,18 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   profileStatCard: { alignItems: 'center', backgroundColor: palette.cream, borderColor: '#E2DACB', borderRadius: 20, borderWidth: 1, flex: 1, padding: 18 },
+  profileStatCardCompact: {
+    flex: 0,
+    minHeight: 78,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
   profileStatValue: { fontSize: 30, fontWeight: '900' },
   profileStatLabel: { color: palette.slate, fontSize: 13, fontWeight: '800', marginTop: 6, textAlign: 'center' },
   featuresSection: { alignItems: 'center', marginTop: -120, paddingHorizontal: 16 },
   featuresSectionCompact: {
-    marginTop: 28,
+    marginTop: 10,
     paddingHorizontal: 12,
   },
   symbolField: {
