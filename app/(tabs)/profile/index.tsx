@@ -8,7 +8,7 @@ import FlashcardsPanel from '@/components/home/FlashcardsPanel';
 import SettingsPanel, { AppSettings } from '@/components/home/SettingsPanel';
 import TopBar from '@/components/home/TopBar';
 import XPPanel, { UserInfo } from '@/components/home/XPPanel';
-import { getRecentLearningCourses, saveCourseProgress } from '@/data/courses';
+import { getRecentLearningCourses } from '@/data/courses';
 import { db } from '@/db/mainData';
 import { FloatingMathSymbols } from '@/features/simulations/core/floating-math-symbols';
 
@@ -50,13 +50,13 @@ export default function EvidexProfile() {
 
   useEffect(() => {
     db.init();
-    setCourses(getRecentLearningCourses());
+    setCourses(getRecentLearningCourses().filter((course) => course.progress > 0));
     setUser(db.getUser());
     setSettings(db.getSettings());
   }, []);
 
   const refreshCourses = useCallback(() => {
-    setCourses(getRecentLearningCourses());
+    setCourses(getRecentLearningCourses().filter((course) => course.progress > 0));
   }, []);
 
   useFocusEffect(
@@ -64,16 +64,6 @@ export default function EvidexProfile() {
       refreshCourses();
     }, [refreshCourses])
   );
-
-  const updateCourseProgress = useCallback((course: Course, nextProgress: number) => {
-    if (!course.subject || !course.courseId || !course.totalSlides) {
-      return;
-    }
-
-    const nextSlide = Math.max(Math.ceil((nextProgress / 100) * course.totalSlides) - 1, 0);
-    saveCourseProgress(course.subject, course.courseId, nextSlide);
-    refreshCourses();
-  }, [refreshCourses]);
 
   const refreshUser = useCallback((updatedUser?: UserInfo) => {
     setUser(updatedUser ?? db.getUser());
@@ -119,7 +109,6 @@ export default function EvidexProfile() {
                 courses={courses}
                 darkMode={settings.darkMode}
                 onCourseUpdate={refreshCourses}
-                onProgressChange={updateCourseProgress}
               />
             </PanelBox>
             <PanelBox accentColor={theme.yellow} colors={theme}>

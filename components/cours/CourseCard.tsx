@@ -73,10 +73,10 @@ export default function CourseCard({ course, currentSlide, index, subject }: Cou
         <View style={styles.cardFooter}>
           <View style={styles.footerMeta}>
             <ThemedText lightColor={THEME.muted} style={styles.slideText}>
-              {course.totalSlides} slides
+              {course.totalSlides} diapos
             </ThemedText>
             <ThemedText lightColor={THEME.muted} style={styles.slideText}>
-              {hasStarted ? `${progress}%` : 'start'}
+              {hasStarted ? `${progress}%` : 'demarrer'}
             </ThemedText>
           </View>
           <View style={[styles.openButton, { backgroundColor: `${accent}12` }]}>

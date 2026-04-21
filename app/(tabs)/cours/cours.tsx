@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, Easing, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CourseCard from '@/components/cours/CourseCard';
@@ -13,8 +14,13 @@ import {
   SUBJECT_LABELS,
   getCourseProgressMap,
 } from '@/data/courses';
+import { FloatingMathSymbols } from '@/features/simulations/core/floating-math-symbols';
 
 const SUBJECTS: CourseSubject[] = ['java', 'math', 'physique'];
+
+function isCourseSubject(value: string | undefined): value is CourseSubject {
+  return Boolean(value && SUBJECTS.includes(value as CourseSubject));
+}
 
 const THEME = {
   background: '#EEF5ED',
@@ -28,25 +34,18 @@ const THEME = {
   yellow: '#D8A94A',
 };
 
-const backgroundBubbles = [
-  { height: 92, left: -24, opacity: 0.28, top: 82, width: 92 },
-  { height: 56, left: 44, opacity: 0.22, top: 154, width: 56 },
-  { height: 28, left: 132, opacity: 0.26, top: 58, width: 28 },
-  { height: 18, left: 188, opacity: 0.28, top: 214, width: 18 },
-  { height: 120, opacity: 0.22, right: -34, top: 110, width: 120 },
-  { height: 66, opacity: 0.2, right: 34, top: 226, width: 66 },
-  { height: 34, opacity: 0.24, right: 148, top: 68, width: 34 },
-  { height: 22, opacity: 0.28, right: 210, top: 178, width: 22 },
-  { height: 84, left: -18, opacity: 0.18, top: 520, width: 84 },
-  { height: 42, left: 78, opacity: 0.22, top: 650, width: 42 },
-  { height: 96, opacity: 0.18, right: -28, top: 610, width: 96 },
-  { height: 30, opacity: 0.24, right: 112, top: 520, width: 30 },
-];
-
 export default function CoursesScreen() {
-  const [activeSubject, setActiveSubject] = useState<CourseSubject>('java');
+  const params = useLocalSearchParams<{ subject?: string }>();
+  const initialSubject = isCourseSubject(params.subject) ? params.subject : 'java';
+  const [activeSubject, setActiveSubject] = useState<CourseSubject>(initialSubject);
   const [progressMap, setProgressMap] = useState(getCourseProgressMap);
   const subjectMotion = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (isCourseSubject(params.subject)) {
+      setActiveSubject(params.subject);
+    }
+  }, [params.subject]);
 
   useFocusEffect(
     useCallback(() => {
@@ -90,81 +89,46 @@ export default function CoursesScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ThemedView lightColor={THEME.background} style={styles.page}>
-        <View pointerEvents="none" style={styles.bubbleLayer}>
-          {backgroundBubbles.map((bubble, index) => (
-            <View
-              key={`course-bubble-${index}`}
-              style={[
-                styles.bubble,
-                {
-                  height: bubble.height,
-                  left: bubble.left,
-                  opacity: bubble.opacity,
-                  right: bubble.right,
-                  top: bubble.top,
-                  width: bubble.width,
-                },
-              ]}
-            />
-          ))}
-        </View>
+        <FloatingMathSymbols showGlow={false} style={styles.mathSymbols} />
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.subjectTabs}>
-            {SUBJECTS.map((subject) => {
-              const isActive = subject === activeSubject;
-
-              return (
-                <Pressable
-                  key={subject}
-                  onPress={() => setActiveSubject(subject)}
-                  style={({ pressed }) => [
-                    styles.subjectButton,
-                    { borderColor: isActive ? THEME.ink : THEME.border },
-                    isActive ? styles.subjectButtonActive : null,
-                    pressed ? styles.pressed : null,
-                  ]}>
-                  <ThemedText lightColor={THEME.ink} style={[styles.subjectText, isActive ? styles.subjectTextActive : null]}>
-                    {SUBJECT_LABELS[subject]}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
-          </View>
+          <ThemedText lightColor={THEME.muted} style={styles.screenKicker}>
+            Cours / {SUBJECT_LABELS[activeSubject]}
+          </ThemedText>
 
           <Animated.View style={[styles.hero, { opacity: subjectMotion, transform: [{ translateY: subjectTranslate }] }]}>
             <View style={styles.badge}>
               <MaterialCommunityIcons color="#6357E8" name="code-tags" size={14} />
               <ThemedText lightColor="#6357E8" style={styles.badgeText}>
-                {SUBJECT_LABELS[activeSubject]} Learning Lab
+                Laboratoire {SUBJECT_LABELS[activeSubject]}
               </ThemedText>
             </View>
 
             <ThemedText lightColor={THEME.ink} style={styles.title}>
-              Learn {SUBJECT_LABELS[activeSubject]}
+              Apprendre {SUBJECT_LABELS[activeSubject]}
             </ThemedText>
-            <ThemedText lightColor="#6B5CFF" style={styles.titleAccent}>
-              Visually.
+            <ThemedText lightColor="#8f9b8e" style={styles.titleAccent}>
+              visuellement.
             </ThemedText>
             <ThemedText lightColor={THEME.muted} style={styles.subtitle}>
-              Interactive mini-courses with clear examples, progress tracking, and quick checkpoints.
+              Mini-cours interactifs avec exemples clairs, suivi de progression et questions rapides.
             </ThemedText>
 
             <View style={styles.statsRow}>
               <ThemedText lightColor={THEME.muted} style={styles.statText}>
-                {courses.length} mini courses
+                {courses.length} mini-cours
               </ThemedText>
               <ThemedText lightColor={THEME.muted} style={styles.statText}>
-                {totalSlides} slides
+                {totalSlides} diapos
               </ThemedText>
               <ThemedText lightColor={THEME.muted} style={styles.statText}>
-                {subjectProgress}% done
+                {subjectProgress}% termine
               </ThemedText>
             </View>
           </Animated.View>
 
           <Animated.View style={[styles.courseSection, { opacity: subjectMotion, transform: [{ translateX: subjectTranslate }] }]}>
             <ThemedText lightColor={THEME.muted} style={styles.sectionLabel}>
-              Mini courses
+              Mini-cours
             </ThemedText>
 
             <View style={styles.courseList}>
@@ -199,19 +163,9 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: 'hidden',
   },
-  bubbleLayer: {
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-  },
-  bubble: {
-    backgroundColor: 'rgba(255,255,255,0.58)',
-    borderColor: 'rgba(184,199,177,0.42)',
-    borderRadius: 999,
-    borderWidth: 1,
-    position: 'absolute',
+  mathSymbols: {
+    backgroundColor: THEME.background,
+    opacity: 0.72,
   },
   scrollContent: {
     alignSelf: 'center',
@@ -220,6 +174,14 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 42,
     width: '100%',
+  },
+  screenKicker: {
+    color: THEME.muted,
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+    lineHeight: 16,
+    textTransform: 'uppercase',
   },
   hero: {
     alignItems: 'center',
