@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { db } from '@/db/mainData';
+import { FloatingMathSymbols } from '@/features/simulations/core/floating-math-symbols';
 
 const palette = {
   charcoal: '#19191F',
@@ -967,7 +968,23 @@ const styles = StyleSheet.create({
     marginTop: 28,
     paddingHorizontal: 12,
   },
-  cardsGrid: { alignItems: 'flex-end', flexDirection: 'row', gap: 16, justifyContent: 'center', width: '100%' },
+  symbolField: {
+    backgroundColor: 'transparent',
+    bottom: 16,
+    left: 10,
+    overflow: 'hidden',
+    position: 'absolute',
+    right: 10,
+    top: 122,
+    zIndex: 0,
+  },
+  symbolFieldCompact: {
+    bottom: 12,
+    left: 8,
+    right: 8,
+    top: 104,
+  },
+  cardsGrid: { alignItems: 'flex-end', flexDirection: 'row', gap: 16, justifyContent: 'center', width: '100%', zIndex: 1 },
   cardsGridCompact: {
     alignItems: 'stretch',
     flexDirection: 'row',
@@ -1001,7 +1018,12 @@ const styles = StyleSheet.create({
   simulationCard: { borderColor: 'rgba(126,166,224,0.3)' },
   simulationCardExpanded: { shadowOpacity: 0.14, shadowRadius: 22 },
   cardHovered: { opacity: 1, transform: [{ scale: 1.06 }] },
-  cardDimmed: { opacity: 0.62, transform: [{ scale: 0.93 }] },
+  cardDimmed: {
+    backgroundColor: '#E6EDE3',
+    borderColor: '#D6E0D2',
+    shadowOpacity: 0.04,
+    transform: [{ scale: 0.93 }],
+  },
   cardPressed: { transform: [{ scale: 1.02 }] },
   cardMedia: { alignItems: 'center', borderRadius: 20, height: 186, justifyContent: 'center' },
   cardMediaCompact: {
