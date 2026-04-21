@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { db } from '@/db/mainData';
+import { FloatingMathSymbols } from '@/features/simulations/core/floating-math-symbols';
 
 const palette = {
   charcoal: '#19191F',
@@ -395,8 +396,10 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={styles.featuresSection}>
-          <View style={styles.cardsGrid}>
+        <View style={[styles.featuresSection, isCompact ? styles.featuresSectionCompact : null]}>
+          <FloatingMathSymbols showGlow={false} style={[styles.symbolField, isCompact ? styles.symbolFieldCompact : null]} />
+
+          <View style={[styles.cardsGrid, isCompact ? styles.cardsGridCompact : null]}>
             <Animated.View style={[styles.cardWrap, {width: simulationCardWidth}]}>
               <Pressable
                 onHoverIn={() => setHoveredCard('cours')}
@@ -404,6 +407,7 @@ export default function HomeScreen() {
                 onPress={() => router.push('/(tabs)/cours' as Href)}
                 style={({ hovered }) => [
                   styles.card,
+                  isCompact ? styles.cardCompact : null,
                   hovered && !simulationsExpanded ? styles.cardHovered : null,
                   hoveredCard === 'simulations' && !simulationsExpanded ? styles.cardDimmed : null,
                 ]}>
@@ -412,12 +416,12 @@ export default function HomeScreen() {
                     <MaterialIcons name="menu-book" size={34} color={palette.ink} />
                   </View>
                 </View>
-                <View style={styles.cardText}>
-                  <Text style={styles.cardTitle}>Cours</Text>
-                  <Text style={styles.cardSubtitle}>Tous les cours</Text>
+                <View style={[styles.cardText, isCompact ? styles.cardTextCompact : null]}>
+                  <Text style={[styles.cardTitle, isCompact ? styles.cardTitleCompact : null]}>Cours</Text>
+                  <Text style={[styles.cardSubtitle, isCompact ? styles.cardSubtitleCompact : null]}>Tous les cours</Text>
                 </View>
-                <View style={styles.cardFooter}>
-                  <Text style={styles.cardFooterText}>Ouvrir</Text>
+                <View style={[styles.cardFooter, isCompact ? styles.cardFooterCompact : null]}>
+                  <Text style={[styles.cardFooterText, isCompact ? styles.cardFooterTextCompact : null]}>Ouvrir</Text>
                   <MaterialIcons name="chevron-right" size={22} color={palette.slate} />
                 </View>
               </Pressable>
@@ -964,7 +968,23 @@ const styles = StyleSheet.create({
     marginTop: 28,
     paddingHorizontal: 12,
   },
-  cardsGrid: { alignItems: 'flex-end', flexDirection: 'row', gap: 16, justifyContent: 'center', width: '100%' },
+  symbolField: {
+    backgroundColor: 'transparent',
+    bottom: 16,
+    left: 10,
+    overflow: 'hidden',
+    position: 'absolute',
+    right: 10,
+    top: 122,
+    zIndex: 0,
+  },
+  symbolFieldCompact: {
+    bottom: 12,
+    left: 8,
+    right: 8,
+    top: 104,
+  },
+  cardsGrid: { alignItems: 'flex-end', flexDirection: 'row', gap: 16, justifyContent: 'center', width: '100%', zIndex: 1 },
   cardsGridCompact: {
     alignItems: 'stretch',
     flexDirection: 'row',
@@ -998,7 +1018,12 @@ const styles = StyleSheet.create({
   simulationCard: { borderColor: 'rgba(126,166,224,0.3)' },
   simulationCardExpanded: { shadowOpacity: 0.14, shadowRadius: 22 },
   cardHovered: { opacity: 1, transform: [{ scale: 1.06 }] },
-  cardDimmed: { opacity: 0.62, transform: [{ scale: 0.93 }] },
+  cardDimmed: {
+    backgroundColor: '#E6EDE3',
+    borderColor: '#D6E0D2',
+    shadowOpacity: 0.04,
+    transform: [{ scale: 0.93 }],
+  },
   cardPressed: { transform: [{ scale: 1.02 }] },
   cardMedia: { alignItems: 'center', borderRadius: 20, height: 186, justifyContent: 'center' },
   cardMediaCompact: {
