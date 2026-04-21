@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import {Href, router} from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -26,6 +27,7 @@ type SectionIndexScreenProps = {
 };
 
 type DashboardFilter = string;
+const PAGE_SIZE = 10;
 
 const MATH_THEME = {
   background: '#EEF5ED',
@@ -46,10 +48,10 @@ const MATH_THEME = {
 };
 
 const DASHBOARD_CONFIG: Record<
-  'math' | 'physics',
+  'math' | 'physics' | 'java-programming',
   {
     categoryLabels: Record<string, string>;
-    filters: Array<{ label: string; value: DashboardFilter }>;
+    filters: { label: string; value: DashboardFilter }[];
     subtitle: string;
     title: string;
   }
@@ -109,6 +111,17 @@ const DASHBOARD_CONFIG: Record<
     subtitle: 'Retrouve tes simulations de physique dans le même espace organisé, lisible et facile a parcourir.',
     title: 'Simulation de Physique',
   },
+  'java-programming': {
+    categoryLabels: {
+      'a-venir': 'A venir',
+    },
+    filters: [
+      { label: 'Actifs', value: 'ready' },
+      { label: 'A venir', value: 'soon' },
+    ],
+    subtitle: 'Retrouve tes simulations Java dans le meme espace organise, lisible et facile a parcourir.',
+    title: 'Simulation Java',
+  },
 };
 
 function getMathCardLayout(screenWidth: number) {
@@ -155,6 +168,7 @@ function DashboardSectionScreen({
   const [query, setQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<DashboardFilter[]>([]);
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+  const [activePage, setActivePage] = useState(0);
 
   const normalizedQuery = query.trim().toLowerCase();
   const { containerWidth, gridGap, isTwoColumns, rowGap } = getMathCardLayout(width);
@@ -171,10 +185,25 @@ function DashboardSectionScreen({
       }),
     [activeFilters, entries, normalizedQuery]
   );
-  const cardRows = useMemo(
-    () => chunkEntries(filteredEntries, isTwoColumns ? 2 : 1),
-    [filteredEntries, isTwoColumns]
+  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / PAGE_SIZE));
+  const pagedEntries = useMemo(
+    () => filteredEntries.slice(activePage * PAGE_SIZE, (activePage + 1) * PAGE_SIZE),
+    [activePage, filteredEntries]
   );
+  const cardRows = useMemo(
+    () => chunkEntries(pagedEntries, isTwoColumns ? 2 : 1),
+    [isTwoColumns, pagedEntries]
+  );
+
+  useEffect(() => {
+    setActivePage(0);
+  }, [activeFilters, normalizedQuery]);
+
+  useEffect(() => {
+    if (activePage >= totalPages) {
+      setActivePage(Math.max(0, totalPages - 1));
+    }
+  }, [activePage, totalPages]);
 
   const toggleFilter = (filter: DashboardFilter) => {
     setActiveFilters((currentFilters) =>
@@ -192,12 +221,20 @@ function DashboardSectionScreen({
         <ScrollView contentContainerStyle={styles.mathScrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.mathContainer}>
             <View style={styles.mathHero}>
-              <View style={styles.heroBadge}>
-                <MaterialCommunityIcons color="#243B53" name="school-outline" size={16} />
-                <ThemedText darkColor="#243B53" lightColor="#243B53" style={styles.heroBadgeText}>
-                  Espace d etude
+              <Pressable onPress={() => router.push('/(tabs)/home')} style={styles.heroLogoButton}>
+                <Image
+                  contentFit="contain"
+                  source={require('@/assets/images/evidexe-logo.png')}
+                  style={styles.heroLogo}
+                />
+              </Pressable>
+
+              <Pressable onPress={() => router.push('/(tabs)/profile')} style={styles.heroProfileButton}>
+                <MaterialCommunityIcons color="#243B53" name="account-circle-outline" size={18} />
+                <ThemedText darkColor="#243B53" lightColor="#243B53" style={styles.heroProfileText}>
+                  Profil
                 </ThemedText>
-              </View>
+              </Pressable>
 
               <ThemedText lightColor={MATH_THEME.ink} style={styles.heroTitle}>
                 {config.title}
@@ -290,6 +327,32 @@ function DashboardSectionScreen({
                     {filteredEntries.length} simulation{filteredEntries.length > 1 ? 's' : ''} visible{filteredEntries.length > 1 ? 's' : ''}
                   </ThemedText>
                 </View>
+
+                {totalPages > 1 ? (
+                  <View style={styles.paginationRow}>
+                    {Array.from({ length: totalPages }, (_, index) => {
+                      const isActive = index === activePage;
+
+                      return (
+                        <Pressable
+                          key={`page-${index + 1}`}
+                          onPress={() => setActivePage(index)}
+                          style={({ pressed, hovered }) => [
+                            styles.paginationChip,
+                            isActive ? styles.paginationChipActive : null,
+                            pressed || hovered ? styles.filterChipPressed : null,
+                          ]}>
+                          <ThemedText
+                            darkColor={isActive ? '#243B53' : '#5A6A58'}
+                            lightColor={isActive ? '#243B53' : '#5A6A58'}
+                            style={styles.paginationChipText}>
+                            Page {index + 1}
+                          </ThemedText>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ) : null}
               </View>
 
               {filteredEntries.length === 0 ? (
@@ -408,7 +471,7 @@ function renderDefaultScreen(title: string, entries: SimulationEntry[]) {
 export function SectionIndexScreen({ section, title }: SectionIndexScreenProps) {
   const entries = SIMULATION_CATALOG[section];
 
-  if (section === 'math' || section === 'physics') {
+  if (section === 'math' || section === 'physics' || section === 'java-programming') {
     return <DashboardSectionScreen config={DASHBOARD_CONFIG[section]} entries={entries} />;
   }
 
@@ -485,19 +548,34 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     zIndex: 0,
   },
-  heroBadge: {
+  heroLogoButton: {
     alignItems: 'center',
     alignSelf: 'flex-start',
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  heroLogo: {
+    height: 42,
+    width: 132,
+  },
+  heroProfileButton: {
+    alignItems: 'center',
     backgroundColor: '#DDE4D5',
+    borderColor: '#A8B59A',
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#A8B59A',
     flexDirection: 'row',
     gap: 8,
+    position: 'absolute',
     paddingHorizontal: 12,
     paddingVertical: 8,
+    right: 22,
+    top: 24,
+    zIndex: 2,
   },
-  heroBadgeText: {
+  heroProfileText: {
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 18,
@@ -658,6 +736,32 @@ const styles = StyleSheet.create({
     color: '#5C6F5E',
     fontSize: 14,
     lineHeight: 20,
+  },
+  paginationRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'flex-end',
+  },
+  paginationChip: {
+    alignItems: 'center',
+    backgroundColor: MATH_THEME.chip,
+    borderColor: 'rgba(36,59,83,0.08)',
+    borderRadius: 999,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 38,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  paginationChipActive: {
+    backgroundColor: MATH_THEME.chipActive,
+    borderColor: '#243B53',
+  },
+  paginationChipText: {
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
   },
   emptyState: {
     alignItems: 'center',

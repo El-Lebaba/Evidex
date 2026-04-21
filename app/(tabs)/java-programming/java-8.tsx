@@ -1,5 +1,5 @@
-import { Java8Simulation } from '@/features/simulations/java-programming/java-8-simulation';
+import { LineSimulationScreen } from '@/features/simulations/core/line-simulation-screen';
 
 export default function Java8Screen() {
-  return <Java8Simulation />;
+  return <LineSimulationScreen title="Bientot" type="java-programming" />;
 }
