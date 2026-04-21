@@ -34,7 +34,7 @@ const THEME = {
   yellow: '#D8A94A',
 };
 
-export default function CoursesScreen() {
+export function CoursesScreen() {
   const params = useLocalSearchParams<{ subject?: string }>();
   const initialSubject = isCourseSubject(params.subject) ? params.subject : 'java';
   const [activeSubject, setActiveSubject] = useState<CourseSubject>(initialSubject);
@@ -224,77 +224,38 @@ const styles = StyleSheet.create({
     color: THEME.muted,
     fontSize: 16,
     lineHeight: 24,
-    maxWidth: 560,
+    maxWidth: 760,
     textAlign: 'center',
-  },
-  subjectTabs: {
-    backgroundColor: 'transparent',
-    flexDirection: 'row',
-    gap: 12,
-  },
-  subjectButton: {
-    alignItems: 'center',
-    backgroundColor: THEME.panel,
-    borderRadius: 20,
-    borderWidth: 1,
-    flex: 1,
-    minHeight: 64,
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    shadowColor: '#000000',
-    shadowOffset: { height: 8, width: 0 },
-    shadowOpacity: 0.06,
-    shadowRadius: 14,
-  },
-  subjectButtonActive: {
-    backgroundColor: '#111827',
-    shadowColor: '#000000',
-    shadowOffset: { height: 8, width: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-  },
-  subjectText: {
-    color: THEME.ink,
-    fontSize: 16,
-    fontWeight: '700',
-    lineHeight: 20,
-  },
-  subjectTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '900',
-  },
-  pressed: {
-    opacity: 0.82,
-    transform: [{ translateY: 1 }],
   },
   statsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 14,
+    gap: 10,
     justifyContent: 'center',
-    paddingTop: 10,
+    marginTop: 8,
   },
   statText: {
-    color: THEME.muted,
+    backgroundColor: THEME.soft,
+    borderRadius: 999,
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 18,
+    overflow: 'hidden',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   courseSection: {
-    gap: 14,
+    gap: 16,
   },
   sectionLabel: {
     color: THEME.muted,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '900',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
     lineHeight: 16,
     textTransform: 'uppercase',
   },
   courseList: {
-    flexDirection: "row",
-    flexWrap: 'wrap',
-    gap: 16,
-    padding: 10
+    gap: 14,
   },
 });
