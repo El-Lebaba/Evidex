@@ -187,7 +187,7 @@ export const db = {
   saveSettings(settings: AppSettings) {
     write('evidex_settings', settings);
 
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
       window.dispatchEvent(new Event('evidex_settings_changed'));
     }
   },
