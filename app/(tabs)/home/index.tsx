@@ -1,4 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { Href, router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -242,10 +245,7 @@ export default function HomeScreen() {
     inputRange: [0, 1],
     outputRange: isCompact ? [158, 186] : [208, 240],
   });
-  const courseCardOpacity = expandProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.84, 0.56],
-  });
+
   const detailHeight = expandProgress.interpolate({
     inputRange: [0, 1],
     outputRange: [0, isCompact ? 1120 : 520],
@@ -402,16 +402,15 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={[styles.featuresSection, isCompact ? styles.featuresSectionCompact : null]}>
-          <View style={[styles.cardsGrid, isCompact ? styles.cardsGridCompact : null]}>
-            <Animated.View style={[styles.cardWrap, { opacity: courseCardOpacity, width: courseCardWidth }]}>
+        <View style={styles.featuresSection}>
+          <View style={styles.cardsGrid}>
+            <Animated.View style={[styles.cardWrap, {width: simulationCardWidth}]}>
               <Pressable
                 onHoverIn={() => setHoveredCard('cours')}
                 onHoverOut={() => setHoveredCard((current) => (current === 'cours' ? null : current))}
+                onPress={() => router.push('/(tabs)/cours' as Href)}
                 style={({ hovered }) => [
                   styles.card,
-                  isCompact ? styles.cardCompact : null,
-                  styles.cardDisabled,
                   hovered && !simulationsExpanded ? styles.cardHovered : null,
                   hoveredCard === 'simulations' && !simulationsExpanded ? styles.cardDimmed : null,
                 ]}>
@@ -420,13 +419,13 @@ export default function HomeScreen() {
                     <MaterialIcons name="menu-book" size={34} color={palette.ink} />
                   </View>
                 </View>
-                <View style={[styles.cardText, isCompact ? styles.cardTextCompact : null]}>
-                  <Text style={[styles.cardTitle, isCompact ? styles.cardTitleCompact : null]}>Cours</Text>
-                  <Text style={[styles.cardSubtitle, isCompact ? styles.cardSubtitleCompact : null]}>Bientot disponible</Text>
+                <View style={styles.cardText}>
+                  <Text style={styles.cardTitle}>Cours</Text>
+                  <Text style={styles.cardSubtitle}>Tous les cours</Text>
                 </View>
-                <View style={[styles.cardFooter, isCompact ? styles.cardFooterCompact : null]}>
-                  <Text style={[styles.cardFooterText, isCompact ? styles.cardFooterTextCompact : null]}>Bientot</Text>
-                  <MaterialIcons name="schedule" size={22} color={palette.slate} />
+                <View style={styles.cardFooter}>
+                  <Text style={styles.cardFooterText}>Ouvrir</Text>
+                  <MaterialIcons name="chevron-right" size={22} color={palette.slate} />
                 </View>
               </Pressable>
             </Animated.View>

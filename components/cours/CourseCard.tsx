@@ -13,14 +13,14 @@ type CourseCardProps = {
 };
 
 const THEME = {
-  border: '#A8B59A',
-  ink: '#243B53',
-  muted: '#6E7F73',
-  panel: '#F3F1E7',
-  soft: '#DDE4D5',
+  border: '#E2DACB',
+  ink: '#111827',
+  muted: '#5F6B7A',
+  panel: '#FFFFFF',
+  soft: '#DFE9DC',
 };
 
-const accentColors = ['#AAB18E', '#7CCFBF', '#D8A94A', '#D97B6C', '#7EA6E0'];
+const accentColors = ['#6B5CFF', '#10A77A', '#F59E0B', '#F97316', '#0EA5E9', '#8B5CF6'];
 
 const subjectIcons: Record<CourseSubject, keyof typeof MaterialCommunityIcons.glyphMap> = {
   java: 'language-java',
@@ -44,43 +44,43 @@ export default function CourseCard({ course, currentSlide, index, subject }: Cou
       <Pressable
         style={({ pressed }) => [
           styles.card,
-          { borderColor: accent },
+          { borderTopColor: accent },
           pressed ? styles.pressed : null,
         ]}>
-        <View style={[styles.accent, { backgroundColor: accent }]} />
-
-        <View style={styles.topRow}>
-          <View style={[styles.iconBox, { borderColor: accent }]}>
-            <MaterialCommunityIcons color={THEME.ink} name={subjectIcons[subject]} size={24} />
+        <View style={styles.cardTop}>
+          <View style={[styles.iconBox, { backgroundColor: `${accent}18` }]}>
+            <MaterialCommunityIcons color={accent} name={subjectIcons[subject]} size={27} />
           </View>
-
-          <View style={styles.meta}>
-            <ThemedText lightColor={THEME.muted} style={styles.subjectLabel}>
-              {SUBJECT_LABELS[subject]} - cours {index + 1}
-            </ThemedText>
-            <ThemedText lightColor={THEME.ink} style={styles.title}>
-              {course.title}
+          <View style={styles.numberBadge}>
+            <ThemedText lightColor={THEME.muted} style={styles.numberText}>
+              {String(index + 1).padStart(2, '0')}
             </ThemedText>
           </View>
-
-          <MaterialCommunityIcons color={accent} name="arrow-right" size={24} />
         </View>
 
-        <ThemedText lightColor={THEME.muted} numberOfLines={2} style={styles.description}>
-          {course.description}
-        </ThemedText>
+        <View style={styles.meta}>
+          <ThemedText lightColor={THEME.ink} style={styles.title}>
+            {course.title}
+          </ThemedText>
+          <ThemedText lightColor={accent} style={styles.subjectLabel}>
+            {course.subtitle || SUBJECT_LABELS[subject]}
+          </ThemedText>
+          <ThemedText lightColor={THEME.muted} numberOfLines={2} style={styles.description}>
+            {course.description}
+          </ThemedText>
+        </View>
 
-        <View style={styles.progressBlock}>
-          <View style={styles.progressMeta}>
-            <ThemedText lightColor={THEME.ink} style={styles.progressText}>
-              {hasStarted ? `Page ${safeSlide + 1}/${course.totalSlides}` : 'Non commence'}
+        <View style={styles.cardFooter}>
+          <View style={styles.footerMeta}>
+            <ThemedText lightColor={THEME.muted} style={styles.slideText}>
+              {course.totalSlides} slides
             </ThemedText>
-            <ThemedText lightColor={THEME.muted} style={styles.progressText}>
-              {progress}%
+            <ThemedText lightColor={THEME.muted} style={styles.slideText}>
+              {hasStarted ? `${progress}%` : 'start'}
             </ThemedText>
           </View>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { backgroundColor: accent, width: `${progress}%` }]} />
+          <View style={[styles.openButton, { backgroundColor: `${accent}12` }]}>
+            <MaterialCommunityIcons color={accent} name="chevron-right" size={22} />
           </View>
         </View>
       </Pressable>
@@ -91,51 +91,73 @@ export default function CourseCard({ course, currentSlide, index, subject }: Cou
 const styles = StyleSheet.create({
   card: {
     backgroundColor: THEME.panel,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    gap: 13,
+    borderColor: THEME.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderTopWidth: 4,
+    flexBasis: 260,
+    flexGrow: 1,
+    gap: 16,
+    minHeight: 220,
     overflow: 'hidden',
-    padding: 16,
+    padding: 18,
+    shadowColor: '#000000',
+    shadowOffset: { height: 8, width: 0 },
+    shadowOpacity: 0.07,
+    shadowRadius: 16,
   },
   pressed: {
     opacity: 0.86,
-    transform: [{ translateY: 1 }],
+    transform: [{ scale: 0.99 }, { translateY: 1 }],
   },
-  accent: {
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-    top: 0,
-    width: 5,
-  },
-  topRow: {
+  cardTop: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 12,
+    justifyContent: 'space-between',
   },
   iconBox: {
     alignItems: 'center',
-    backgroundColor: THEME.soft,
-    borderRadius: 12,
-    borderWidth: 1,
-    height: 48,
+    borderRadius: 10,
+    height: 44,
     justifyContent: 'center',
-    width: 48,
+    width: 44,
+  },
+  numberBadge: {
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 999,
+    height: 24,
+    justifyContent: 'center',
+    minWidth: 32,
+    paddingHorizontal: 8,
+  },
+  numberText: {
+    color: THEME.muted,
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 14,
+  },
+  openButton: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
   },
   meta: {
     flex: 1,
-    gap: 2,
+    gap: 7,
   },
   subjectLabel: {
-    color: THEME.muted,
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.8,
     lineHeight: 16,
     textTransform: 'uppercase',
   },
   title: {
     color: THEME.ink,
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '900',
     lineHeight: 25,
   },
@@ -144,28 +166,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
   },
-  progressBlock: {
-    gap: 8,
-  },
-  progressMeta: {
+  cardFooter: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingTop: 2,
   },
-  progressText: {
+  footerMeta: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  slideText: {
+    color: THEME.muted,
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '900',
     lineHeight: 16,
-  },
-  progressTrack: {
-    backgroundColor: THEME.soft,
-    borderColor: THEME.border,
-    borderRadius: 999,
-    borderWidth: 1,
-    height: 12,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
   },
 });

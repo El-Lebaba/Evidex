@@ -589,6 +589,16 @@ export type LearningCourse = {
 
 export type CourseProgressMap = Record<string, number>;
 
+export type RecentLearningCourse = {
+    id: string;
+    courseId: string;
+    subject: CourseSubject;
+    name: string;
+    progress: number;
+    completed: boolean;
+    totalSlides: number;
+};
+
 const mathCourses: LearningCourse[] = [
     {
         id: 'derivatives-basics',
@@ -743,14 +753,35 @@ export const SUBJECT_LABELS: Record<CourseSubject, string> = {
     physique: 'Physique',
 };
 
+const rawJavaCourses = COURSES as unknown as LearningCourse[];
+const javaCourseOrder = [
+    'variables',
+    'strings',
+    'boolean-logic',
+    'if-statement',
+    'switch',
+    'for-loop',
+    'while-loop',
+    'arrays',
+    'methods',
+    'classes',
+];
+
+const javaCourses = javaCourseOrder
+    .map((courseId) => rawJavaCourses.find((course) => course.id === courseId))
+    .filter((course): course is LearningCourse => Boolean(course));
+
 export const COURSE_SUBJECTS: Record<CourseSubject, LearningCourse[]> = {
-    java: COURSES as unknown as LearningCourse[],
+    java: javaCourses,
     math: mathCourses,
     physique: physicsCourses,
 };
 
 const COURSE_PROGRESS_KEY = 'evidex_learning_course_progress';
+const COURSE_RECENTS_KEY = 'evidex_learning_course_recents';
+const SUBJECTS_WITH_COURSES: CourseSubject[] = ['java', 'math', 'physique'];
 let memoryProgress: CourseProgressMap = {};
+let memoryRecents: string[] = [];
 
 function progressKey(subject: CourseSubject, courseId: string) {
     return `${subject}:${courseId}`;
@@ -778,12 +809,14 @@ export function getCourseProgress(subject: CourseSubject, courseId: string) {
 }
 
 export function saveCourseProgress(subject: CourseSubject, courseId: string, slideIndex: number) {
+    const key = progressKey(subject, courseId);
     const nextProgress = {
         ...getCourseProgressMap(),
-        [progressKey(subject, courseId)]: slideIndex,
+        [key]: slideIndex,
     };
 
     memoryProgress = nextProgress;
+    saveRecentCourseKey(key);
 
     if (canUseLocalStorage()) {
         localStorage.setItem(COURSE_PROGRESS_KEY, JSON.stringify(nextProgress));
@@ -792,4 +825,72 @@ export function saveCourseProgress(subject: CourseSubject, courseId: string, sli
 
 export function findCourse(subject: CourseSubject, courseId: string) {
     return COURSE_SUBJECTS[subject].find((course) => course.id === courseId);
+}
+
+function getRecentCourseKeys(): string[] {
+    if (!canUseLocalStorage()) {
+        return memoryRecents;
+    }
+
+    try {
+        const savedRecents = localStorage.getItem(COURSE_RECENTS_KEY);
+        const parsedRecents = savedRecents ? JSON.parse(savedRecents) : [];
+        return Array.isArray(parsedRecents) ? parsedRecents.filter((key): key is string => typeof key === 'string') : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveRecentCourseKey(key: string) {
+    const nextRecents = [key, ...getRecentCourseKeys().filter((recentKey: string) => recentKey !== key)].slice(0, 12);
+    memoryRecents = nextRecents;
+
+    if (canUseLocalStorage()) {
+        localStorage.setItem(COURSE_RECENTS_KEY, JSON.stringify(nextRecents));
+    }
+}
+
+function toRecentLearningCourse(subject: CourseSubject, course: LearningCourse, progressMap: CourseProgressMap): RecentLearningCourse {
+    const key = progressKey(subject, course.id);
+    const currentSlide = progressMap[key] ?? -1;
+    const safeSlide = currentSlide >= 0 ? Math.min(currentSlide, Math.max(course.totalSlides - 1, 0)) : -1;
+    const progress = safeSlide < 0 || course.totalSlides === 0 ? 0 : Math.round(((safeSlide + 1) / course.totalSlides) * 100);
+
+    return {
+        id: key,
+        courseId: course.id,
+        subject,
+        name: `${SUBJECT_LABELS[subject]} - ${course.title}`,
+        progress,
+        completed: progress >= 100,
+        totalSlides: course.totalSlides,
+    };
+}
+
+export function getLearningCourseSummaries() {
+    const progressMap = getCourseProgressMap();
+
+    return SUBJECTS_WITH_COURSES.flatMap((subject) =>
+        COURSE_SUBJECTS[subject].map((course) => toRecentLearningCourse(subject, course, progressMap))
+    );
+}
+
+export function getRecentLearningCourses(limit = 6) {
+    const progressMap = getCourseProgressMap();
+    const summaries = getLearningCourseSummaries();
+    const byId = new Map(summaries.map((course) => [course.id, course]));
+    const orderedRecents = getRecentCourseKeys()
+        .map((key) => byId.get(key))
+        .filter((course): course is RecentLearningCourse => Boolean(course));
+    const startedCourses = summaries.filter(
+        (course) => course.progress > 0 && !orderedRecents.some((recent) => recent.id === course.id)
+    );
+    const fallbackCourses = summaries.filter(
+        (course) =>
+            !(course.id in progressMap) &&
+            !orderedRecents.some((recent) => recent.id === course.id) &&
+            !startedCourses.some((started) => started.id === course.id)
+    );
+
+    return [...orderedRecents, ...startedCourses, ...fallbackCourses].slice(0, limit);
 }
