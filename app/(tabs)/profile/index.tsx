@@ -70,7 +70,6 @@ export default function EvidexProfile() {
   }, []);
 
   function saveSettings(nextSettings: AppSettings) {
-    db.saveSettings(nextSettings);
     setSettings(nextSettings);
   }
 

@@ -168,7 +168,7 @@ export default function HomeScreen() {
   useEffect(() => {
     db.init();
     const user = db.getUser();
-    const courses = db.getCourses();
+    const courses = db.getRecentCourses();
     setUserLevel(user.level);
     setUserXp(user.xp);
     setActiveCourses(courses.filter((course) => !course.completed).length);

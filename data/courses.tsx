@@ -1,3 +1,5 @@
+import { db } from '@/db/mainData';
+
 /**
  * COURSE DATA STRUCTURE
  *
@@ -1053,77 +1055,24 @@ export const COURSE_SUBJECTS: Record<CourseSubject, LearningCourse[]> = {
     physique: physicsCourses,
 };
 
-const COURSE_PROGRESS_KEY = 'evidex_learning_course_progress';
-const COURSE_RECENTS_KEY = 'evidex_learning_course_recents';
 const SUBJECTS_WITH_COURSES: CourseSubject[] = ['java', 'math', 'physique'];
-let memoryProgress: CourseProgressMap = {};
-let memoryRecents: string[] = [];
 
 function progressKey(subject: CourseSubject, courseId: string) {
     return `${subject}:${courseId}`;
 }
 
-function canUseLocalStorage() {
-    return typeof localStorage !== 'undefined';
-}
-
 export function getCourseProgressMap(): CourseProgressMap {
-    if (!canUseLocalStorage()) {
-        return memoryProgress;
-    }
-
-    try {
-        const savedProgress = localStorage.getItem(COURSE_PROGRESS_KEY);
-        return savedProgress ? JSON.parse(savedProgress) : {};
-    } catch {
-        return {};
-    }
+    db.init();
+    return db.getCourseProgressMap();
 }
 
 export function getCourseProgress(subject: CourseSubject, courseId: string) {
-    return getCourseProgressMap()[progressKey(subject, courseId)] ?? 0;
-}
-
-export function saveCourseProgress(subject: CourseSubject, courseId: string, slideIndex: number) {
-    const key = progressKey(subject, courseId);
-    const nextProgress = {
-        ...getCourseProgressMap(),
-        [key]: slideIndex,
-    };
-
-    memoryProgress = nextProgress;
-    saveRecentCourseKey(key);
-
-    if (canUseLocalStorage()) {
-        localStorage.setItem(COURSE_PROGRESS_KEY, JSON.stringify(nextProgress));
-    }
+    db.init();
+    return db.getCourseProgress(subject, courseId);
 }
 
 export function findCourse(subject: CourseSubject, courseId: string) {
     return COURSE_SUBJECTS[subject].find((course) => course.id === courseId);
-}
-
-function getRecentCourseKeys(): string[] {
-    if (!canUseLocalStorage()) {
-        return memoryRecents;
-    }
-
-    try {
-        const savedRecents = localStorage.getItem(COURSE_RECENTS_KEY);
-        const parsedRecents = savedRecents ? JSON.parse(savedRecents) : [];
-        return Array.isArray(parsedRecents) ? parsedRecents.filter((key): key is string => typeof key === 'string') : [];
-    } catch {
-        return [];
-    }
-}
-
-function saveRecentCourseKey(key: string) {
-    const nextRecents = [key, ...getRecentCourseKeys().filter((recentKey: string) => recentKey !== key)].slice(0, 12);
-    memoryRecents = nextRecents;
-
-    if (canUseLocalStorage()) {
-        localStorage.setItem(COURSE_RECENTS_KEY, JSON.stringify(nextRecents));
-    }
 }
 
 function toRecentLearningCourse(subject: CourseSubject, course: LearningCourse, progressMap: CourseProgressMap): RecentLearningCourse {
@@ -1152,21 +1101,11 @@ export function getLearningCourseSummaries() {
 }
 
 export function getRecentLearningCourses(limit = 6) {
-    const progressMap = getCourseProgressMap();
     const summaries = getLearningCourseSummaries();
     const byId = new Map(summaries.map((course) => [course.id, course]));
-    const orderedRecents = getRecentCourseKeys()
-        .map((key) => byId.get(key))
+    const orderedRecents = db.getRecentCourses(limit)
+        .map((course) => byId.get(String(course.id)))
         .filter((course): course is RecentLearningCourse => Boolean(course));
-    const startedCourses = summaries.filter(
-        (course) => course.progress > 0 && !orderedRecents.some((recent) => recent.id === course.id)
-    );
-    const fallbackCourses = summaries.filter(
-        (course) =>
-            !(course.id in progressMap) &&
-            !orderedRecents.some((recent) => recent.id === course.id) &&
-            !startedCourses.some((started) => started.id === course.id)
-    );
 
-    return [...orderedRecents, ...startedCourses, ...fallbackCourses].slice(0, limit);
+    return orderedRecents.slice(0, limit);
 }

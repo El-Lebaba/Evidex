@@ -70,11 +70,7 @@ export default function SettingsPanel({
   }
 
   function resetData() {
-    // This page is mainly used on web, where localStorage is available.
-    if (typeof localStorage !== 'undefined') {
-      localStorage.clear();
-      location.reload();
-    }
+    onClose();
   }
 
   return (

@@ -48,17 +48,12 @@ type XPPanelProps = {
 
 const xpPerLevel = 100;
 
-export default function XPPanel({ darkMode = false, user, onUserUpdate }: XPPanelProps) {
+export default function XPPanel({ darkMode = false, user }: XPPanelProps) {
   const theme = darkMode ? darkColors : colors;
   const achievements: Achievement[] = db.getAchievements();
   const completedAchievements = achievements.filter((item) => item.completed);
   const xpInLevel = user.xp % xpPerLevel;
   const progress = `${xpInLevel}%` as `${number}%`;
-
-  function addXP(amount: number) {
-    const updatedUser = db.addXP(amount);
-    onUserUpdate(updatedUser);
-  }
 
   function openAchievements() {
     router.push('/achievements' as never);
@@ -113,19 +108,6 @@ export default function XPPanel({ darkMode = false, user, onUserUpdate }: XPPane
         <Text style={[styles.remainingText, { color: theme.muted }]}>
           encore {xpPerLevel - xpInLevel} XP pour le niveau {user.level + 1}
         </Text>
-      </View>
-
-      {/* Buttons used during tests/presentations to simulate progress */}
-      <View style={styles.xpButtons}>
-        {[10, 25, 50].map((amount) => (
-          <Pressable
-            key={amount}
-            onPress={() => addXP(amount)}
-            style={[styles.xpButton, { borderColor: `${theme.yellow}80` }]}
-          >
-            <Text style={[styles.xpButtonText, { color: theme.yellow }]}>+{amount} XP</Text>
-          </Pressable>
-        ))}
       </View>
 
       {/* Achievement preview */}

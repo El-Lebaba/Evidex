@@ -1,11 +1,18 @@
 export type Course = {
-  id: number;
+  id: number | string;
   name: string;
   progress: number;
   completed: boolean;
+  subject?: string;
+  courseId?: string;
+  totalSlides?: number;
+  highestSlideIndex?: number;
+  lastOpenedAt?: string;
 };
 
 export type UserInfo = {
+  id?: string;
+  name?: string;
   xp: number;
   level: number;
 };
@@ -23,23 +30,55 @@ export type AppSettings = {
   notifications: boolean;
 };
 
-const defaultCourses: Course[] = [
-  { id: 1, name: 'Java - If Statement', progress: 65, completed: false },
-  { id: 2, name: 'Java - Variables', progress: 40, completed: false },
-  { id: 3, name: 'Java - For Loops', progress: 90, completed: false },
-  { id: 4, name: 'Java - Methods', progress: 20, completed: false },
-  { id: 5, name: 'Java - Arrays', progress: 100, completed: true },
-  { id: 6, name: 'Java - Classes and Objects', progress: 10, completed: false },
-];
+type StoredUser = {
+  id: string;
+  key: string;
+  name: string;
+  xp: number;
+  level: number;
+  createdAt: string;
+  lastSeenAt: string;
+};
 
-const defaultUser: UserInfo = { xp: 340, level: 4 };
+type StoredCourseProgress = {
+  id: string;
+  subject: string;
+  courseId: string;
+  name: string;
+  progress: number;
+  completed: boolean;
+  totalSlides?: number;
+  highestSlideIndex?: number;
+  lastOpenedAt: string;
+};
+
+type UserData = {
+  courses: Record<string, StoredCourseProgress>;
+  achievements: Record<string, Achievement>;
+  settings: AppSettings;
+};
+
+type AppData = {
+  activeUserId: string;
+  users: Record<string, StoredUser>;
+  userData: Record<string, UserData>;
+};
+
+const storageKey = 'evidex_app_data';
+const defaultUserName = 'User';
+
+const defaultSettings: AppSettings = {
+  darkMode: false,
+  language: 'fr',
+  notifications: true,
+};
 
 const defaultAchievements: Achievement[] = [
   {
     id: 1,
     title: 'Premier pas',
     description: 'Ouvrir la simulation pour la premiere fois',
-    completed: true,
+    completed: false,
   },
   {
     id: 2,
@@ -51,7 +90,7 @@ const defaultAchievements: Achievement[] = [
     id: 3,
     title: 'Premier cours termine',
     description: 'Completer 1 cours',
-    completed: true,
+    completed: false,
   },
   {
     id: 4,
@@ -73,122 +112,434 @@ const defaultAchievements: Achievement[] = [
   },
 ];
 
-const defaultSettings: AppSettings = {
-  darkMode: false,
-  language: 'fr',
-  notifications: true,
-};
+let memoryData: AppData | null = null;
 
 function canUseLocalStorage() {
   return typeof localStorage !== 'undefined';
 }
 
-function read<T>(key: string, fallback: T): T {
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function normalizeUserName(name?: string | null) {
+  const trimmedName = name?.trim();
+  return trimmedName && trimmedName.length > 0 ? trimmedName : defaultUserName;
+}
+
+function userKey(name: string) {
+  return normalizeUserName(name).toLocaleLowerCase();
+}
+
+function createId(prefix: string) {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function clampProgress(progress: number) {
+  if (!Number.isFinite(progress)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(100, Math.round(progress)));
+}
+
+function progressFromSlide(slideIndex: number, totalSlides?: number) {
+  if (!totalSlides || totalSlides <= 0) {
+    return slideIndex >= 0 ? 1 : 0;
+  }
+
+  const safeSlide = Math.max(0, Math.min(Math.floor(slideIndex), totalSlides - 1));
+  return clampProgress(((safeSlide + 1) / totalSlides) * 100);
+}
+
+function defaultAchievementMap() {
+  return Object.fromEntries(defaultAchievements.map((achievement) => [String(achievement.id), achievement]));
+}
+
+function createUser(name: string): StoredUser {
+  const displayName = normalizeUserName(name);
+  return {
+    id: createId('user'),
+    key: userKey(displayName),
+    name: displayName,
+    xp: 0,
+    level: 1,
+    createdAt: nowIso(),
+    lastSeenAt: nowIso(),
+  };
+}
+
+function createUserData(): UserData {
+  return {
+    courses: {},
+    achievements: defaultAchievementMap(),
+    settings: { ...defaultSettings },
+  };
+}
+
+function createDefaultAppData() {
+  const user = createUser(defaultUserName);
+  return {
+    activeUserId: user.id,
+    users: { [user.id]: user },
+    userData: { [user.id]: createUserData() },
+  };
+}
+
+function readAppData(): AppData {
+  if (memoryData) {
+    return memoryData;
+  }
+
   if (!canUseLocalStorage()) {
-    return fallback;
+    memoryData = createDefaultAppData();
+    return memoryData;
   }
 
   try {
-    const savedValue = localStorage.getItem(key);
-    return savedValue ? JSON.parse(savedValue) : fallback;
+    const savedValue = localStorage.getItem(storageKey);
+    memoryData = savedValue ? JSON.parse(savedValue) : createDefaultAppData();
   } catch {
-    return fallback;
+    memoryData = createDefaultAppData();
+  }
+
+  if (!memoryData) {
+    memoryData = createDefaultAppData();
+  }
+
+  return memoryData;
+}
+
+function writeAppData(nextData: AppData) {
+  memoryData = nextData;
+
+  if (canUseLocalStorage()) {
+    localStorage.setItem(storageKey, JSON.stringify(nextData));
   }
 }
 
-function write<T>(key: string, value: T) {
-  if (!canUseLocalStorage()) {
-    return;
+function ensureActiveUser(data = readAppData()) {
+  let activeUser = data.users[data.activeUserId];
+
+  if (!activeUser) {
+    activeUser = createUser(defaultUserName);
+    data.activeUserId = activeUser.id;
+    data.users[activeUser.id] = activeUser;
   }
 
-  localStorage.setItem(key, JSON.stringify(value));
+  if (!data.userData[activeUser.id]) {
+    data.userData[activeUser.id] = createUserData();
+  }
+
+  return activeUser;
 }
 
-function init() {
-  // Put starter data in localStorage the first time the dashboard opens.
-  if (!canUseLocalStorage()) {
-    return;
+function getActiveUserData(data = readAppData()) {
+  const user = ensureActiveUser(data);
+  return data.userData[user.id];
+}
+
+function findUserByName(data: AppData, name: string) {
+  const key = userKey(name);
+  return Object.values(data.users).find((user) => user.key === key);
+}
+
+function courseIdentity(course: Partial<Course>) {
+  const idText = String(course.id ?? '');
+
+  if (course.subject && course.courseId) {
+    return {
+      subject: course.subject,
+      courseId: course.courseId,
+      id: `${course.subject}:${course.courseId}`,
+    };
   }
 
-  if (!localStorage.getItem('evidex_courses')) {
-    write('evidex_courses', defaultCourses);
+  if (idText.includes(':')) {
+    const [subject, courseId] = idText.split(':');
+    return { subject, courseId, id: idText };
   }
-  if (!localStorage.getItem('evidex_user')) {
-    write('evidex_user', defaultUser);
-  }
-  if (!localStorage.getItem('evidex_achievements')) {
-    write('evidex_achievements', defaultAchievements);
-  }
-  if (!localStorage.getItem('evidex_settings')) {
-    write('evidex_settings', defaultSettings);
+
+  return { subject: 'general', courseId: idText, id: idText };
+}
+
+function mapCourse(course: StoredCourseProgress): Course {
+  return {
+    id: course.id,
+    name: course.name,
+    progress: course.progress,
+    completed: course.completed,
+    subject: course.subject,
+    courseId: course.courseId,
+    totalSlides: course.totalSlides,
+    highestSlideIndex: course.highestSlideIndex,
+    lastOpenedAt: course.lastOpenedAt,
+  };
+}
+
+function emitSettingsChanged() {
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new Event('evidex_settings_changed'));
   }
 }
 
 export const db = {
-  init,
+  init(userName?: string) {
+    const data = readAppData();
+    ensureActiveUser(data);
 
-  getCourses() {
-    return read<Course[]>('evidex_courses', defaultCourses);
+    if (userName) {
+      db.setActiveUser(userName);
+      return;
+    }
+
+    writeAppData(data);
   },
-  saveCourses(courses: Course[]) {
-    write('evidex_courses', courses);
+
+  setActiveUser(userName: string) {
+    const data = readAppData();
+    const displayName = normalizeUserName(userName);
+    let user = findUserByName(data, displayName);
+
+    if (!user) {
+      user = createUser(displayName);
+      data.users[user.id] = user;
+      data.userData[user.id] = createUserData();
+    }
+
+    user.name = displayName;
+    user.key = userKey(displayName);
+    user.lastSeenAt = nowIso();
+    data.activeUserId = user.id;
+    ensureActiveUser(data);
+    writeAppData(data);
+
+    return db.getUser();
   },
-  addCourse(name: string) {
-    const courses = db.getCourses();
-    const course: Course = {
-      id: Date.now(),
-      name,
-      progress: 0,
-      completed: false,
+
+  syncUser(userName: string) {
+    return db.setActiveUser(userName);
+  },
+
+  renameActiveUser(nextName: string) {
+    const data = readAppData();
+    const currentUser = ensureActiveUser(data);
+    const displayName = normalizeUserName(nextName);
+    const existingUser = findUserByName(data, displayName);
+
+    if (existingUser && existingUser.id !== currentUser.id) {
+      data.activeUserId = existingUser.id;
+      existingUser.lastSeenAt = nowIso();
+      ensureActiveUser(data);
+      writeAppData(data);
+      return db.getUser();
+    }
+
+    currentUser.name = displayName;
+    currentUser.key = userKey(displayName);
+    currentUser.lastSeenAt = nowIso();
+    writeAppData(data);
+    return db.getUser();
+  },
+
+  getUsers() {
+    const data = readAppData();
+    return Object.values(data.users)
+      .sort((left, right) => right.lastSeenAt.localeCompare(left.lastSeenAt))
+      .map((user) => ({
+        id: user.id,
+        name: user.name,
+        xp: user.xp,
+        level: user.level,
+      }));
+  },
+
+  getUser(): UserInfo {
+    const data = readAppData();
+    const user = ensureActiveUser(data);
+    return {
+      id: user.id,
+      name: user.name,
+      xp: user.xp,
+      level: user.level,
     };
-
-    db.saveCourses([...courses, course]);
-    return course;
-  },
-  updateCourse(id: number, patch: Partial<Course>) {
-    const courses = db.getCourses().map((course) =>
-      course.id === id ? { ...course, ...patch } : course,
-    );
-    db.saveCourses(courses);
-  },
-  deleteCourse(id: number) {
-    db.saveCourses(db.getCourses().filter((course) => course.id !== id));
   },
 
-  getUser() {
-    return read<UserInfo>('evidex_user', defaultUser);
+  saveUser(userInfo: UserInfo) {
+    const data = readAppData();
+    const user = ensureActiveUser(data);
+
+    if (userInfo.name) {
+      user.name = normalizeUserName(userInfo.name);
+      user.key = userKey(user.name);
+    }
+
+    user.xp = Math.max(0, Math.round(userInfo.xp));
+    user.level = Math.max(1, Math.round(userInfo.level));
+    user.lastSeenAt = nowIso();
+    writeAppData(data);
   },
-  saveUser(user: UserInfo) {
-    write('evidex_user', user);
-  },
+
   addXP(amount: number) {
     const user = db.getUser();
-    const xp = user.xp + amount;
+    const xp = Math.max(0, user.xp + amount);
     const level = Math.floor(xp / 100) + 1;
-    const updatedUser = { xp, level };
+    const nextUser = { ...user, xp, level };
 
-    db.saveUser(updatedUser);
-    return updatedUser;
+    db.saveUser(nextUser);
+    return nextUser;
+  },
+
+  getRecentCourses(limit = 6) {
+    const userData = getActiveUserData();
+    return Object.values(userData.courses)
+      .filter((course) => course.progress > 0)
+      .sort((left, right) => right.lastOpenedAt.localeCompare(left.lastOpenedAt))
+      .slice(0, limit)
+      .map(mapCourse);
+  },
+
+  getCourseProgressMap() {
+    const userData = getActiveUserData();
+    return Object.values(userData.courses).reduce<Record<string, number>>((progressMap, course) => {
+      if (course.progress > 0) {
+        progressMap[course.id] = course.highestSlideIndex ?? 0;
+      }
+
+      return progressMap;
+    }, {});
+  },
+
+  getCourseProgress(subject: string, courseId: string) {
+    const userData = getActiveUserData();
+    const course = userData.courses[`${subject}:${courseId}`];
+    return course?.highestSlideIndex ?? 0;
+  },
+
+  saveCourseProgress(subject: string, courseId: string, slideIndex: number, totalSlides?: number, courseName?: string) {
+    const progress = progressFromSlide(slideIndex, totalSlides);
+
+    if (progress <= 0) {
+      return;
+    }
+
+    const data = readAppData();
+    const userData = getActiveUserData(data);
+    const id = `${subject}:${courseId}`;
+    const existing = userData.courses[id];
+    const highestSlideIndex = Math.max(existing?.highestSlideIndex ?? -1, Math.max(0, Math.floor(slideIndex)));
+    const nextProgress = Math.max(existing?.progress ?? 0, progress);
+
+    userData.courses[id] = {
+      id,
+      subject,
+      courseId,
+      name: courseName ?? existing?.name ?? `${subject} - ${courseId}`,
+      progress: nextProgress,
+      completed: nextProgress >= 100,
+      totalSlides: totalSlides ?? existing?.totalSlides,
+      highestSlideIndex,
+      lastOpenedAt: nowIso(),
+    };
+
+    writeAppData(data);
+  },
+
+  saveCourses(courses: Course[]) {
+    courses.forEach((course) => {
+      const identity = courseIdentity(course);
+
+      if (course.highestSlideIndex !== undefined) {
+        db.saveCourseProgress(
+          identity.subject,
+          identity.courseId,
+          course.highestSlideIndex,
+          course.totalSlides,
+          course.name,
+        );
+        return;
+      }
+
+      if (course.progress > 0) {
+        const slideIndex = course.totalSlides
+          ? Math.max(0, Math.ceil((course.progress / 100) * course.totalSlides) - 1)
+          : 0;
+        db.saveCourseProgress(identity.subject, identity.courseId, slideIndex, course.totalSlides, course.name);
+      }
+    });
+  },
+
+  updateCourse(id: number | string, patch: Partial<Course>) {
+    const identity = courseIdentity({ ...patch, id });
+    const existingProgress = db.getCourseProgress(identity.subject, identity.courseId);
+
+    db.saveCourseProgress(
+      identity.subject,
+      identity.courseId,
+      patch.highestSlideIndex ?? existingProgress,
+      patch.totalSlides,
+      patch.name,
+    );
+  },
+
+  deleteCourse(id: number | string) {
+    const data = readAppData();
+    const userData = getActiveUserData(data);
+    const identity = courseIdentity({ id });
+    delete userData.courses[identity.id];
+    writeAppData(data);
   },
 
   getAchievements() {
-    return read<Achievement[]>('evidex_achievements', defaultAchievements);
+    const userData = getActiveUserData();
+    return defaultAchievements.map((achievement) => ({
+      ...achievement,
+      ...userData.achievements[String(achievement.id)],
+    }));
   },
+
   completeAchievement(id: number) {
-    const achievements = db.getAchievements().map((achievement) =>
-      achievement.id === id ? { ...achievement, completed: true } : achievement,
-    );
-    write('evidex_achievements', achievements);
+    const data = readAppData();
+    const userData = getActiveUserData(data);
+    const existing = userData.achievements[String(id)] ?? defaultAchievements.find((achievement) => achievement.id === id);
+
+    if (existing) {
+      userData.achievements[String(id)] = { ...existing, completed: true };
+      writeAppData(data);
+    }
+  },
+
+  saveAchievement(achievement: Achievement) {
+    const data = readAppData();
+    const userData = getActiveUserData(data);
+    const existing = userData.achievements[String(achievement.id)];
+    userData.achievements[String(achievement.id)] = {
+      ...achievement,
+      completed: existing?.completed || achievement.completed,
+    };
+    writeAppData(data);
   },
 
   getSettings() {
-    return read<AppSettings>('evidex_settings', defaultSettings);
+    return { ...getActiveUserData().settings };
   },
-  saveSettings(settings: AppSettings) {
-    write('evidex_settings', settings);
 
-    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
-      window.dispatchEvent(new Event('evidex_settings_changed'));
-    }
+  saveSettings(settings: AppSettings) {
+    const data = readAppData();
+    const userData = getActiveUserData(data);
+    userData.settings = { ...settings };
+    writeAppData(data);
+    emitSettingsChanged();
+  },
+
+  resetActiveUserData() {
+    const data = readAppData();
+    const user = ensureActiveUser(data);
+    data.userData[user.id] = createUserData();
+    user.xp = 0;
+    user.level = 1;
+    user.lastSeenAt = nowIso();
+    writeAppData(data);
+    emitSettingsChanged();
   },
 };

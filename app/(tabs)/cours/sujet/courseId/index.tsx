@@ -11,7 +11,6 @@ import {
   SUBJECT_LABELS,
   findCourse,
   getCourseProgress,
-  saveCourseProgress,
 } from '@/data/courses';
 
 const THEME = {
@@ -175,7 +174,6 @@ export default function CourseReaderScreen() {
     if (subject && courseId && course) {
       setSavedProgress((currentSavedProgress) => {
         const nextSavedProgress = Math.max(currentSavedProgress, slideIndex);
-        saveCourseProgress(subject, courseId, nextSavedProgress);
         return nextSavedProgress;
       });
     }
