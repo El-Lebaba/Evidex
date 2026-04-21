@@ -1,8 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CourseCard from '@/components/cours/CourseCard';
@@ -91,6 +91,13 @@ export function CoursesScreen() {
       <ThemedView lightColor={THEME.background} style={styles.page}>
         <FloatingMathSymbols showGlow={false} style={styles.mathSymbols} />
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <MaterialCommunityIcons color={THEME.ink} name="arrow-left" size={18} />
+            <ThemedText lightColor={THEME.ink} style={styles.backButtonText}>
+              Retour
+            </ThemedText>
+          </Pressable>
+
           <ThemedText lightColor={THEME.muted} style={styles.screenKicker}>
             Cours / {SUBJECT_LABELS[activeSubject]}
           </ThemedText>
@@ -183,6 +190,24 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     textTransform: 'uppercase',
   },
+  backButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: THEME.soft,
+    borderColor: THEME.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  backButtonText: {
+    color: THEME.ink,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
   hero: {
     alignItems: 'center',
     gap: 8,
@@ -257,5 +282,8 @@ const styles = StyleSheet.create({
   },
   courseList: {
     gap: 14,
+    flexWrap: 'wrap',
+    flexDirection: 'row',
+    flexGrow: 1,
   },
 });
