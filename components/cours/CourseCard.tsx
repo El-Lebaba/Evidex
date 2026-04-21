@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Href, Link } from 'expo-router';
+import {Href, Link, router} from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -35,18 +35,18 @@ export default function CourseCard({ course, currentSlide, index, subject }: Cou
   const progress =
     !hasStarted || course.totalSlides === 0 ? 0 : Math.round(((safeSlide + 1) / course.totalSlides) * 100);
   const href = {
-    pathname: '/(tabs)/cours/[subject]/[courseId]',
+    pathname: '/(tabs)/cours/sujet/courseId',
     params: { courseId: course.id, subject },
   } as unknown as Href;
 
   return (
-    <Link href={href} asChild>
       <Pressable
-        style={({ pressed }) => [
-          styles.card,
-          { borderTopColor: accent },
-          pressed ? styles.pressed : null,
-        ]}>
+          onPress={() => router.push(href)}
+          style={({ pressed }) => [
+              styles.card,
+            { borderTopColor: accent },
+            pressed ? styles.pressed : null,
+          ]}>
         <View style={styles.cardTop}>
           <View style={[styles.iconBox, { backgroundColor: `${accent}18` }]}>
             <MaterialCommunityIcons color={accent} name={subjectIcons[subject]} size={27} />
@@ -84,7 +84,6 @@ export default function CourseCard({ course, currentSlide, index, subject }: Cou
           </View>
         </View>
       </Pressable>
-    </Link>
   );
 }
 
@@ -149,6 +148,7 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   subjectLabel: {
+    color: THEME.ink,
     fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0.8,

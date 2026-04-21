@@ -99,7 +99,7 @@ export default function CoursesScreen() {
             <View style={styles.badge}>
               <MaterialCommunityIcons color="#6357E8" name="code-tags" size={14} />
               <ThemedText lightColor="#6357E8" style={styles.badgeText}>
-                Laboratoire {SUBJECT_LABELS[activeSubject]}
+                Lab {SUBJECT_LABELS[activeSubject]}
               </ThemedText>
             </View>
 
@@ -201,6 +201,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   badgeText: {
+    color: THEME.ink,
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 18,
@@ -291,8 +292,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   courseList: {
-    flexDirection: 'row',
+    flexDirection: "row",
     flexWrap: 'wrap',
     gap: 16,
+    padding: 10
   },
 });

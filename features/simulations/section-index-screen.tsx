@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Href, Link } from 'expo-router';
+import {Href, router} from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   Pressable,
@@ -53,7 +53,7 @@ const DASHBOARD_CONFIG: Record<
     subtitle: string;
     title: string;
   }
-> = {
+  >={
   math: {
     categoryLabels: {
       'a-venir': 'A venir',
@@ -87,7 +87,7 @@ const DASHBOARD_CONFIG: Record<
       { label: 'Visualisation', value: 'visualisation' },
       { label: 'A venir', value: 'soon' },
     ],
-    subtitle: 'Explore tes simulations dans une interface plus claire, plus douce et pensee pour reviser efficacement.',
+    subtitle: 'Explore tes simulations dans une interface plus claire, plus douce et pensée pour reviser efficacement.',
     title: 'Simulation de Math',
   },
   physics: {
@@ -106,7 +106,7 @@ const DASHBOARD_CONFIG: Record<
       { label: 'Energie', value: 'energie' },
       { label: 'A venir', value: 'soon' },
     ],
-    subtitle: 'Retrouve tes simulations de physique dans le meme espace organise, lisible et facile a parcourir.',
+    subtitle: 'Retrouve tes simulations de physique dans le même espace organisé, lisible et facile a parcourir.',
     title: 'Simulation de Physique',
   },
 };
@@ -314,8 +314,8 @@ function DashboardSectionScreen({
                       ]}>
                       {row.map((entry) => (
                         <View key={entry.href} style={styles.cardSlot}>
-                          <Link href={entry.href as Href} asChild>
                             <Pressable
+                                onPress={()=>router.push(entry.href as Href)}
                               style={({ pressed, hovered }) => [
                                 styles.mathCard,
                                 pressed || hovered ? styles.mathCardPressed : null,
@@ -366,7 +366,6 @@ function DashboardSectionScreen({
                                 <MaterialCommunityIcons color={MATH_THEME.coral} name="arrow-right" size={20} />
                               </View>
                             </Pressable>
-                          </Link>
                         </View>
                       ))}
 
@@ -392,14 +391,12 @@ function renderDefaultScreen(title: string, entries: SimulationEntry[]) {
 
         <ScrollView contentContainerStyle={styles.listContent} style={styles.list}>
           {entries.length === 0 ? (
-            <ThemedText style={styles.description}>Aucune simulation pour l'instant.</ThemedText>
+            <ThemedText style={styles.description}>Aucune simulation pour l&#39;instant.</ThemedText>
           ) : (
             entries.map((entry) => (
-              <Link href={entry.href as Href} key={entry.href} asChild>
-                <Pressable style={styles.card}>
-                  <ThemedText type="defaultSemiBold">{entry.title}</ThemedText>
-                </Pressable>
-              </Link>
+              <Pressable onPress={()=>router.push(entry.href as Href)} key={entry.href} style={styles.card}>
+                <ThemedText type="defaultSemiBold">{entry.title}</ThemedText>
+              </Pressable>
             ))
           )}
         </ScrollView>
