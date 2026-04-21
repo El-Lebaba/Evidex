@@ -1,5 +1,5 @@
-import { Java9Simulation } from '@/features/simulations/java-programming/java-9-simulation';
+import { LineSimulationScreen } from '@/features/simulations/core/line-simulation-screen';
 
 export default function Java9Screen() {
-  return <Java9Simulation />;
+  return <LineSimulationScreen title="Bientot" type="java-programming" />;
 }

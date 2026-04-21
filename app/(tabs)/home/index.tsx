@@ -368,6 +368,13 @@ export default function HomeScreen() {
         ref={scrollRef}
         showsVerticalScrollIndicator={false}>
         <View style={styles.heroShell}>
+          <View style={styles.homeProfileRow}>
+            <Pressable onPress={() => router.push('/(tabs)/profile')} style={[styles.accountChip, isCompact ? styles.accountChipCompact : null]}>
+              <MaterialIcons name="person-outline" size={18} color={palette.ink} />
+              <Text style={styles.accountText}>Profil</Text>
+            </Pressable>
+          </View>
+
           <View {...heroPanResponder.panHandlers} style={styles.heroViewport}>
             <Animated.View
               style={[
@@ -551,12 +558,6 @@ function HeroBrandSlide({ animatedStyle, driftProgress, isCompact, slideWidth }:
             />
           </Animated.View>
         ))}
-        <View style={styles.heroTopRow}>
-          <Pressable onPress={() => router.push('/(tabs)/profile')} style={[styles.accountChip, isCompact ? styles.accountChipCompact : null]}>
-            <MaterialIcons name="person-outline" size={18} color={palette.ink}/>
-            <Text style={styles.accountText}>Profil</Text>
-          </Pressable>
-        </View>
         <View style={[styles.heroTextBlock, isCompact ? styles.heroTextBlockCompact : null]}>
           <Text style={[styles.eyebrow, isCompact ? styles.eyebrowCompact : null]}>Accueil Evidex</Text>
           <Text style={[styles.heroTitle, isCompact ? styles.heroTitleCompact : null]}>Ton espace</Text>
@@ -709,6 +710,10 @@ const styles = StyleSheet.create({
   safeArea: { backgroundColor: palette.cream, flex: 1 },
   content: { backgroundColor: palette.cream, paddingBottom: 56 },
   heroShell: { backgroundColor: palette.cream, paddingHorizontal: 22, paddingTop: 8, position: 'relative' },
+  homeProfileRow: {
+    alignItems: 'flex-end',
+    marginBottom: 8,
+  },
   heroViewport: { overflow: 'hidden' },
   heroTrack: {
     flexDirection: 'row',
@@ -742,7 +747,6 @@ const styles = StyleSheet.create({
   heroBubbleWrap: {
     position: 'absolute',
   },
-  heroTopRow: { alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'flex-end' },
   heroTextBlock: { alignItems: 'center', marginTop: 20 },
   heroTextBlockCompact: { marginTop: 44 },
   heroDotsTop: {

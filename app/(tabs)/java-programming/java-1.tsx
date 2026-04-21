@@ -1,5 +1,5 @@
-import { Java1Simulation } from '@/features/simulations/java-programming/java-1-simulation';
+import { LineSimulationScreen } from '@/features/simulations/core/line-simulation-screen';
 
 export default function Java1Screen() {
-  return <Java1Simulation />;
+  return <LineSimulationScreen title="Bientot" type="java-programming" />;
 }

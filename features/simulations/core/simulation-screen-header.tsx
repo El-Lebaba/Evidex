@@ -21,7 +21,8 @@ export function SimulationScreenHeader({ title, type }: SimulationScreenHeaderPr
     <View style={styles.headerShell}>
       <View style={styles.topShade} />
       <View style={styles.header}>
-        <View style={styles.leftGroup}>
+        <View style={styles.headerRow}>
+          <View style={styles.leftGroup}>
           <Pressable onPress={() => router.push(
               type === 'math' ? '/(tabs)/math' : type === 'physics' ? '/(tabs)/physics' :'/(tabs)/java-programming'
           )} style={styles.backButton}>
@@ -39,6 +40,10 @@ export function SimulationScreenHeader({ title, type }: SimulationScreenHeaderPr
               {title}
             </ThemedText>
           </View>
+          </View>
+          <Pressable onPress={() => router.push('/(tabs)/profile')} style={styles.profileButton}>
+            <MaterialCommunityIcons color="#243B53" name="account-circle-outline" size={20} />
+          </Pressable>
         </View>
       </View>
     </View>
@@ -67,6 +72,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     width: '100%',
   },
+  headerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
   leftGroup: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -78,6 +89,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   backButton: {
+    alignItems: 'center',
+    backgroundColor: '#F5F1E6',
+    borderColor: '#243B53',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    height: 38,
+    justifyContent: 'center',
+    width: 38,
+  },
+  profileButton: {
     alignItems: 'center',
     backgroundColor: '#F5F1E6',
     borderColor: '#243B53',
