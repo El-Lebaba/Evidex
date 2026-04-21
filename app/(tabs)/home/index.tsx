@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  type ViewStyle,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -105,48 +104,20 @@ function createSlideBubbles(panelWidth: number, isCompact: boolean, seedOffset: 
   }));
 }
 
-const sectionCards = [
-  {
-    key: 'math',
-    title: 'Math',
-    subtitle: 'Fonctions, calcul et plus',
-    accent: palette.yellow,
-    icon: 'functions',
-    href: '/(tabs)/math' as const,
-  },
-  {
-    key: 'physics',
-    title: 'Physiques',
-    subtitle: 'Mouvement, forces, energie',
-    accent: palette.blue,
-    icon: 'science',
-    href: '/(tabs)/physics' as const,
-  },
-  {
-    key: 'java',
-    title: 'Java',
-    subtitle: 'Programmation et logique',
-    accent: palette.copper,
-    icon: 'code',
-    href: '/(tabs)/java-programming' as const,
-  },
-];
-
-type AnimatedHeroStyle = Animated.WithAnimatedObject<ViewStyle>;
-
 type HeroSlideProps = {
   slideWidth: number;
   isCompact: boolean;
   driftProgress: Animated.Value;
-  animatedStyle: AnimatedHeroStyle;
+  animatedStyle: any;
 };
 
 export default function HomeScreen() {
+
+
   const { width } = useWindowDimensions();
   const isCompact = width < 480;
   const slideWidth = Math.max(width - (isCompact ? 24 : 44), 280);
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const [simulationsExpanded, setSimulationsExpanded] = useState(false);
+  const [expandedPanel, setExpandedPanel] = useState<'cours' | 'simulations' | null>(null);
   const [revealAnchorY, setRevealAnchorY] = useState(0);
   const [heroIndex, setHeroIndex] = useState(0);
   const [userLevel, setUserLevel] = useState(1);
@@ -161,6 +132,37 @@ export default function HomeScreen() {
   const dragStartX = useRef(0);
   const currentHeroIndex = useRef(0);
   const currentTranslateX = useRef(0);
+  const coursesExpanded = expandedPanel === 'cours';
+  const simulationsExpanded = expandedPanel === 'simulations';
+  const expandedTitle = coursesExpanded ? 'Choisis ta matiere' : 'Choisis ta section';
+  const expandedEyebrow = coursesExpanded ? 'Cours' : 'Simulations';
+
+  const expandedCards = [
+    {
+      key: 'math',
+      title: 'Math',
+      subtitle: 'Fonctions, calcul et plus',
+      accent: palette.yellow,
+      icon: 'functions',
+      href: (coursesExpanded ? { pathname: '/(tabs)/cours', params: { subject: 'math' } } : '/(tabs)/math') as Href
+    },
+    {
+      key: 'physics',
+      title: 'Physiques',
+      subtitle: 'Mouvement, forces, energie',
+      accent: palette.blue,
+      icon: 'science',
+      href: (coursesExpanded ? { pathname: '/(tabs)/cours', params: { subject: 'physique' } } : '/(tabs)/physics') as Href
+    },
+    {
+      key: 'java',
+      title: 'Java',
+      subtitle: 'Programmation et logique',
+      accent: palette.copper,
+      icon: 'code',
+      href: (coursesExpanded ? { pathname: '/(tabs)/cours', params: { subject: 'java' } } : '/(tabs)/java-programming') as Href
+    }
+  ];
 
   useEffect(() => {
     db.init();
@@ -172,16 +174,17 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
+    const isExpanded = expandedPanel !== null;
     Animated.timing(expandProgress, {
-      duration: simulationsExpanded ? 420 : 280,
-      easing: simulationsExpanded ? Easing.out(Easing.cubic) : Easing.inOut(Easing.ease),
-      toValue: simulationsExpanded ? 1 : 0,
+      duration: isExpanded ? 420 : 280,
+      easing: isExpanded ? Easing.out(Easing.cubic) : Easing.inOut(Easing.ease),
+      toValue: isExpanded ? 1 : 0,
       useNativeDriver: false,
     }).start();
-  }, [expandProgress, simulationsExpanded]);
+  }, [expandedPanel, expandProgress]);
 
   useEffect(() => {
-    if (!simulationsExpanded) {
+    if (expandedPanel === null) {
       return;
     }
     const timer = setTimeout(() => {
@@ -191,7 +194,7 @@ export default function HomeScreen() {
       });
     }, 180);
     return () => clearTimeout(timer);
-  }, [revealAnchorY, simulationsExpanded]);
+  }, [expandedPanel, revealAnchorY]);
 
   useEffect(() => {
     const listenerId = heroTranslateX.addListener(({ value }) => {
@@ -234,7 +237,7 @@ export default function HomeScreen() {
     currentTranslateX.current = nextX;
   }, [heroTranslateX, slideWidth]);
 
-  const simulationCardWidth = expandProgress.interpolate({
+  const cardWidth = expandProgress.interpolate({
     inputRange: [0, 1],
     outputRange: isCompact ? [158, 186] : [208, 240],
   });
@@ -256,8 +259,8 @@ export default function HomeScreen() {
     outputRange: [0, -8],
   });
 
-  function toggleSimulations() {
-    setSimulationsExpanded((current) => !current);
+  function togglePanel(panel: 'cours' | 'simulations') {
+    setExpandedPanel((current) => (current === panel ? null : panel));
   }
 
   function getSlideAnimatedStyle(index: number) {
@@ -397,48 +400,48 @@ export default function HomeScreen() {
 
         <View style={styles.featuresSection}>
           <View style={styles.cardsGrid}>
-            <Animated.View style={[styles.cardWrap, {width: simulationCardWidth}]}>
+            <Animated.View style={[styles.cardWrap, { transform: [{ translateY: simulationCardLift }], width: cardWidth }]}>
               <Pressable
-                onHoverIn={() => setHoveredCard('cours')}
-                onHoverOut={() => setHoveredCard((current) => (current === 'cours' ? null : current))}
-                onPress={() => router.push('/(tabs)/cours' as Href)}
+                onPress={() => togglePanel('cours')}
                 style={({ hovered }) => [
                   styles.card,
-                  hovered && !simulationsExpanded ? styles.cardHovered : null,
-                  hoveredCard === 'simulations' && !simulationsExpanded ? styles.cardDimmed : null,
+                  isCompact ? styles.cardCompact : null,
+                  coursesExpanded ? styles.simulationCardExpanded : null,
+                  hovered && expandedPanel === null ? styles.cardHovered : null,
+                  expandedPanel === null ? styles.cardDimmed : null,
                 ]}>
                 <View style={[styles.cardMedia, isCompact ? styles.cardMediaCompact : null, { backgroundColor: `${palette.yellow}20` }]}>
                   <View style={[styles.cardIconWrap, isCompact ? styles.cardIconWrapCompact : null, { backgroundColor: palette.yellow }]}>
                     <MaterialIcons name="menu-book" size={34} color={palette.ink} />
                   </View>
                 </View>
-                <View style={styles.cardText}>
-                  <Text style={styles.cardTitle}>Cours</Text>
-                  <Text style={styles.cardSubtitle}>Tous les cours</Text>
+                <View style={[styles.cardText, isCompact ? styles.cardTextCompact : null]}>
+                  <Text style={[styles.cardTitle, isCompact ? styles.cardTitleCompact : null]}>Cours</Text>
+                  <Text style={[styles.cardSubtitle, isCompact ? styles.cardSubtitleCompact : null]}>
+                    {coursesExpanded ? 'Choisis une matiere' : 'Explorer les matieres'}
+                  </Text>
                 </View>
-                <View style={styles.cardFooter}>
-                  <Text style={styles.cardFooterText}>Ouvrir</Text>
-                  <MaterialIcons name="chevron-right" size={22} color={palette.slate} />
+                <View style={[styles.cardFooter, isCompact ? styles.cardFooterCompact : null]}>
+                  <Text style={[styles.cardFooterText, isCompact ? styles.cardFooterTextCompact : null]}>
+                    {coursesExpanded ? 'Refermer' : 'Ouvrir'}
+                  </Text>
+                  <MaterialIcons name={coursesExpanded ? 'expand-less' : 'chevron-right'} size={22} color={palette.slate} />
                 </View>
               </Pressable>
             </Animated.View>
 
             <Animated.View
-              style={[
-                styles.cardWrap,
-                { transform: [{ translateY: simulationCardLift }], width: simulationCardWidth },
+              style={[styles.cardWrap, { transform: [{ translateY: simulationCardLift }], width: cardWidth },
               ]}>
               <Pressable
-                onHoverIn={() => setHoveredCard('simulations')}
-                onHoverOut={() => setHoveredCard((current) => (current === 'simulations' ? null : current))}
-                onPress={toggleSimulations}
+                onPress={() => togglePanel('simulations')}
                 style={({ hovered, pressed }) => [
                   styles.card,
                   isCompact ? styles.cardCompact : null,
                   styles.simulationCard,
                   simulationsExpanded ? styles.simulationCardExpanded : null,
-                  hovered && !simulationsExpanded ? styles.cardHovered : null,
-                  hoveredCard === 'cours' && !simulationsExpanded ? styles.cardDimmed : null,
+                  hovered && expandedPanel === null ? styles.cardHovered : null,
+                  expandedPanel === null ? styles.cardDimmed : null,
                   pressed ? styles.cardPressed : null,
                 ]}>
                 <View style={[styles.cardMedia, isCompact ? styles.cardMediaCompact : null, { backgroundColor: `${palette.blue}20` }]}>
@@ -473,12 +476,12 @@ export default function HomeScreen() {
             ]}>
             <View style={[styles.sectionPanel, isCompact ? styles.sectionPanelCompact : null]}>
               <View style={[styles.sectionPanelHeader, isCompact ? styles.sectionPanelHeaderCompact : null]}>
-                <Text style={[styles.sectionEyebrow, isCompact ? styles.sectionEyebrowCompact : null]}>Simulations</Text>
-                <Text style={[styles.sectionTitle, isCompact ? styles.sectionTitleCompact : null]}>Choisis ta section</Text>
+                <Text style={[styles.sectionEyebrow, isCompact ? styles.sectionEyebrowCompact : null]}>{expandedEyebrow}</Text>
+                <Text style={[styles.sectionTitle, isCompact ? styles.sectionTitleCompact : null]}>{expandedTitle}</Text>
               </View>
 
               <View style={[styles.sectionCardsGrid, isCompact ? styles.sectionCardsGridCompact : null]}>
-                {sectionCards.map((card) => (
+                {expandedCards.map((card) => (
                   <Pressable
                     key={card.key}
                     onPress={() => router.push(card.href)}
@@ -550,7 +553,7 @@ function HeroBrandSlide({ animatedStyle, driftProgress, isCompact, slideWidth }:
         ))}
         <View style={styles.heroTopRow}>
           <Pressable onPress={() => router.push('/(tabs)/profile')} style={[styles.accountChip, isCompact ? styles.accountChipCompact : null]}>
-            <MaterialIcons name="person-outline" size={18} color={palette.ink} />
+            <MaterialIcons name="person-outline" size={18} color={palette.ink}/>
             <Text style={styles.accountText}>Profil</Text>
           </Pressable>
         </View>
@@ -560,8 +563,8 @@ function HeroBrandSlide({ animatedStyle, driftProgress, isCompact, slideWidth }:
           <Text style={[styles.heroTitle, isCompact ? styles.heroTitleCompact : null]}>d&apos;apprentissage</Text>
         </View>
         <View style={[styles.logoStage, isCompact ? styles.logoStageCompact : null]}>
-          <View style={[styles.logoAura, isCompact ? styles.logoAuraCompact : null]} />
-          <Image resizeMode="contain" source={homeLogo} style={[styles.logoImage, isCompact ? styles.logoImageCompact : null]} />
+          <View style={[styles.logoAura, isCompact ? styles.logoAuraCompact : null]}/>
+          <Image resizeMode="contain" source={homeLogo} style={[styles.logoImage, isCompact ? styles.logoImageCompact : null]}/>
         </View>
       </View>
     </Animated.View>

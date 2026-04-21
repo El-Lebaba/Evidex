@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { Href, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -30,15 +30,108 @@ function isCourseSubject(value: string): value is CourseSubject {
   return SUBJECTS.includes(value as CourseSubject);
 }
 
-function cleanText(value: string) {
+const highlightedKeywords = [
+  'variable',
+  'variables',
+  'condition',
+  'conditions',
+  'methode',
+  'methodes',
+  'parametres',
+  'tableau',
+  'tableaux',
+  'index',
+  'classe',
+  'classes',
+  'objet',
+  'objets',
+  'constructeur',
+  'boucle',
+  'boucles',
+  'booleen',
+  'booleens',
+  'String',
+  'boolean',
+  'true',
+  'false',
+  'if',
+  'else',
+  'switch',
+  'case',
+  'default',
+  'break',
+  'for',
+  'while',
+  'return',
+  'final',
+  'new',
+  'derivee',
+  'derivees',
+  'integrale',
+  'integrales',
+  'limite',
+  'limites',
+  'fonction',
+  'fonctions',
+  'tangente',
+  'vitesse',
+  'acceleration',
+  'position',
+  'force',
+  'forces',
+  'energie',
+  'travail',
+  'conservation',
+];
+
+function normalizeText(value: string) {
   return value
-    .replace(/\*\*/g, '')
-    .replace(/`/g, '')
     .replace(/â€”/g, '-')
     .replace(/â†’/g, '->')
     .replace(/âœ“/g, 'ok')
     .replace(/âœ—/g, 'non')
     .replace(/Ã—/g, 'x');
+}
+
+function cleanCodeText(value: string) {
+  return normalizeText(value).replace(/\*\*/g, '').replace(/`/g, '');
+}
+
+function renderHighlightedText(value: string) {
+  const text = normalizeText(value);
+  const markerPattern = /(`[^`]+`|\*\*[^*]+\*\*)/g;
+  const keywordPattern = new RegExp(`\\b(${highlightedKeywords.join('|')})\\b`, 'gi');
+
+  return text.split(markerPattern).flatMap((part, index) => {
+    if (!part) {
+      return [];
+    }
+
+    const markedAsCode = part.startsWith('`') && part.endsWith('`');
+    const markedAsBold = part.startsWith('**') && part.endsWith('**');
+
+    if (markedAsCode || markedAsBold) {
+      const content = markedAsCode ? part.slice(1, -1) : part.slice(2, -2);
+
+      return (
+        <Text key={`marked-${index}`} style={markedAsCode ? styles.inlineCode : styles.keywordText}>
+          {content}
+        </Text>
+      );
+    }
+
+    return part.split(keywordPattern).map((piece, pieceIndex) => {
+      const isKeyword = highlightedKeywords.some((keyword) => keyword.toLowerCase() === piece.toLowerCase());
+
+      return isKeyword ? (
+        <Text key={`keyword-${index}-${pieceIndex}`} style={styles.keywordText}>
+          {piece}
+        </Text>
+      ) : (
+        piece
+      );
+    });
+  });
 }
 
 function buildQuiz(courseTitle: string) {
@@ -95,7 +188,7 @@ export default function CourseReaderScreen() {
           <ThemedText lightColor={THEME.ink} style={styles.emptyTitle}>
             Cours introuvable
           </ThemedText>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable onPress={() => router.replace('/(tabs)/cours' as Href)} style={styles.backButton}>
             <MaterialCommunityIcons color={THEME.ink} name="arrow-left" size={18} />
             <ThemedText lightColor={THEME.ink} style={styles.backButtonText}>
               Retour
@@ -113,7 +206,7 @@ export default function CourseReaderScreen() {
   const quiz = buildQuiz(course.title);
   const canGoPrevious = slideIndex > 0;
   const canGoNext = slideIndex < maxSlideIndex;
-  const codeLines = slide.code ? cleanText(slide.code).split('\n') : [];
+  const codeLines = slide.code ? cleanCodeText(slide.code).split('\n') : [];
 
   function goPrevious() {
     setSlideIndex((currentIndex) => Math.max(currentIndex - 1, 0));
@@ -123,11 +216,18 @@ export default function CourseReaderScreen() {
     setSlideIndex((currentIndex) => Math.min(currentIndex + 1, maxSlideIndex));
   }
 
+  function goBackToCourses() {
+    router.replace({
+      pathname: '/(tabs)/cours',
+      params: { subject },
+    } as unknown as Href);
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ThemedView lightColor={THEME.background} style={styles.page}>
         <View style={styles.topBar}>
-          <Pressable onPress={() => router.back()} style={styles.iconButton}>
+          <Pressable onPress={goBackToCourses} style={styles.iconButton}>
             <MaterialCommunityIcons color={THEME.ink} name="arrow-left" size={22} />
           </Pressable>
 
@@ -164,7 +264,7 @@ export default function CourseReaderScreen() {
               {slide.title}
             </ThemedText>
             <ThemedText lightColor={THEME.ink} style={styles.theoryText}>
-              {cleanText(slide.theory)}
+              {renderHighlightedText(slide.theory)}
             </ThemedText>
 
             {slide.code ? (
@@ -397,6 +497,21 @@ const styles = StyleSheet.create({
     color: THEME.ink,
     fontSize: 17,
     lineHeight: 27,
+  },
+  keywordText: {
+    backgroundColor: '#ECEBFF',
+    borderRadius: 6,
+    color: THEME.purple,
+    fontWeight: '900',
+    paddingHorizontal: 4,
+  },
+  inlineCode: {
+    backgroundColor: '#E8EEF6',
+    borderRadius: 6,
+    color: '#0F172A',
+    fontFamily: 'monospace',
+    fontWeight: '900',
+    paddingHorizontal: 4,
   },
   codeWindow: {
     backgroundColor: '#0B1020',
