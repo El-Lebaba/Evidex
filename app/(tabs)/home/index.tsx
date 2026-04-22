@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, type Href } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -34,6 +34,9 @@ const palette = {
 
 const homeLogo = require('@/assets/images/evidexe-logo.png');
 const studyingBoy = require('@/assets/images/studying-boy-hq.png');
+const NOMBRE_VIGNETTES_ACCUEIL = 3;
+const INDEX_CENTRAL_VIGNETTES = 2;
+const OFFSETS_VIGNETTES_VISIBLES = [-2, -1, 0, 1, 2] as const;
 
 type BubbleSpec = {
   height: number;
@@ -52,8 +55,7 @@ function intersects(x: number, y: number, size: number, rect: { x: number; y: nu
   return x < rect.x + rect.width && x + size > rect.x && y < rect.y + rect.height && y + size > rect.y;
 }
 
-function createHeroBubbles(panelWidth: number, isCompact: boolean): BubbleSpec[] {
-  const panelHeight = isCompact ? 570 : 620;
+function createBubblesAccueil(panelWidth: number, panelHeight: number, isCompact: boolean): BubbleSpec[] {
   const safePadding = isCompact ? 14 : 18;
   const bubbleCount = isCompact ? 24 : 28;
   const maxBubble = isCompact ? 76 : 108;
@@ -97,45 +99,75 @@ function createHeroBubbles(panelWidth: number, isCompact: boolean): BubbleSpec[]
   return bubbles;
 }
 
-function createSlideBubbles(panelWidth: number, isCompact: boolean, seedOffset: number) {
-  return createHeroBubbles(panelWidth + seedOffset, isCompact).map((bubble, index) => ({
+function createSlideBubbles(panelWidth: number, panelHeight: number, isCompact: boolean, seedOffset: number) {
+  return createBubblesAccueil(panelWidth + seedOffset, panelHeight, isCompact).map((bubble, index) => ({
     ...bubble,
     left: Math.max(0, Math.min(panelWidth - bubble.width, bubble.left + ((index % 3) - 1) * 6)),
   }));
 }
 
-type HeroSlideProps = {
+function wrapSlideIndex(index: number) {
+  return (index + NOMBRE_VIGNETTES_ACCUEIL) % NOMBRE_VIGNETTES_ACCUEIL;
+}
+
+type PropsVignetteAccueil = {
   slideWidth: number;
+  panelHeight: number;
   isCompact: boolean;
   driftProgress: Animated.Value;
   animatedStyle: any;
+  bubbles: BubbleSpec[];
+  onExplore: () => void;
 };
 
 export default function HomeScreen() {
 
 
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const isCompact = width < 480;
   const slideWidth = Math.max(width - (isCompact ? 24 : 44), 280);
+  const hauteurPanneauAccueil = isCompact ? Math.max(height - 150, 570) : Math.max(height - 146, 700);
   const [expandedPanel, setExpandedPanel] = useState<'cours' | 'simulations' | null>(null);
-  const [revealAnchorY, setRevealAnchorY] = useState(0);
-  const [heroIndex, setHeroIndex] = useState(0);
+  const [featuresAnchorY, setFeaturesAnchorY] = useState(0);
+  const [indexVignetteAccueil, setIndexVignetteAccueil] = useState(0);
   const [userLevel, setUserLevel] = useState(1);
   const [userXp, setUserXp] = useState(0);
   const [activeCourses, setActiveCourses] = useState(0);
 
   const expandProgress = useRef(new Animated.Value(0)).current;
-  const heroTranslateX = useRef(new Animated.Value(0)).current;
+  const translationXVignettesAccueil = useRef(new Animated.Value(-(INDEX_CENTRAL_VIGNETTES * slideWidth))).current;
   const bubbleDrift = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef<ScrollView | null>(null);
   const autoAdvanceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragStartX = useRef(0);
-  const currentHeroIndex = useRef(0);
+  const animationVignettesEnCours = useRef(false);
+  const indexVignetteAccueilCourant = useRef(0);
   const currentTranslateX = useRef(0);
   const coursesExpanded = expandedPanel === 'cours';
   const simulationsExpanded = expandedPanel === 'simulations';
   const expandedTitle = coursesExpanded ? 'Choisis ta matiere' : 'Choisis ta section';
   const expandedEyebrow = coursesExpanded ? 'Cours' : 'Simulations';
+  const bubblesMarque = useMemo(
+    () => createSlideBubbles(slideWidth - 12, hauteurPanneauAccueil, isCompact, 0),
+    [hauteurPanneauAccueil, isCompact, slideWidth],
+  );
+  const bubblesAPropos = useMemo(
+    () => createSlideBubbles(slideWidth - 12, hauteurPanneauAccueil, isCompact, 37),
+    [hauteurPanneauAccueil, isCompact, slideWidth],
+  );
+  const bubblesProfil = useMemo(
+    () => createSlideBubbles(slideWidth - 12, hauteurPanneauAccueil, isCompact, 91),
+    [hauteurPanneauAccueil, isCompact, slideWidth],
+  );
+  const vignettesVisibles = useMemo(
+    () =>
+      OFFSETS_VIGNETTES_VISIBLES.map((offset) => ({
+        indexReel: wrapSlideIndex(indexVignetteAccueil + offset),
+        indexSlot: offset + INDEX_CENTRAL_VIGNETTES,
+        offset,
+      })),
+    [indexVignetteAccueil],
+  );
 
   const expandedCards = [
     {
@@ -190,21 +222,21 @@ export default function HomeScreen() {
     const timer = setTimeout(() => {
       scrollRef.current?.scrollTo({
         animated: true,
-        y: Math.max(revealAnchorY + 180, 0),
+        y: Math.max(featuresAnchorY + 180, 0),
       });
     }, 180);
     return () => clearTimeout(timer);
-  }, [expandedPanel, revealAnchorY]);
+  }, [expandedPanel, featuresAnchorY]);
 
   useEffect(() => {
-    const listenerId = heroTranslateX.addListener(({ value }) => {
+    const listenerId = translationXVignettesAccueil.addListener(({ value }) => {
       currentTranslateX.current = value;
     });
 
     return () => {
-      heroTranslateX.removeListener(listenerId);
+      translationXVignettesAccueil.removeListener(listenerId);
     };
-  }, [heroTranslateX]);
+  }, [translationXVignettesAccueil]);
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -232,14 +264,26 @@ export default function HomeScreen() {
   }, [bubbleDrift]);
 
   useEffect(() => {
-    const nextX = -(currentHeroIndex.current * slideWidth);
-    heroTranslateX.setValue(nextX);
+    const nextX = -(INDEX_CENTRAL_VIGNETTES * slideWidth);
+    translationXVignettesAccueil.setValue(nextX);
     currentTranslateX.current = nextX;
-  }, [heroTranslateX, slideWidth]);
+  }, [slideWidth, translationXVignettesAccueil]);
+
+  const synchroniserPositionVignettesAccueil = useCallback(
+    (realIndex: number) => {
+      indexVignetteAccueilCourant.current = realIndex;
+      setIndexVignetteAccueil(realIndex);
+
+      const nextX = -(INDEX_CENTRAL_VIGNETTES * slideWidth);
+      translationXVignettesAccueil.setValue(nextX);
+      currentTranslateX.current = nextX;
+    },
+    [slideWidth, translationXVignettesAccueil],
+  );
 
   const cardWidth = expandProgress.interpolate({
     inputRange: [0, 1],
-    outputRange: isCompact ? [158, 186] : [208, 240],
+    outputRange: isCompact ? [164, 194] : [286, 338],
   });
 
   const detailHeight = expandProgress.interpolate({
@@ -263,24 +307,31 @@ export default function HomeScreen() {
     setExpandedPanel((current) => (current === panel ? null : panel));
   }
 
-  function getSlideAnimatedStyle(index: number) {
-    const inputRange = [-(index + 1) * slideWidth, -index * slideWidth, -(index - 1) * slideWidth];
+  const scrollToExplore = useCallback(() => {
+    scrollRef.current?.scrollTo({
+      animated: true,
+      y: Math.max(featuresAnchorY - 16, 0),
+    });
+  }, [featuresAnchorY]);
+
+  function getSlideAnimatedStyle(trackIndex: number) {
+    const inputRange = [-(trackIndex + 1) * slideWidth, -trackIndex * slideWidth, -(trackIndex - 1) * slideWidth];
     return {
-      opacity: heroTranslateX.interpolate({
+      opacity: translationXVignettesAccueil.interpolate({
         inputRange,
         outputRange: [0.32, 1, 0.32],
         extrapolate: 'clamp',
       }),
       transform: [
         {
-          translateY: heroTranslateX.interpolate({
+          translateY: translationXVignettesAccueil.interpolate({
             inputRange,
             outputRange: [16, 0, 16],
             extrapolate: 'clamp',
           }),
         },
         {
-          scale: heroTranslateX.interpolate({
+          scale: translationXVignettesAccueil.interpolate({
             inputRange,
             outputRange: [0.96, 1, 0.96],
             extrapolate: 'clamp',
@@ -290,18 +341,28 @@ export default function HomeScreen() {
     };
   }
 
-  const animateToSlide = useCallback((targetIndex: number) => {
-    const clampedIndex = Math.max(0, Math.min(2, targetIndex));
-    currentHeroIndex.current = clampedIndex;
-    setHeroIndex(clampedIndex);
-    Animated.spring(heroTranslateX, {
+  const animerVersVignette = useCallback((indexPisteCible: number, indexVignetteCible: number) => {
+    animationVignettesEnCours.current = true;
+    translationXVignettesAccueil.stopAnimation((valeurCourante) => {
+      currentTranslateX.current = valeurCourante;
+    });
+
+    Animated.spring(translationXVignettesAccueil, {
       damping: 22,
       mass: 0.9,
       stiffness: 190,
-      toValue: -clampedIndex * slideWidth,
+      toValue: -(indexPisteCible * slideWidth),
       useNativeDriver: true,
-    }).start();
-  }, [heroTranslateX, slideWidth]);
+    }).start(({ finished }) => {
+      animationVignettesEnCours.current = false;
+
+      if (!finished) {
+        return;
+      }
+
+      synchroniserPositionVignettesAccueil(indexVignetteCible);
+    });
+  }, [slideWidth, synchroniserPositionVignettesAccueil, translationXVignettesAccueil]);
 
   const scheduleAutoAdvance = useCallback(
     (nextIndex: number) => {
@@ -309,57 +370,137 @@ export default function HomeScreen() {
         clearTimeout(autoAdvanceTimeout.current);
       }
       autoAdvanceTimeout.current = setTimeout(() => {
-        const targetIndex = (nextIndex + 1) % 3;
-        animateToSlide(targetIndex);
+        const indexVignetteSuivante = wrapSlideIndex(nextIndex + 1);
+        const nextTrackIndex = INDEX_CENTRAL_VIGNETTES + 1;
+
+        animerVersVignette(nextTrackIndex, indexVignetteSuivante);
       }, 15000);
     },
-    [animateToSlide],
+    [animerVersVignette],
   );
 
   useEffect(() => {
-    scheduleAutoAdvance(heroIndex);
+    scheduleAutoAdvance(indexVignetteAccueil);
     return () => {
       if (autoAdvanceTimeout.current) {
         clearTimeout(autoAdvanceTimeout.current);
       }
     };
-  }, [heroIndex, scheduleAutoAdvance]);
+  }, [indexVignetteAccueil, scheduleAutoAdvance]);
 
-  const heroPanResponder = useRef(
-    PanResponder.create({
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const reinitialiserVignettesApresVisibilite = () => {
+      synchroniserPositionVignettesAccueil(indexVignetteAccueilCourant.current);
+      scheduleAutoAdvance(indexVignetteAccueilCourant.current);
+    };
+
+    document.addEventListener('visibilitychange', reinitialiserVignettesApresVisibilite);
+    window.addEventListener('blur', reinitialiserVignettesApresVisibilite);
+
+    return () => {
+      document.removeEventListener('visibilitychange', reinitialiserVignettesApresVisibilite);
+      window.removeEventListener('blur', reinitialiserVignettesApresVisibilite);
+    };
+  }, [scheduleAutoAdvance, synchroniserPositionVignettesAccueil]);
+
+  const gestionGlisserVignettesAccueil = useMemo(
+    () =>
+      PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) =>
+        !animationVignettesEnCours.current &&
         Math.abs(gestureState.dx) > 6 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
       onPanResponderGrant: () => {
         if (autoAdvanceTimeout.current) {
           clearTimeout(autoAdvanceTimeout.current);
         }
-        dragStartX.current = currentTranslateX.current;
+        animationVignettesEnCours.current = false;
+        translationXVignettesAccueil.stopAnimation((valeurCourante) => {
+          currentTranslateX.current = valeurCourante;
+          dragStartX.current = valeurCourante;
+        });
       },
       onPanResponderMove: (_, gestureState) => {
         const nextX = dragStartX.current + gestureState.dx;
-        const minX = -(2 * slideWidth);
-        heroTranslateX.setValue(Math.max(minX - 48, Math.min(48, nextX)));
+        const minX = -((OFFSETS_VIGNETTES_VISIBLES.length - 1) * slideWidth);
+        translationXVignettesAccueil.setValue(
+          Math.max(minX - 24, Math.min(slideWidth - 24, nextX)),
+        );
       },
       onPanResponderRelease: (_, gestureState) => {
         const threshold = slideWidth * 0.18;
-        const baseIndex = currentHeroIndex.current;
-        let nextIndex = baseIndex;
+        let nextTrackIndex = INDEX_CENTRAL_VIGNETTES;
+        let indexVignetteSuivante = indexVignetteAccueilCourant.current;
 
         if (gestureState.dx <= -threshold || gestureState.vx <= -0.45) {
-          nextIndex = Math.min(baseIndex + 1, 2);
+          nextTrackIndex = INDEX_CENTRAL_VIGNETTES + 1;
+          indexVignetteSuivante = wrapSlideIndex(indexVignetteAccueilCourant.current + 1);
         } else if (gestureState.dx >= threshold || gestureState.vx >= 0.45) {
-          nextIndex = Math.max(baseIndex - 1, 0);
-        } else {
-          nextIndex = Math.round(Math.abs(currentTranslateX.current) / slideWidth);
+          nextTrackIndex = INDEX_CENTRAL_VIGNETTES - 1;
+          indexVignetteSuivante = wrapSlideIndex(indexVignetteAccueilCourant.current - 1);
         }
 
-        animateToSlide(nextIndex);
+        animerVersVignette(nextTrackIndex, indexVignetteSuivante);
       },
       onPanResponderTerminate: () => {
-        animateToSlide(currentHeroIndex.current);
+        animerVersVignette(INDEX_CENTRAL_VIGNETTES, indexVignetteAccueilCourant.current);
       },
     }),
-  ).current;
+    [animerVersVignette, slideWidth, translationXVignettesAccueil],
+  );
+
+  function renderVignetteAccueil(trackIndex: number, realIndex: number, offset: number) {
+    const animatedStyle = getSlideAnimatedStyle(trackIndex);
+
+    if (realIndex === 0) {
+      return (
+        <VignetteAccueilMarque
+          key={`vignette-accueil-${offset}-marque`}
+          animatedStyle={animatedStyle}
+          bubbles={bubblesMarque}
+          driftProgress={bubbleDrift}
+          isCompact={isCompact}
+          onExplore={scrollToExplore}
+          panelHeight={hauteurPanneauAccueil}
+          slideWidth={slideWidth}
+        />
+      );
+    }
+
+    if (realIndex === 1) {
+      return (
+        <VignetteAccueilAPropos
+          key={`vignette-accueil-${offset}-apropos`}
+          animatedStyle={animatedStyle}
+          bubbles={bubblesAPropos}
+          driftProgress={bubbleDrift}
+          isCompact={isCompact}
+          onExplore={scrollToExplore}
+          panelHeight={hauteurPanneauAccueil}
+          slideWidth={slideWidth}
+        />
+      );
+    }
+
+    return (
+      <VignetteAccueilProfil
+        key={`vignette-accueil-${offset}-profil`}
+        activeCourses={activeCourses}
+        animatedStyle={animatedStyle}
+        bubbles={bubblesProfil}
+        driftProgress={bubbleDrift}
+        isCompact={isCompact}
+        level={userLevel}
+        onExplore={scrollToExplore}
+        panelHeight={hauteurPanneauAccueil}
+        slideWidth={slideWidth}
+        xp={userXp}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -367,45 +508,39 @@ export default function HomeScreen() {
         contentContainerStyle={styles.content}
         ref={scrollRef}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.heroShell}>
+        <View style={styles.zoneVignettesAccueil}>
           <View style={styles.homeProfileRow}>
             <Pressable onPress={() => router.push('/(tabs)/profile')} style={[styles.accountChip, isCompact ? styles.accountChipCompact : null]}>
               <MaterialIcons name="person-outline" size={18} color={palette.ink} />
-              <Text style={styles.accountText}>Profil</Text>
+              <Text selectable={false} style={styles.accountText}>Profil</Text>
             </Pressable>
           </View>
 
-          <View {...heroPanResponder.panHandlers} style={styles.heroViewport}>
+          <View {...gestionGlisserVignettesAccueil.panHandlers} style={styles.fenetreVignettesAccueil}>
             <Animated.View
               style={[
-                styles.heroTrack,
+                styles.pisteVignettesAccueil,
                 {
-                  transform: [{ translateX: heroTranslateX }],
-                  width: slideWidth * 3,
+                  transform: [{ translateX: translationXVignettesAccueil }],
+                  width: slideWidth * OFFSETS_VIGNETTES_VISIBLES.length,
                 },
               ]}>
-              <HeroBrandSlide animatedStyle={getSlideAnimatedStyle(0)} driftProgress={bubbleDrift} isCompact={isCompact} slideWidth={slideWidth} />
-              <HeroAboutSlide animatedStyle={getSlideAnimatedStyle(1)} driftProgress={bubbleDrift} isCompact={isCompact} slideWidth={slideWidth} />
-              <HeroProfileSlide
-                activeCourses={activeCourses}
-                animatedStyle={getSlideAnimatedStyle(2)}
-                driftProgress={bubbleDrift}
-                isCompact={isCompact}
-                level={userLevel}
-                slideWidth={slideWidth}
-                xp={userXp}
-              />
+              {vignettesVisibles.map(({ indexReel, indexSlot, offset }) =>
+                renderVignetteAccueil(indexSlot, indexReel, offset),
+              )}
             </Animated.View>
           </View>
 
-          <View style={styles.heroDotsTop}>
+          <View style={styles.rangeePointsAccueil}>
             {[0, 1, 2].map((index) => (
-              <View key={`dot-${index}`} style={[styles.heroDot, heroIndex === index ? styles.heroDotActive : null]} />
+              <View key={`dot-${index}`} style={[styles.pointAccueil, indexVignetteAccueil === index ? styles.pointAccueilActif : null]} />
             ))}
           </View>
         </View>
 
-        <View style={[styles.featuresSection, isCompact ? styles.featuresSectionCompact : null]}>
+        <View
+          onLayout={(event) => setFeaturesAnchorY(event.nativeEvent.layout.y)}
+          style={[styles.featuresSection, isCompact ? styles.featuresSectionCompact : null]}>
           <View style={[styles.cardsGrid, isCompact ? styles.cardsGridCompact : null]}>
             <Animated.View style={[styles.cardWrap, { transform: [{ translateY: simulationCardLift }], width: cardWidth }]}>
               <Pressable
@@ -475,7 +610,6 @@ export default function HomeScreen() {
           </View>
 
           <Animated.View
-            onLayout={(event) => setRevealAnchorY(event.nativeEvent.layout.y)}
             style={[
               styles.sectionReveal,
               isCompact ? styles.sectionRevealCompact : null,
@@ -519,17 +653,15 @@ export default function HomeScreen() {
   );
 }
 
-function HeroBrandSlide({ animatedStyle, driftProgress, isCompact, slideWidth }: HeroSlideProps) {
-  const bubbles = createSlideBubbles(slideWidth - 12, isCompact, 0);
-
+function VignetteAccueilMarque({ animatedStyle, bubbles, driftProgress, isCompact, onExplore, panelHeight, slideWidth }: PropsVignetteAccueil) {
   return (
-    <Animated.View style={[styles.heroSlide, { width: slideWidth }, animatedStyle]}>
-      <View style={[styles.heroPanel, isCompact ? styles.heroPanelCompact : null]}>
+    <Animated.View style={[styles.vignetteAccueil, { width: slideWidth }, animatedStyle]}>
+      <View style={[styles.panneauAccueil, isCompact ? styles.panneauAccueilCompact : null, { height: panelHeight, minHeight: panelHeight }]}>
         {bubbles.map((bubble, index) => (
           <Animated.View
             key={`brand-bubble-${index}`}
             style={[
-              styles.heroBubbleWrap,
+              styles.cadreBulleAccueil,
               {
                 left: bubble.left,
                 top: bubble.top,
@@ -552,37 +684,39 @@ function HeroBrandSlide({ animatedStyle, driftProgress, isCompact, slideWidth }:
           >
             <View
               style={[
-                styles.heroBubble,
+                styles.bulleAccueil,
                 { height: bubble.height, opacity: bubble.opacity, width: bubble.width },
               ]}
             />
           </Animated.View>
         ))}
-        <View style={[styles.heroTextBlock, isCompact ? styles.heroTextBlockCompact : null]}>
+        <View style={[styles.blocTexteAccueil, isCompact ? styles.blocTexteAccueilCompact : null]}>
           <Text style={[styles.eyebrow, isCompact ? styles.eyebrowCompact : null]}>Accueil Evidex</Text>
-          <Text style={[styles.heroTitle, isCompact ? styles.heroTitleCompact : null]}>Ton espace</Text>
-          <Text style={[styles.heroTitle, isCompact ? styles.heroTitleCompact : null]}>d&apos;apprentissage</Text>
+          <Text style={[styles.titreAccueil, isCompact ? styles.titreAccueilCompact : null]}>Ton espace</Text>
+          <Text style={[styles.titreAccueil, isCompact ? styles.titreAccueilCompact : null]}>d&apos;apprentissage</Text>
         </View>
         <View style={[styles.logoStage, isCompact ? styles.logoStageCompact : null]}>
           <View style={[styles.logoAura, isCompact ? styles.logoAuraCompact : null]}/>
           <Image resizeMode="contain" source={homeLogo} style={[styles.logoImage, isCompact ? styles.logoImageCompact : null]}/>
         </View>
+        <Pressable onPress={onExplore} style={[styles.boutonExplorerAccueil, styles.boutonExplorerAccueilFlottant, isCompact ? styles.boutonExplorerAccueilCompact : null]}>
+          <Text style={[styles.texteBoutonExplorerAccueil, isCompact ? styles.texteBoutonExplorerAccueilCompact : null]}>Explorer</Text>
+          <MaterialIcons name="south" size={20} color={palette.ink} />
+        </Pressable>
       </View>
     </Animated.View>
   );
 }
 
-function HeroAboutSlide({ animatedStyle, driftProgress, isCompact, slideWidth }: HeroSlideProps) {
-  const bubbles = createSlideBubbles(slideWidth - 12, isCompact, 37);
-
+function VignetteAccueilAPropos({ animatedStyle, bubbles, driftProgress, isCompact, onExplore, panelHeight, slideWidth }: PropsVignetteAccueil) {
   return (
-    <Animated.View style={[styles.heroSlide, { width: slideWidth }, animatedStyle]}>
-      <View style={[styles.heroPanel, styles.heroPanelVariant, isCompact ? styles.heroPanelCompact : null]}>
+    <Animated.View style={[styles.vignetteAccueil, { width: slideWidth }, animatedStyle]}>
+      <View style={[styles.panneauAccueil, styles.panneauAccueilSecondaire, isCompact ? styles.panneauAccueilCompact : null, { height: panelHeight, minHeight: panelHeight }]}>
         {bubbles.map((bubble, index) => (
           <Animated.View
             key={`about-bubble-${index}`}
             style={[
-              styles.heroBubbleWrap,
+              styles.cadreBulleAccueil,
               {
                 left: bubble.left,
                 top: bubble.top,
@@ -602,7 +736,7 @@ function HeroAboutSlide({ animatedStyle, driftProgress, isCompact, slideWidth }:
                 ],
               },
             ]}>
-            <View style={[styles.heroBubble, { height: bubble.height, opacity: bubble.opacity, width: bubble.width }]} />
+            <View style={[styles.bulleAccueil, { height: bubble.height, opacity: bubble.opacity, width: bubble.width }]} />
           </Animated.View>
         ))}
         <View style={[styles.aboutLayout, isCompact ? styles.aboutLayoutCompact : null]}>
@@ -628,28 +762,30 @@ function HeroAboutSlide({ animatedStyle, driftProgress, isCompact, slideWidth }:
             <Image resizeMode="cover" source={studyingBoy} style={[styles.studyImage, isCompact ? styles.studyImageCompact : null]} />
           </View>
         </View>
+        <Pressable onPress={onExplore} style={[styles.boutonExplorerAccueil, styles.boutonExplorerAccueilFlottant, isCompact ? styles.boutonExplorerAccueilCompact : null]}>
+          <Text style={[styles.texteBoutonExplorerAccueil, isCompact ? styles.texteBoutonExplorerAccueilCompact : null]}>Explorer</Text>
+          <MaterialIcons name="south" size={20} color={palette.ink} />
+        </Pressable>
       </View>
     </Animated.View>
   );
 }
 
-type HeroProfileSlideProps = HeroSlideProps & {
+type PropsVignetteProfilAccueil = PropsVignetteAccueil & {
   activeCourses: number;
   level: number;
   xp: number;
 };
 
-function HeroProfileSlide({ activeCourses, animatedStyle, driftProgress, isCompact, level, slideWidth, xp }: HeroProfileSlideProps) {
-  const bubbles = createSlideBubbles(slideWidth - 12, isCompact, 91);
-
+function VignetteAccueilProfil({ activeCourses, animatedStyle, bubbles, driftProgress, isCompact, level, onExplore, panelHeight, slideWidth, xp }: PropsVignetteProfilAccueil) {
   return (
-    <Animated.View style={[styles.heroSlide, { width: slideWidth }, animatedStyle]}>
-      <View style={[styles.heroPanel, styles.heroPanelVariant, isCompact ? styles.heroPanelCompact : null]}>
+    <Animated.View style={[styles.vignetteAccueil, { width: slideWidth }, animatedStyle]}>
+      <View style={[styles.panneauAccueil, styles.panneauAccueilSecondaire, isCompact ? styles.panneauAccueilCompact : null, { height: panelHeight, minHeight: panelHeight }]}>
         {bubbles.map((bubble, index) => (
           <Animated.View
             key={`profile-bubble-${index}`}
             style={[
-              styles.heroBubbleWrap,
+              styles.cadreBulleAccueil,
               {
                 left: bubble.left,
                 top: bubble.top,
@@ -669,12 +805,12 @@ function HeroProfileSlide({ activeCourses, animatedStyle, driftProgress, isCompa
                 ],
               },
             ]}>
-            <View style={[styles.heroBubble, { height: bubble.height, opacity: bubble.opacity, width: bubble.width }]} />
+            <View style={[styles.bulleAccueil, { height: bubble.height, opacity: bubble.opacity, width: bubble.width }]} />
           </Animated.View>
         ))}
-        <View style={[styles.profileHeroHeader, isCompact ? styles.profileHeroHeaderCompact : null]}>
+        <View style={[styles.enTeteApercuProfilAccueil, isCompact ? styles.enTeteApercuProfilAccueilCompact : null]}>
           <Text style={[styles.eyebrow, isCompact ? styles.eyebrowCompact : null]}>Profil en bref</Text>
-          <Text style={[styles.profileHeroTitle, isCompact ? styles.profileHeroTitleCompact : null]}>Un apercu rapide de ta progression</Text>
+          <Text style={[styles.titreApercuProfilAccueil, isCompact ? styles.titreApercuProfilAccueilCompact : null]}>Un apercu rapide de ta progression</Text>
         </View>
         <View style={[styles.profilePreviewCard, isCompact ? styles.profilePreviewCardCompact : null]}>
           <View style={styles.profileBadgeRow}>
@@ -701,6 +837,10 @@ function HeroProfileSlide({ activeCourses, animatedStyle, driftProgress, isCompa
             </View>
           </View>
         </View>
+        <Pressable onPress={onExplore} style={[styles.boutonExplorerAccueil, styles.boutonExplorerAccueilFlottant, isCompact ? styles.boutonExplorerAccueilCompact : null]}>
+          <Text style={[styles.texteBoutonExplorerAccueil, isCompact ? styles.texteBoutonExplorerAccueilCompact : null]}>Explorer</Text>
+          <MaterialIcons name="south" size={20} color={palette.ink} />
+        </Pressable>
       </View>
     </Animated.View>
   );
@@ -709,47 +849,43 @@ function HeroProfileSlide({ activeCourses, animatedStyle, driftProgress, isCompa
 const styles = StyleSheet.create({
   safeArea: { backgroundColor: palette.cream, flex: 1 },
   content: { backgroundColor: palette.cream, paddingBottom: 56 },
-  heroShell: { backgroundColor: palette.cream, paddingHorizontal: 22, paddingTop: 8, position: 'relative' },
+  zoneVignettesAccueil: { backgroundColor: palette.cream, paddingHorizontal: 22, paddingTop: 8, position: 'relative' },
   homeProfileRow: {
     alignItems: 'flex-end',
     marginBottom: 8,
   },
-  heroViewport: { overflow: 'hidden' },
-  heroTrack: {
+  fenetreVignettesAccueil: { overflow: 'hidden' },
+  pisteVignettesAccueil: {
     flexDirection: 'row',
     userSelect: 'none',
   },
-  heroSlide: { paddingRight: 12 },
-  heroPanel: {
+  vignetteAccueil: { paddingRight: 12 },
+  panneauAccueil: {
     backgroundColor: palette.sage,
     borderRadius: 38,
-    height: 680,
-    minHeight: 680,
     overflow: 'hidden',
     paddingHorizontal: 22,
     paddingTop: 18,
     position: 'relative',
   },
-  heroPanelVariant: { backgroundColor: palette.sageDeep },
-  heroPanelCompact: {
+  panneauAccueilSecondaire: { backgroundColor: palette.sageDeep },
+  panneauAccueilCompact: {
     borderRadius: 28,
-    height: 640,
-    minHeight: 640,
     paddingHorizontal: 16,
     paddingTop: 16,
   },
-  heroBubble: {
+  bulleAccueil: {
     backgroundColor: 'rgba(255,255,255,0.42)',
     borderColor: 'rgba(255,255,255,0.3)',
     borderRadius: 999,
     borderWidth: 1,
   },
-  heroBubbleWrap: {
+  cadreBulleAccueil: {
     position: 'absolute',
   },
-  heroTextBlock: { alignItems: 'center', marginTop: 20 },
-  heroTextBlockCompact: { marginTop: 44 },
-  heroDotsTop: {
+  blocTexteAccueil: { alignItems: 'center', marginTop: 20 },
+  blocTexteAccueilCompact: { marginTop: 44 },
+  rangeePointsAccueil: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
@@ -760,8 +896,8 @@ const styles = StyleSheet.create({
     top: 24,
     zIndex: 5,
   },
-  heroDot: { backgroundColor: 'rgba(32,36,43,0.18)', borderRadius: 999, height: 8, width: 8 },
-  heroDotActive: { backgroundColor: palette.charcoal, width: 24 },
+  pointAccueil: { backgroundColor: 'rgba(32,36,43,0.18)', borderRadius: 999, height: 8, width: 8 },
+  pointAccueilActif: { backgroundColor: palette.charcoal, width: 24 },
   eyebrow: {
     color: 'rgba(25,25,31,0.55)',
     fontSize: 15,
@@ -775,8 +911,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 8,
   },
-  heroTitle: { color: palette.ink, fontSize: 44, fontWeight: '900', lineHeight: 46, textAlign: 'center' },
-  heroTitleCompact: {
+  titreAccueil: { color: palette.ink, fontSize: 44, fontWeight: '900', lineHeight: 46, textAlign: 'center' },
+  titreAccueilCompact: {
     fontSize: 28,
     lineHeight: 31,
     maxWidth: 280,
@@ -792,7 +928,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  accountText: { color: palette.ink, fontSize: 14, fontWeight: '800' },
+  accountText: { color: palette.ink, fontSize: 14, fontWeight: '800', userSelect: 'none' },
   accountChipCompact: {
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -827,6 +963,38 @@ const styles = StyleSheet.create({
   logoImageCompact: {
     height: 108,
     width: '82%',
+  },
+  boutonExplorerAccueil: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,255,255,0.78)',
+    borderColor: 'rgba(32,36,43,0.08)',
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  boutonExplorerAccueilFlottant: {
+    bottom: 24,
+    marginTop: 0,
+    position: 'absolute',
+  },
+  boutonExplorerAccueilCompact: {
+    bottom: 18,
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  texteBoutonExplorerAccueil: {
+    color: palette.ink,
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  texteBoutonExplorerAccueilCompact: {
+    fontSize: 13,
   },
   aboutLayout: {
     alignItems: 'center',
@@ -928,10 +1096,10 @@ const styles = StyleSheet.create({
     height: '100%',
     width: '100%',
   },
-  profileHeroHeader: { alignItems: 'center', paddingTop: 46 },
-  profileHeroHeaderCompact: { paddingTop: 54 },
-  profileHeroTitle: { color: palette.ink, fontSize: 34, fontWeight: '900', lineHeight: 40, maxWidth: 520, textAlign: 'center' },
-  profileHeroTitleCompact: {
+  enTeteApercuProfilAccueil: { alignItems: 'center', paddingTop: 46 },
+  enTeteApercuProfilAccueilCompact: { paddingTop: 54 },
+  titreApercuProfilAccueil: { color: palette.ink, fontSize: 34, fontWeight: '900', lineHeight: 40, maxWidth: 520, textAlign: 'center' },
+  titreApercuProfilAccueilCompact: {
     fontSize: 26,
     lineHeight: 31,
     maxWidth: 280,
@@ -975,9 +1143,9 @@ const styles = StyleSheet.create({
   },
   profileStatValue: { fontSize: 30, fontWeight: '900' },
   profileStatLabel: { color: palette.slate, fontSize: 13, fontWeight: '800', marginTop: 6, textAlign: 'center' },
-  featuresSection: { alignItems: 'center', marginTop: -120, paddingHorizontal: 16 },
+  featuresSection: { alignItems: 'center', marginTop: 54, paddingHorizontal: 16 },
   featuresSectionCompact: {
-    marginTop: 10,
+    marginTop: 28,
     paddingHorizontal: 12,
   },
   symbolField: {
@@ -1010,10 +1178,10 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     borderWidth: 1,
     elevation: 2,
-    minHeight: 350,
-    paddingBottom: 22,
-    paddingHorizontal: 18,
-    paddingTop: 18,
+    minHeight: 430,
+    paddingBottom: 26,
+    paddingHorizontal: 22,
+    paddingTop: 22,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
@@ -1037,11 +1205,11 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.93 }],
   },
   cardPressed: { transform: [{ scale: 1.02 }] },
-  cardMedia: { alignItems: 'center', borderRadius: 20, height: 186, justifyContent: 'center' },
+  cardMedia: { alignItems: 'center', borderRadius: 24, height: 226, justifyContent: 'center' },
   cardMediaCompact: {
     height: 122,
   },
-  cardIconWrap: { alignItems: 'center', borderRadius: 18, height: 92, justifyContent: 'center', width: 92 },
+  cardIconWrap: { alignItems: 'center', borderRadius: 22, height: 116, justifyContent: 'center', width: 116 },
   cardIconWrapCompact: {
     borderRadius: 16,
     height: 64,
@@ -1052,12 +1220,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingTop: 10,
   },
-  cardTitle: { color: palette.ink, fontSize: 30, fontWeight: '900', textAlign: 'center' },
+  cardTitle: { color: palette.ink, fontSize: 38, fontWeight: '900', textAlign: 'center' },
   cardTitleCompact: {
     fontSize: 18,
     lineHeight: 22,
   },
-  cardSubtitle: { color: palette.slate, fontSize: 16, fontWeight: '700', marginTop: 8, textAlign: 'center' },
+  cardSubtitle: { color: palette.slate, fontSize: 18, fontWeight: '700', lineHeight: 24, marginTop: 10, textAlign: 'center' },
   cardSubtitleCompact: {
     fontSize: 12,
     lineHeight: 16,

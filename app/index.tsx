@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FloatingMathSymbols } from '@/features/simulations/core/floating-math-symbols';
@@ -13,7 +13,6 @@ const palette = {
   cream: '#EEF5ED',
   sage: '#B8C7B1',
   slate: '#536165',
-  white: '#FFFFFF',
 };
 
 export default function IntroScreen() {
@@ -124,7 +123,6 @@ export default function IntroScreen() {
               />
             </Animated.View>
           </Pressable>
-          <Text style={styles.hint}>click logo to start</Text>
         </Animated.View>
 
         <Animated.View
@@ -166,33 +164,16 @@ const styles = StyleSheet.create({
   logoShell: {
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: palette.white,
-    borderColor: 'rgba(188, 133, 89, 0.14)',
-    borderRadius: 40,
-    borderWidth: 1,
-    elevation: 4,
-    height: 230,
+    backgroundColor: 'transparent',
+    height: 190,
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 34,
-    shadowColor: '#000000',
-    shadowOffset: { height: 10, width: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
     width: '100%',
   },
   logo: {
     height: 138,
     width: '100%',
-  },
-  hint: {
-    color: palette.slate,
-    fontSize: 14,
-    fontWeight: '600',
-    letterSpacing: 0.4,
-    marginTop: 28,
-    textTransform: 'lowercase',
-    zIndex: 2,
   },
   curtain: {
     ...StyleSheet.absoluteFillObject,
