@@ -13,57 +13,65 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Line, Path, Rect } from 'react-native-svg';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { DefinitionPopover } from '@/features/simulations/core/definition-popover';
-import { FormulaRenderer } from '@/features/simulations/core/formula-renderer';
+import { ThemedText as TexteThematique } from '@/components/themed-text';
+import { ThemedView as VueThematique } from '@/components/themed-view';
+import { DefinitionPopover as PopoverDefinition } from '@/features/simulations/core/definition-popover';
+import { FormulaRenderer as RenduFormule } from '@/features/simulations/core/formula-renderer';
 import {
-  SIMULATION_HEADER_CONTENT_GAP,
-  SIMULATION_HEADER_TOTAL_HEIGHT,
-  SimulationScreenHeader,
+  SIMULATION_HEADER_CONTENT_GAP as ESPACE_CONTENU_ENTETE_SIMULATION,
+  SIMULATION_HEADER_TOTAL_HEIGHT as HAUTEUR_TOTALE_ENTETE_SIMULATION,
+  SimulationScreenHeader as EnTeteEcranSimulation,
 } from '@/features/simulations/core/simulation-screen-header';
 
-type SeriesDefinition = {
-  converges: boolean;
-  desc: string;
-  exact: number;
-  formulaLabel: string;
-  formulaLatex: string;
-  label: string;
-  limitLabel: string;
-  term: (n: number) => number;
+type DefinitionSerie = {
+  converge: boolean;
+  description: string;
+  etiquetteFormule: string;
+  etiquetteLimite: string;
+  limiteExacte: number;
+  nom: string;
+  terme: (indice: number) => number;
+  texteLatex: string;
 };
 
-type Point = {
+type PointGraphique = {
   x: number;
   y: number;
 };
 
-const SIMULATION_PAGE_BACKGROUND = '#EAE3D2';
-const TERMS_MIN = 5;
-const TERMS_MAX = 100;
-const TERM_STEP = 5;
-const CHART_HEIGHT = 300;
-const BAR_HEIGHT = 170;
-const MAX_BAR_COUNT = 40;
-const THEME = {
+type DonneeSommePartielle = {
+  indice: number;
+  somme: number;
+  terme: number;
+};
+
+const ARRIERE_PLAN_PAGE_SERIES = '#EAE3D2';
+const NOMBRE_MIN_TERMES = 5;
+const NOMBRE_MAX_TERMES = 100;
+const PAS_NOMBRE_TERMES = 5;
+const HAUTEUR_GRAPHIQUE_SOMMES = 300;
+const HAUTEUR_GRAPHIQUE_TERMES = 170;
+const NOMBRE_MAX_BARRES_TERMES = 40;
+
+const PALETTE_SERIES = {
   accent: '#D8A94A',
-  accentSoft: 'rgba(216, 169, 74, 0.2)',
-  background: '#E9ECE4',
-  border: '#243B53',
-  function: '#7CCFBF',
-  functionSoft: 'rgba(124, 207, 191, 0.22)',
-  grid: '#B7C7B0',
-  gridSoft: 'rgba(167, 184, 158, 0.35)',
-  ink: '#243B53',
-  limit: '#7EA6E0',
-  mutedInk: '#6E7F73',
-  negative: '#D97B6C',
-  panel: '#DDE4D5',
+  accentDoux: 'rgba(216, 169, 74, 0.2)',
+  arrierePlan: '#E9ECE4',
+  bordure: '#243B53',
+  courbe: '#7CCFBF',
+  courbeDouce: 'rgba(124, 207, 191, 0.22)',
+  grille: '#B7C7B0',
+  grilleDouce: 'rgba(167, 184, 158, 0.35)',
+  encre: '#243B53',
+  limite: '#7EA6E0',
+  encreAttenue: '#6E7F73',
+  negatif: '#D97B6C',
+  panneau: '#DDE4D5',
   surface: '#F3F1E7',
 };
 
-const WEB_SLIDER_INTERACTION_STYLE =
+// Sur le web, on bloque la selection de texte pendant le glisser du curseur.
+const STYLE_GLISSER_CURSEUR_WEB =
   Platform.OS === 'web'
     ? ({
         cursor: 'ew-resize',
@@ -72,173 +80,194 @@ const WEB_SLIDER_INTERACTION_STYLE =
       } as any)
     : undefined;
 
-const SERIES: SeriesDefinition[] = [
+// Liste des series disponibles avec leur terme general et leur limite attendue.
+const SERIES_DISPONIBLES: DefinitionSerie[] = [
   {
-    converges: true,
-    desc: 'Suite geometrique positive qui se stabilise rapidement.',
-    exact: 2,
-    formulaLabel: '1/2^n',
-    formulaLatex: '\\left(\\frac{1}{2}\\right)^n',
-    label: 'Geometrique',
-    limitLabel: '2',
-    term: (n) => Math.pow(0.5, n),
+    converge: true,
+    description: 'Suite geometrique positive qui se stabilise rapidement.',
+    etiquetteFormule: '1/2^n',
+    etiquetteLimite: '2',
+    limiteExacte: 2,
+    nom: 'Geometrique',
+    terme: (indice) => Math.pow(0.5, indice),
+    texteLatex: '\\left(\\frac{1}{2}\\right)^n',
   },
   {
-    converges: false,
-    desc: 'Serie harmonique qui diverge lentement.',
-    exact: Number.POSITIVE_INFINITY,
-    formulaLabel: '1/n',
-    formulaLatex: '\\frac{1}{n}',
-    label: 'Harmonique',
-    limitLabel: '\\infty',
-    term: (n) => 1 / n,
+    converge: false,
+    description: 'Serie harmonique qui diverge lentement.',
+    etiquetteFormule: '1/n',
+    etiquetteLimite: '\\infty',
+    limiteExacte: Number.POSITIVE_INFINITY,
+    nom: 'Harmonique',
+    terme: (indice) => 1 / indice,
+    texteLatex: '\\frac{1}{n}',
   },
   {
-    converges: true,
-    desc: 'Serie de Bâle qui converge vers pi carre sur 6.',
-    exact: (Math.PI * Math.PI) / 6,
-    formulaLabel: '1/n^2',
-    formulaLatex: '\\frac{1}{n^2}',
-    label: 'Bale',
-    limitLabel: '\\frac{\\pi^2}{6}',
-    term: (n) => 1 / (n * n),
+    converge: true,
+    description: 'Serie de Bale qui converge vers pi carre sur 6.',
+    etiquetteFormule: '1/n^2',
+    etiquetteLimite: '\\frac{\\pi^2}{6}',
+    limiteExacte: (Math.PI * Math.PI) / 6,
+    nom: 'Bale',
+    terme: (indice) => 1 / (indice * indice),
+    texteLatex: '\\frac{1}{n^2}',
   },
   {
-    converges: true,
-    desc: 'Serie alternee classique qui converge vers ln(2).',
-    exact: Math.log(2),
-    formulaLabel: '(-1)^(n+1)/n',
-    formulaLatex: '\\frac{(-1)^{n+1}}{n}',
-    label: 'Alternee',
-    limitLabel: '\\ln(2)',
-    term: (n) => Math.pow(-1, n + 1) / n,
+    converge: true,
+    description: 'Serie alternee classique qui converge vers ln(2).',
+    etiquetteFormule: '(-1)^(n+1)/n',
+    etiquetteLimite: '\\ln(2)',
+    limiteExacte: Math.log(2),
+    nom: 'Alternee',
+    terme: (indice) => Math.pow(-1, indice + 1) / indice,
+    texteLatex: '\\frac{(-1)^{n+1}}{n}',
   },
   {
-    converges: true,
-    desc: 'Serie de Leibniz qui approche pi sur 4.',
-    exact: Math.PI / 4,
-    formulaLabel: '(-1)^n/(2n+1)',
-    formulaLatex: '\\frac{(-1)^n}{2n+1}',
-    label: 'Leibniz',
-    limitLabel: '\\frac{\\pi}{4}',
-    term: (n) => Math.pow(-1, n) / (2 * n + 1),
+    converge: true,
+    description: 'Serie de Leibniz qui approche pi sur 4.',
+    etiquetteFormule: '(-1)^n/(2n+1)',
+    etiquetteLimite: '\\frac{\\pi}{4}',
+    limiteExacte: Math.PI / 4,
+    nom: 'Leibniz',
+    terme: (indice) => Math.pow(-1, indice) / (2 * indice + 1),
+    texteLatex: '\\frac{(-1)^n}{2n+1}',
   },
 ];
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
+function borner(valeur: number, minimum: number, maximum: number) {
+  return Math.min(Math.max(valeur, minimum), maximum);
 }
 
-function formatNumber(value: number) {
-  if (!Number.isFinite(value)) {
-    return '∞';
+function formaterValeur(valeur: number) {
+  if (!Number.isFinite(valeur)) {
+    return 'infini';
   }
 
-  return value.toFixed(5);
+  return valeur.toFixed(5);
 }
 
-function createPathData(points: Point[]) {
+// Transforme des points en chemin SVG continu pour dessiner la courbe.
+function creerCheminSvg(points: PointGraphique[]) {
   return points
     .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
     .join(' ');
 }
 
-function buildPartialSums(series: SeriesDefinition, nTerms: number) {
-  const items: { n: number; sum: number; term: number }[] = [];
-  let total = 0;
+// Calcule les sommes partielles S_n = a_1 + ... + a_n a partir du terme general.
+function construireSommesPartielles(serie: DefinitionSerie, nombreTermes: number) {
+  const donneesSommes: DonneeSommePartielle[] = [];
+  let sommeAccumulee = 0;
 
-  for (let n = 1; n <= Math.min(nTerms, TERMS_MAX); n += 1) {
-    const termValue = series.term(n);
-    total += termValue;
-    items.push({ n, sum: total, term: termValue });
+  for (let indice = 1; indice <= Math.min(nombreTermes, NOMBRE_MAX_TERMES); indice += 1) {
+    const valeurTerme = serie.terme(indice);
+    sommeAccumulee += valeurTerme;
+    donneesSommes.push({ indice, somme: sommeAccumulee, terme: valeurTerme });
   }
 
-  return items;
+  return donneesSommes;
 }
 
-function PartialSumsGraph({
-  graphHeight,
-  graphWidth,
-  partialSums,
-  series,
+function GraphiqueSommesPartielles({
+  hauteur,
+  largeur,
+  serie,
+  sommesPartielles,
 }: {
-  graphHeight: number;
-  graphWidth: number;
-  partialSums: { n: number; sum: number; term: number }[];
-  series: SeriesDefinition;
+  hauteur: number;
+  largeur: number;
+  serie: DefinitionSerie;
+  sommesPartielles: DonneeSommePartielle[];
 }) {
-  const values = partialSums.map((entry) => entry.sum);
-  const minValue = Math.min(...values, series.converges ? series.exact : values[0] ?? 0, 0);
-  const maxValue = Math.max(...values, series.converges ? series.exact : values[values.length - 1] ?? 0, 0);
-  const domainPadding = Math.max((maxValue - minValue) * 0.14, 0.35);
-  const yMin = minValue - domainPadding;
-  const yMax = maxValue + domainPadding;
-  const xMax = Math.max(partialSums.length, 2);
+  const valeursSommes = sommesPartielles.map((donneeSomme) => donneeSomme.somme);
+  const minimumGraphique = Math.min(
+    ...valeursSommes,
+    serie.converge ? serie.limiteExacte : valeursSommes[0] ?? 0,
+    0
+  );
+  const maximumGraphique = Math.max(
+    ...valeursSommes,
+    serie.converge ? serie.limiteExacte : valeursSommes[valeursSommes.length - 1] ?? 0,
+    0
+  );
+  const margeVerticale = Math.max((maximumGraphique - minimumGraphique) * 0.14, 0.35);
+  const ordonneeMinimum = minimumGraphique - margeVerticale;
+  const ordonneeMaximum = maximumGraphique + margeVerticale;
+  const indiceMaximum = Math.max(sommesPartielles.length, 2);
 
-  const toPoint = (n: number, value: number): Point => ({
-    x: ((n - 1) / Math.max(xMax - 1, 1)) * graphWidth,
-    y: graphHeight - ((value - yMin) / Math.max(yMax - yMin, 0.0001)) * graphHeight,
+  // Conversion du repere mathematique vers les pixels de l'ecran.
+  const convertirEnPointEcran = (indice: number, valeur: number): PointGraphique => ({
+    x: ((indice - 1) / Math.max(indiceMaximum - 1, 1)) * largeur,
+    y: hauteur - ((valeur - ordonneeMinimum) / Math.max(ordonneeMaximum - ordonneeMinimum, 0.0001)) * hauteur,
   });
 
-  const linePoints = partialSums.map((entry) => toPoint(entry.n, entry.sum));
-  const areaPath =
-    linePoints.length > 1
-      ? `${createPathData(linePoints)} L ${linePoints[linePoints.length - 1].x.toFixed(2)} ${graphHeight.toFixed(
+  const pointsCourbe = sommesPartielles.map((donneeSomme) =>
+    convertirEnPointEcran(donneeSomme.indice, donneeSomme.somme)
+  );
+  const cheminSurface =
+    pointsCourbe.length > 1
+      ? `${creerCheminSvg(pointsCourbe)} L ${pointsCourbe[pointsCourbe.length - 1].x.toFixed(2)} ${hauteur.toFixed(
           2
-        )} L ${linePoints[0].x.toFixed(2)} ${graphHeight.toFixed(2)} Z`
+        )} L ${pointsCourbe[0].x.toFixed(2)} ${hauteur.toFixed(2)} Z`
       : '';
-  const curvePath = linePoints.length > 1 ? createPathData(linePoints) : '';
-  const zeroY = toPoint(1, 0).y;
-  const limitY = series.converges ? toPoint(1, series.exact).y : null;
+  const cheminCourbe = pointsCourbe.length > 1 ? creerCheminSvg(pointsCourbe) : '';
+  const positionAxeHorizontal = convertirEnPointEcran(1, 0).y;
+  const positionLimite = serie.converge ? convertirEnPointEcran(1, serie.limiteExacte).y : null;
 
   return (
-    <View style={[styles.graph, { height: graphHeight, width: graphWidth }]}>
-      <Svg height={graphHeight} width={graphWidth}>
-        <Rect fill={THEME.panel} height={graphHeight} width={graphWidth} x={0} y={0} />
+    <View style={[stylesSeries.graphique, { height: hauteur, width: largeur }]}>
+      <Svg height={hauteur} width={largeur}>
+        <Rect fill={PALETTE_SERIES.panneau} height={hauteur} width={largeur} x={0} y={0} />
 
-        {Array.from({ length: 6 }, (_, index) => (
+        {Array.from({ length: 6 }, (_, indexLigne) => (
           <Line
-            key={`grid-h-${index}`}
-            stroke={THEME.gridSoft}
+            key={`grille-h-${indexLigne}`}
+            stroke={PALETTE_SERIES.grilleDouce}
             strokeWidth={1}
             x1={0}
-            x2={graphWidth}
-            y1={(index / 5) * graphHeight}
-            y2={(index / 5) * graphHeight}
+            x2={largeur}
+            y1={(indexLigne / 5) * hauteur}
+            y2={(indexLigne / 5) * hauteur}
           />
         ))}
-        {Array.from({ length: 6 }, (_, index) => (
+        {Array.from({ length: 6 }, (_, indexLigne) => (
           <Line
-            key={`grid-v-${index}`}
-            stroke={THEME.gridSoft}
+            key={`grille-v-${indexLigne}`}
+            stroke={PALETTE_SERIES.grilleDouce}
             strokeWidth={1}
-            x1={(index / 5) * graphWidth}
-            x2={(index / 5) * graphWidth}
+            x1={(indexLigne / 5) * largeur}
+            x2={(indexLigne / 5) * largeur}
             y1={0}
-            y2={graphHeight}
+            y2={hauteur}
           />
         ))}
 
-        <Line stroke={THEME.grid} strokeWidth={1.5} x1={0} x2={graphWidth} y1={zeroY} y2={zeroY} />
+        <Line
+          stroke={PALETTE_SERIES.grille}
+          strokeWidth={1.5}
+          x1={0}
+          x2={largeur}
+          y1={positionAxeHorizontal}
+          y2={positionAxeHorizontal}
+        />
 
-        {series.converges && limitY !== null ? (
+        {serie.converge && positionLimite !== null ? (
           <Line
-            stroke={THEME.limit}
+            stroke={PALETTE_SERIES.limite}
             strokeDasharray="8 6"
             strokeWidth={2}
             x1={0}
-            x2={graphWidth}
-            y1={limitY}
-            y2={limitY}
+            x2={largeur}
+            y1={positionLimite}
+            y2={positionLimite}
           />
         ) : null}
 
-        {areaPath ? <Path d={areaPath} fill={THEME.functionSoft} /> : null}
-        {curvePath ? (
+        {cheminSurface ? <Path d={cheminSurface} fill={PALETTE_SERIES.courbeDouce} /> : null}
+        {cheminCourbe ? (
           <Path
-            d={curvePath}
+            d={cheminCourbe}
             fill="none"
-            stroke={THEME.function}
+            stroke={PALETTE_SERIES.courbe}
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={3}
@@ -246,19 +275,25 @@ function PartialSumsGraph({
         ) : null}
       </Svg>
 
-      <View style={styles.graphLegend}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendLine, { backgroundColor: THEME.function }]} />
-          <ThemedText lightColor={THEME.mutedInk} style={styles.legendText}>
+      <View style={stylesSeries.legendeGraphique}>
+        <View style={stylesSeries.elementLegende}>
+          <View style={[stylesSeries.ligneLegende, { backgroundColor: PALETTE_SERIES.courbe }]} />
+          <TexteThematique lightColor={PALETTE_SERIES.encreAttenue} style={stylesSeries.texteLegende}>
             Sommes partielles
-          </ThemedText>
+          </TexteThematique>
         </View>
-        {series.converges ? (
-          <View style={styles.legendItem}>
-            <View style={[styles.legendLine, styles.legendDashed, { backgroundColor: THEME.limit }]} />
-            <ThemedText lightColor={THEME.mutedInk} style={styles.legendText}>
+        {serie.converge ? (
+          <View style={stylesSeries.elementLegende}>
+            <View
+              style={[
+                stylesSeries.ligneLegende,
+                stylesSeries.ligneLegendePointillee,
+                { backgroundColor: PALETTE_SERIES.limite },
+              ]}
+            />
+            <TexteThematique lightColor={PALETTE_SERIES.encreAttenue} style={stylesSeries.texteLegende}>
               Limite
-            </ThemedText>
+            </TexteThematique>
           </View>
         ) : null}
       </View>
@@ -266,43 +301,50 @@ function PartialSumsGraph({
   );
 }
 
-function TermsBarsGraph({
-  graphHeight,
-  graphWidth,
-  partialSums,
+function GraphiqueBarresTermes({
+  hauteur,
+  largeur,
+  sommesPartielles,
 }: {
-  graphHeight: number;
-  graphWidth: number;
-  partialSums: { n: number; sum: number; term: number }[];
+  hauteur: number;
+  largeur: number;
+  sommesPartielles: DonneeSommePartielle[];
 }) {
-  const visibleTerms = partialSums.slice(0, MAX_BAR_COUNT);
-  const maxMagnitude = Math.max(...visibleTerms.map((entry) => Math.abs(entry.term)), 0.001);
-  const gap = 2;
-  const count = Math.max(visibleTerms.length, 1);
-  const barWidth = Math.max((graphWidth - gap * (count - 1)) / count, 2);
+  const termesAffiches = sommesPartielles.slice(0, NOMBRE_MAX_BARRES_TERMES);
+  const amplitudeMaximale = Math.max(...termesAffiches.map((donneeSomme) => Math.abs(donneeSomme.terme)), 0.001);
+  const espaceEntreBarres = 2;
+  const nombreBarres = Math.max(termesAffiches.length, 1);
+  const largeurBarre = Math.max((largeur - espaceEntreBarres * (nombreBarres - 1)) / nombreBarres, 2);
 
   return (
-    <View style={[styles.graph, { height: graphHeight, width: graphWidth }]}>
-      <Svg height={graphHeight} width={graphWidth}>
-        <Rect fill={THEME.panel} height={graphHeight} width={graphWidth} x={0} y={0} />
-        <Line stroke={THEME.grid} strokeWidth={1.5} x1={0} x2={graphWidth} y1={graphHeight} y2={graphHeight} />
+    <View style={[stylesSeries.graphique, { height: hauteur, width: largeur }]}>
+      <Svg height={hauteur} width={largeur}>
+        <Rect fill={PALETTE_SERIES.panneau} height={hauteur} width={largeur} x={0} y={0} />
+        <Line
+          stroke={PALETTE_SERIES.grille}
+          strokeWidth={1.5}
+          x1={0}
+          x2={largeur}
+          y1={hauteur}
+          y2={hauteur}
+        />
 
-        {visibleTerms.map((entry, index) => {
-          const normalized = Math.abs(entry.term) / maxMagnitude;
-          const barHeight = normalized * (graphHeight - 18);
-          const x = index * (barWidth + gap);
-          const y = graphHeight - barHeight;
+        {termesAffiches.map((donneeSomme, indexBarre) => {
+          const amplitudeNormalisee = Math.abs(donneeSomme.terme) / amplitudeMaximale;
+          const hauteurBarre = amplitudeNormalisee * (hauteur - 18);
+          const positionX = indexBarre * (largeurBarre + espaceEntreBarres);
+          const positionY = hauteur - hauteurBarre;
 
           return (
             <Rect
-              key={`bar-${entry.n}`}
-              fill={entry.term >= 0 ? THEME.function : THEME.negative}
-              height={barHeight}
+              key={`barre-${donneeSomme.indice}`}
+              fill={donneeSomme.terme >= 0 ? PALETTE_SERIES.courbe : PALETTE_SERIES.negatif}
+              height={hauteurBarre}
               rx={3}
               ry={3}
-              width={barWidth}
-              x={x}
-              y={y}
+              width={largeurBarre}
+              x={positionX}
+              y={positionY}
             />
           );
         })}
@@ -311,271 +353,286 @@ function TermsBarsGraph({
   );
 }
 
-function IntegerSlider({
-  label,
-  max,
-  min,
-  onChange,
-  step,
-  value,
+function CurseurNombreEntier({
+  etiquette,
+  maximum,
+  minimum,
+  pas,
+  surChangement,
+  valeur,
 }: {
-  label: string;
-  max: number;
-  min: number;
-  onChange: (value: number) => void;
-  step: number;
-  value: number;
+  etiquette: string;
+  maximum: number;
+  minimum: number;
+  pas: number;
+  surChangement: (valeur: number) => void;
+  valeur: number;
 }) {
-  const [typedValue, setTypedValue] = useState(String(value));
+  const [valeurTexte, definirValeurTexte] = useState(String(valeur));
 
   useEffect(() => {
-    setTypedValue(String(value));
-  }, [value]);
+    definirValeurTexte(String(valeur));
+  }, [valeur]);
 
-  const normalizeValue = useCallback(
-    (nextValue: number) => clamp(Math.round(nextValue), min, max),
-    [max, min]
+  const normaliserValeur = useCallback(
+    (prochaineValeur: number) => borner(Math.round(prochaineValeur), minimum, maximum),
+    [maximum, minimum]
   );
 
-  const commitTypedValue = () => {
-    const nextValue = Number(typedValue.trim());
+  const validerValeurTexte = () => {
+    const valeurSaisie = Number(valeurTexte.trim());
 
-    if (!Number.isFinite(nextValue)) {
-      setTypedValue(String(value));
+    if (!Number.isFinite(valeurSaisie)) {
+      definirValeurTexte(String(valeur));
       return;
     }
 
-    const resolvedValue = normalizeValue(Math.round(nextValue / step) * step);
-    onChange(resolvedValue);
-    setTypedValue(String(resolvedValue));
+    const valeurAjustee = normaliserValeur(Math.round(valeurSaisie / pas) * pas);
+    surChangement(valeurAjustee);
+    definirValeurTexte(String(valeurAjustee));
   };
 
-  const setFromEvent = useCallback((event: GestureResponderEvent) => {
-    event.currentTarget.measure((_x, _y, measuredWidth, _height, pageX) => {
-      const position = clamp(event.nativeEvent.pageX - pageX, 0, measuredWidth);
-      const ratio = measuredWidth === 0 ? 0 : position / measuredWidth;
-      const rawValue = min + ratio * (max - min);
-      const snappedValue = normalizeValue(Math.round(rawValue / step) * step);
-      onChange(snappedValue);
-    });
-  }, [max, min, normalizeValue, onChange, step]);
+  // Convertit la position du doigt ou de la souris en valeur du curseur.
+  const definirDepuisGlisser = useCallback(
+    (evenement: GestureResponderEvent) => {
+      evenement.currentTarget.measure((_x, _y, largeurMesuree, _hauteur, pageX) => {
+        const positionHorizontale = borner(evenement.nativeEvent.pageX - pageX, 0, largeurMesuree);
+        const ratio = largeurMesuree === 0 ? 0 : positionHorizontale / largeurMesuree;
+        const valeurBrute = minimum + ratio * (maximum - minimum);
+        const valeurAjustee = normaliserValeur(Math.round(valeurBrute / pas) * pas);
+        surChangement(valeurAjustee);
+      });
+    },
+    [maximum, minimum, normaliserValeur, pas, surChangement]
+  );
 
-  const panResponder = useMemo(
+  const reponseGlisser = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponderCapture: () => true,
-        onPanResponderGrant: setFromEvent,
-        onPanResponderMove: setFromEvent,
+        onPanResponderGrant: definirDepuisGlisser,
+        onPanResponderMove: definirDepuisGlisser,
         onPanResponderTerminationRequest: () => false,
         onShouldBlockNativeResponder: () => true,
         onStartShouldSetPanResponder: () => true,
         onStartShouldSetPanResponderCapture: () => true,
       }),
-    [setFromEvent]
+    [definirDepuisGlisser]
   );
 
-  const percent = ((value - min) / (max - min || 1)) * 100;
+  const pourcentageRemplissage = ((valeur - minimum) / (maximum - minimum || 1)) * 100;
 
   return (
-    <View style={styles.sliderBlock}>
-      <View style={styles.sliderHeader}>
-        <ThemedText lightColor={THEME.mutedInk} style={styles.label}>
-          {label}
-        </ThemedText>
+    <View style={stylesSeries.blocCurseur}>
+      <View style={stylesSeries.enteteCurseur}>
+        <TexteThematique lightColor={PALETTE_SERIES.encreAttenue} style={stylesSeries.etiquette}>
+          {etiquette}
+        </TexteThematique>
         <TextInput
           inputMode="numeric"
           keyboardType="numeric"
-          onBlur={commitTypedValue}
-          onChangeText={setTypedValue}
-          onSubmitEditing={commitTypedValue}
+          onBlur={validerValeurTexte}
+          onChangeText={definirValeurTexte}
+          onSubmitEditing={validerValeurTexte}
           selectTextOnFocus
-          style={styles.sliderValueInput}
-          value={typedValue}
+          style={stylesSeries.champValeurCurseur}
+          value={valeurTexte}
         />
       </View>
 
-      <View {...panResponder.panHandlers} style={[styles.sliderTrack, WEB_SLIDER_INTERACTION_STYLE]}>
-        <View style={[styles.sliderFill, { width: `${percent}%` }]} />
-        <View style={[styles.sliderThumb, WEB_SLIDER_INTERACTION_STYLE, { left: `${percent}%` }]} />
+      <View {...reponseGlisser.panHandlers} style={[stylesSeries.pisteCurseur, STYLE_GLISSER_CURSEUR_WEB]}>
+        <View style={[stylesSeries.remplissageCurseur, { width: `${pourcentageRemplissage}%` }]} />
+        <View
+          style={[
+            stylesSeries.pouceCurseur,
+            STYLE_GLISSER_CURSEUR_WEB,
+            { left: `${pourcentageRemplissage}%` },
+          ]}
+        />
       </View>
     </View>
   );
 }
 
-export function SeriesSimulation() {
-  const [seriesIndex, setSeriesIndex] = useState(0);
-  const [nTerms, setNTerms] = useState(20);
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const { width } = useWindowDimensions();
+export function SimulationSeries() {
+  const [indexSerieActive, definirIndexSerieActive] = useState(0);
+  const [nombreTermes, definirNombreTermes] = useState(20);
+  const animationPositionScroll = useRef(new Animated.Value(0)).current;
+  const { width: largeurFenetre } = useWindowDimensions();
 
-  const horizontalPadding = width >= 1200 ? 12 : 16;
-  const contentWidth = width - horizontalPadding * 2;
-  const isWide = width >= 980;
-  const isCompact = width < 560;
-  const graphWidth = isWide ? Math.round(contentWidth * 0.665) : contentWidth;
-  const sideWidth = isWide ? contentWidth - graphWidth - 20 : contentWidth;
+  const margeHorizontale = largeurFenetre >= 1200 ? 12 : 16;
+  const largeurContenu = largeurFenetre - margeHorizontale * 2;
+  const afficherDeuxColonnes = largeurFenetre >= 980;
+  const affichageCompact = largeurFenetre < 560;
+  const largeurColonneGraphique = afficherDeuxColonnes ? Math.round(largeurContenu * 0.665) : largeurContenu;
+  const largeurColonneCommandes = afficherDeuxColonnes ? largeurContenu - largeurColonneGraphique - 20 : largeurContenu;
 
-  const activeSeries = SERIES[seriesIndex];
-  const partialSums = useMemo(
-    () => buildPartialSums(activeSeries, nTerms),
-    [activeSeries, nTerms]
+  const serieActive = SERIES_DISPONIBLES[indexSerieActive];
+  const sommesPartielles = useMemo(
+    () => construireSommesPartielles(serieActive, nombreTermes),
+    [serieActive, nombreTermes]
   );
-  const currentSum = partialSums[partialSums.length - 1]?.sum ?? 0;
-  const error = activeSeries.converges ? Math.abs(activeSeries.exact - currentSum) : Number.NaN;
-  const headerTranslateY = scrollY.interpolate({
+  const sommeActuelle = sommesPartielles[sommesPartielles.length - 1]?.somme ?? 0;
+  const ecartActuel = serieActive.converge ? Math.abs(serieActive.limiteExacte - sommeActuelle) : Number.NaN;
+
+  // L'entete sort completement de l'ecran quand on descend dans la page.
+  const translationEntete = animationPositionScroll.interpolate({
     extrapolate: 'clamp',
     inputRange: [0, 120],
-    outputRange: [0, -SIMULATION_HEADER_TOTAL_HEIGHT],
-  });
-  const headerOpacity = scrollY.interpolate({
-    extrapolate: 'clamp',
-    inputRange: [0, 60, 120],
-    outputRange: [1, 0.9, 0],
+    outputRange: [0, -HAUTEUR_TOTALE_ENTETE_SIMULATION],
   });
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <ThemedView lightColor={THEME.background} style={styles.container}>
+    <SafeAreaView style={stylesSeries.safeArea} edges={['top']}>
+      <VueThematique lightColor={PALETTE_SERIES.arrierePlan} style={stylesSeries.conteneur}>
         <Animated.View
           style={[
-            styles.headerOverlay,
+            stylesSeries.superpositionEntete,
             {
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
+              transform: [{ translateY: translationEntete }],
             },
           ]}>
-          <SimulationScreenHeader title="Series" type="math" />
+          <EnTeteEcranSimulation title="Series" type="math" />
         </Animated.View>
 
         <Animated.ScrollView
-          contentContainerStyle={styles.content}
-          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          contentContainerStyle={stylesSeries.contenu}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: animationPositionScroll } } }], {
             useNativeDriver: true,
           })}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}>
           <View
             style={[
-              styles.workspace,
+              stylesSeries.espaceTravail,
               {
-                flexDirection: isWide ? 'row' : 'column',
-                paddingLeft: isWide ? 22 : 0,
-                paddingRight: isWide ? 22 : 0,
-                width: contentWidth,
+                flexDirection: afficherDeuxColonnes ? 'row' : 'column',
+                paddingLeft: afficherDeuxColonnes ? 22 : 0,
+                paddingRight: afficherDeuxColonnes ? 22 : 0,
+                width: largeurContenu,
               },
             ]}>
-            <View style={[styles.graphColumn, { width: graphWidth }]}>
-              <View style={styles.formulaCard}>
-                <FormulaRenderer centered fallback={'S_n = Σ a_k'} math={'S_n=\\sum_{k=1}^{n} a_k'} size="md" />
+            <View style={[stylesSeries.colonneGraphique, { width: largeurColonneGraphique }]}>
+              <View style={stylesSeries.carteFormule}>
+                <RenduFormule centered fallback={'S_n = Somme des a_k'} math={'S_n=\\sum_{k=1}^{n} a_k'} size="md" />
               </View>
 
-              <View style={styles.chartPanel}>
-                <ThemedText lightColor={THEME.mutedInk} style={styles.panelLabel}>
+              <View style={stylesSeries.panneauGraphique}>
+                <TexteThematique lightColor={PALETTE_SERIES.encreAttenue} style={stylesSeries.etiquettePanneau}>
                   Sommes partielles
-                </ThemedText>
-                <PartialSumsGraph
-                  graphHeight={CHART_HEIGHT}
-                  graphWidth={graphWidth - 32}
-                  partialSums={partialSums}
-                  series={activeSeries}
+                </TexteThematique>
+                <GraphiqueSommesPartielles
+                  hauteur={HAUTEUR_GRAPHIQUE_SOMMES}
+                  largeur={largeurColonneGraphique - 32}
+                  serie={serieActive}
+                  sommesPartielles={sommesPartielles}
                 />
               </View>
 
-              <View style={styles.chartPanel}>
-                <ThemedText lightColor={THEME.mutedInk} style={styles.panelLabel}>
+              <View style={stylesSeries.panneauGraphique}>
+                <TexteThematique lightColor={PALETTE_SERIES.encreAttenue} style={stylesSeries.etiquettePanneau}>
                   Valeur des termes |a_n|
-                </ThemedText>
-                <TermsBarsGraph
-                  graphHeight={BAR_HEIGHT}
-                  graphWidth={graphWidth - 32}
-                  partialSums={partialSums}
+                </TexteThematique>
+                <GraphiqueBarresTermes
+                  hauteur={HAUTEUR_GRAPHIQUE_TERMES}
+                  largeur={largeurColonneGraphique - 32}
+                  sommesPartielles={sommesPartielles}
                 />
               </View>
             </View>
 
-            <View style={[styles.sidebar, { paddingRight: isWide ? 44 : 0, width: sideWidth }]}>
-              <View style={styles.panel}>
-                <View style={styles.controlHeader}>
-                  <ThemedText lightColor={THEME.mutedInk} style={styles.label}>
+            <View
+              style={[
+                stylesSeries.colonneLaterale,
+                { paddingRight: afficherDeuxColonnes ? 44 : 0, width: largeurColonneCommandes },
+              ]}>
+              <View style={stylesSeries.panneau}>
+                <View style={stylesSeries.enteteCommande}>
+                  <TexteThematique lightColor={PALETTE_SERIES.encreAttenue} style={stylesSeries.etiquette}>
                     Serie
-                  </ThemedText>
+                  </TexteThematique>
                 </View>
 
-                <View style={styles.seriesList}>
-                  {SERIES.map((series, index) => {
-                    const isActive = seriesIndex === index;
+                <View style={stylesSeries.listeSeries}>
+                  {SERIES_DISPONIBLES.map((serie, indexSerie) => {
+                    const estSerieActive = indexSerieActive === indexSerie;
 
                     return (
                       <Pressable
-                        key={series.label}
-                        onPress={() => setSeriesIndex(index)}
-                        style={[styles.seriesButton, isActive ? styles.seriesButtonActive : undefined]}>
-                        <View style={styles.seriesButtonRow}>
-                          <ThemedText lightColor={THEME.ink} style={styles.seriesButtonTitle}>
-                            {series.label}
-                          </ThemedText>
-                          <View style={styles.seriesButtonFormula}>
-                            <FormulaRenderer centered fallback={series.formulaLabel} math={series.formulaLatex} size="sm" />
+                        key={serie.nom}
+                        onPress={() => definirIndexSerieActive(indexSerie)}
+                        style={[stylesSeries.boutonSerie, estSerieActive ? stylesSeries.boutonSerieActif : undefined]}>
+                        <View style={stylesSeries.ligneBoutonSerie}>
+                          <TexteThematique lightColor={PALETTE_SERIES.encre} style={stylesSeries.titreBoutonSerie}>
+                            {serie.nom}
+                          </TexteThematique>
+                          <View style={stylesSeries.formuleBoutonSerie}>
+                            <RenduFormule centered fallback={serie.etiquetteFormule} math={serie.texteLatex} size="sm" />
                           </View>
                         </View>
-                        <ThemedText lightColor={THEME.mutedInk} style={styles.seriesButtonDescription}>
-                          {series.desc}
-                        </ThemedText>
+                        <TexteThematique
+                          lightColor={PALETTE_SERIES.encreAttenue}
+                          style={stylesSeries.descriptionBoutonSerie}>
+                          {serie.description}
+                        </TexteThematique>
                       </Pressable>
                     );
                   })}
                 </View>
               </View>
 
-              <View style={styles.panel}>
-                <IntegerSlider
-                  label="Nombre de termes n"
-                  max={TERMS_MAX}
-                  min={TERMS_MIN}
-                  onChange={setNTerms}
-                  step={TERM_STEP}
-                  value={nTerms}
+              <View style={stylesSeries.panneau}>
+                <CurseurNombreEntier
+                  etiquette="Nombre de termes n"
+                  maximum={NOMBRE_MAX_TERMES}
+                  minimum={NOMBRE_MIN_TERMES}
+                  pas={PAS_NOMBRE_TERMES}
+                  surChangement={definirNombreTermes}
+                  valeur={nombreTermes}
                 />
               </View>
 
-              <View style={[styles.statsGrid, { flexDirection: isCompact ? 'column' : 'row' }]}>
-                <View style={styles.statCard}>
-                  <ThemedText lightColor={THEME.mutedInk} style={styles.statLabel}>
-                    S({nTerms})
-                  </ThemedText>
-                  <ThemedText lightColor={THEME.ink} style={styles.statValue}>
-                    {formatNumber(currentSum)}
-                  </ThemedText>
+              <View
+                style={[stylesSeries.grilleStatistiques, { flexDirection: affichageCompact ? 'column' : 'row' }]}>
+                <View style={stylesSeries.carteStatistique}>
+                  <TexteThematique lightColor={PALETTE_SERIES.encreAttenue} style={stylesSeries.etiquetteStatistique}>
+                    S({nombreTermes})
+                  </TexteThematique>
+                  <TexteThematique lightColor={PALETTE_SERIES.encre} style={stylesSeries.valeurStatistique}>
+                    {formaterValeur(sommeActuelle)}
+                  </TexteThematique>
                 </View>
-                <View style={styles.statCard}>
-                  <ThemedText lightColor={THEME.mutedInk} style={styles.statLabel}>
+
+                <View style={stylesSeries.carteStatistique}>
+                  <TexteThematique lightColor={PALETTE_SERIES.encreAttenue} style={stylesSeries.etiquetteStatistique}>
                     Limite
-                  </ThemedText>
-                  <View style={styles.statFormulaWrap}>
-                    <FormulaRenderer
+                  </TexteThematique>
+                  <View style={stylesSeries.zoneFormuleStatistique}>
+                    <RenduFormule
                       centered
-                      fallback={activeSeries.converges ? activeSeries.limitLabel : '∞'}
-                      math={activeSeries.converges ? activeSeries.limitLabel : '\\infty'}
+                      fallback={serieActive.converge ? serieActive.etiquetteLimite : 'infini'}
+                      math={serieActive.converge ? serieActive.etiquetteLimite : '\\infty'}
                       size="sm"
                     />
                   </View>
                 </View>
-                <View style={styles.statCard}>
-                  <ThemedText lightColor={THEME.mutedInk} style={styles.statLabel}>
+
+                <View style={stylesSeries.carteStatistique}>
+                  <TexteThematique lightColor={PALETTE_SERIES.encreAttenue} style={stylesSeries.etiquetteStatistique}>
                     Ecart
-                  </ThemedText>
-                  <ThemedText lightColor={THEME.ink} style={styles.statValue}>
-                    {activeSeries.converges ? formatNumber(error) : '∞'}
-                  </ThemedText>
+                  </TexteThematique>
+                  <TexteThematique lightColor={PALETTE_SERIES.encre} style={stylesSeries.valeurStatistique}>
+                    {serieActive.converge ? formaterValeur(ecartActuel) : 'infini'}
+                  </TexteThematique>
                 </View>
               </View>
             </View>
           </View>
         </Animated.ScrollView>
-      </ThemedView>
+      </VueThematique>
 
-      <DefinitionPopover
+      <PopoverDefinition
         body={[
           'Une suite fournit des termes a_1, a_2, a_3 et ainsi de suite. Une serie additionne ces termes pour former les sommes partielles S_n.',
           'Si les sommes partielles se stabilisent vers une valeur finie, la serie converge. Sinon, elle diverge ou oscille sans se fixer.',
@@ -589,75 +646,75 @@ export function SeriesSimulation() {
   );
 }
 
-const styles = StyleSheet.create({
+const stylesSeries = StyleSheet.create({
   safeArea: {
-    backgroundColor: SIMULATION_PAGE_BACKGROUND,
+    backgroundColor: ARRIERE_PLAN_PAGE_SERIES,
     flex: 1,
   },
-  container: {
-    backgroundColor: SIMULATION_PAGE_BACKGROUND,
+  conteneur: {
+    backgroundColor: ARRIERE_PLAN_PAGE_SERIES,
     flex: 1,
   },
-  headerOverlay: {
+  superpositionEntete: {
     left: 0,
     position: 'absolute',
     right: 0,
     top: 0,
     zIndex: 10,
   },
-  content: {
+  contenu: {
     alignItems: 'center',
     flexGrow: 1,
     justifyContent: 'flex-start',
     paddingBottom: 28,
     paddingHorizontal: 12,
-    paddingTop: SIMULATION_HEADER_TOTAL_HEIGHT + SIMULATION_HEADER_CONTENT_GAP,
+    paddingTop: HAUTEUR_TOTALE_ENTETE_SIMULATION + ESPACE_CONTENU_ENTETE_SIMULATION,
   },
-  workspace: {
+  espaceTravail: {
     alignItems: 'flex-start',
     gap: 20,
   },
-  graphColumn: {
+  colonneGraphique: {
     gap: 16,
   },
-  sidebar: {
+  colonneLaterale: {
     gap: 16,
   },
-  formulaCard: {
-    backgroundColor: THEME.surface,
-    borderColor: THEME.border,
+  carteFormule: {
+    backgroundColor: PALETTE_SERIES.surface,
+    borderColor: PALETTE_SERIES.bordure,
     borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: 16,
     paddingVertical: 12,
     width: '100%',
   },
-  chartPanel: {
-    backgroundColor: THEME.panel,
-    borderColor: THEME.border,
+  panneauGraphique: {
+    backgroundColor: PALETTE_SERIES.panneau,
+    borderColor: PALETTE_SERIES.bordure,
     borderRadius: 8,
     borderWidth: 1.5,
     gap: 12,
     padding: 16,
     width: '100%',
   },
-  panelLabel: {
-    color: THEME.mutedInk,
+  etiquettePanneau: {
+    color: PALETTE_SERIES.encreAttenue,
     fontSize: 13,
     fontWeight: '900',
     lineHeight: 16,
     textTransform: 'uppercase',
   },
-  graph: {
-    backgroundColor: THEME.panel,
-    borderColor: THEME.border,
+  graphique: {
+    backgroundColor: PALETTE_SERIES.panneau,
+    borderColor: PALETTE_SERIES.bordure,
     borderRadius: 8,
     borderWidth: 1,
     overflow: 'hidden',
   },
-  graphLegend: {
-    backgroundColor: THEME.surface,
-    borderColor: THEME.border,
+  legendeGraphique: {
+    backgroundColor: PALETTE_SERIES.surface,
+    borderColor: PALETTE_SERIES.bordure,
     borderRadius: 8,
     borderWidth: 1.5,
     bottom: 12,
@@ -670,119 +727,119 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     position: 'absolute',
   },
-  legendItem: {
+  elementLegende: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 6,
   },
-  legendLine: {
+  ligneLegende: {
     borderRadius: 999,
     height: 3,
     width: 26,
   },
-  legendDashed: {
+  ligneLegendePointillee: {
     borderStyle: 'dashed',
   },
-  legendText: {
-    color: THEME.mutedInk,
+  texteLegende: {
+    color: PALETTE_SERIES.encreAttenue,
     fontSize: 11,
     lineHeight: 14,
   },
-  panel: {
-    backgroundColor: THEME.panel,
-    borderColor: THEME.border,
+  panneau: {
+    backgroundColor: PALETTE_SERIES.panneau,
+    borderColor: PALETTE_SERIES.bordure,
     borderRadius: 8,
     borderWidth: 1.5,
     gap: 18,
     padding: 16,
     width: '100%',
   },
-  controlHeader: {
+  enteteCommande: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  label: {
-    color: THEME.mutedInk,
+  etiquette: {
+    color: PALETTE_SERIES.encreAttenue,
     fontSize: 13,
     fontWeight: '900',
     lineHeight: 16,
     textTransform: 'uppercase',
   },
-  seriesList: {
+  listeSeries: {
     gap: 10,
   },
-  seriesButton: {
-    backgroundColor: THEME.surface,
-    borderColor: THEME.border,
+  boutonSerie: {
+    backgroundColor: PALETTE_SERIES.surface,
+    borderColor: PALETTE_SERIES.bordure,
     borderRadius: 8,
     borderWidth: 1.5,
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
-  seriesButtonActive: {
-    backgroundColor: THEME.functionSoft,
-    borderColor: THEME.border,
+  boutonSerieActif: {
+    backgroundColor: PALETTE_SERIES.courbeDouce,
+    borderColor: PALETTE_SERIES.bordure,
   },
-  seriesButtonRow: {
+  ligneBoutonSerie: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 10,
     justifyContent: 'space-between',
   },
-  seriesButtonTitle: {
-    color: THEME.ink,
+  titreBoutonSerie: {
+    color: PALETTE_SERIES.encre,
     flexShrink: 1,
     fontSize: 15,
     fontWeight: '800',
     lineHeight: 18,
   },
-  seriesButtonFormula: {
+  formuleBoutonSerie: {
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 92,
   },
-  seriesButtonDescription: {
-    color: THEME.mutedInk,
+  descriptionBoutonSerie: {
+    color: PALETTE_SERIES.encreAttenue,
     fontSize: 13,
     lineHeight: 18,
   },
-  sliderBlock: {
+  blocCurseur: {
     gap: 16,
   },
-  sliderHeader: {
+  enteteCurseur: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  sliderValueInput: {
-    color: THEME.ink,
+  champValeurCurseur: {
+    color: PALETTE_SERIES.encre,
     fontSize: 18,
     fontWeight: '800',
     minWidth: 58,
     padding: 0,
     textAlign: 'right',
   },
-  sliderTrack: {
-    backgroundColor: THEME.surface,
-    borderColor: THEME.border,
+  pisteCurseur: {
+    backgroundColor: PALETTE_SERIES.surface,
+    borderColor: PALETTE_SERIES.bordure,
     borderRadius: 999,
     borderWidth: 1.5,
     height: 30,
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  sliderFill: {
-    backgroundColor: THEME.grid,
+  remplissageCurseur: {
+    backgroundColor: PALETTE_SERIES.grille,
     bottom: 0,
     left: 0,
     position: 'absolute',
     top: 0,
   },
-  sliderThumb: {
-    backgroundColor: THEME.ink,
-    borderColor: THEME.panel,
+  pouceCurseur: {
+    backgroundColor: PALETTE_SERIES.encre,
+    borderColor: PALETTE_SERIES.panneau,
     borderRadius: 9,
     borderWidth: 2,
     height: 18,
@@ -790,36 +847,36 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 18,
   },
-  statsGrid: {
+  grilleStatistiques: {
     gap: 12,
     width: '100%',
   },
-  statCard: {
+  carteStatistique: {
     alignItems: 'center',
-    backgroundColor: THEME.panel,
-    borderColor: THEME.border,
+    backgroundColor: PALETTE_SERIES.panneau,
+    borderColor: PALETTE_SERIES.bordure,
     borderRadius: 8,
     borderWidth: 1.5,
     flex: 1,
     gap: 6,
     padding: 18,
   },
-  statLabel: {
-    color: THEME.mutedInk,
+  etiquetteStatistique: {
+    color: PALETTE_SERIES.encreAttenue,
     fontSize: 11,
     fontWeight: '800',
     lineHeight: 14,
     textAlign: 'center',
     textTransform: 'uppercase',
   },
-  statValue: {
-    color: THEME.ink,
+  valeurStatistique: {
+    color: PALETTE_SERIES.encre,
     fontSize: 22,
     fontWeight: '800',
     lineHeight: 28,
     textAlign: 'center',
   },
-  statFormulaWrap: {
+  zoneFormuleStatistique: {
     minHeight: 26,
     width: '100%',
   },

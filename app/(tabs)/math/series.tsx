@@ -1,5 +1,5 @@
-import { SeriesSimulation } from '@/features/simulations/math/series-simulation';
+import { SimulationSeries } from '@/features/simulations/math/series-simulation';
 
-export default function SeriesScreen() {
-  return <SeriesSimulation />;
+export default function EcranSeries() {
+  return <SimulationSeries />;
 }

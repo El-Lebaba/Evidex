@@ -1,0 +1,117 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 2 /Kids [ 3 0 R 5 0 R ] >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 7 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 3017 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+1 0 0 1 50 792 Tm (Simulation Series - Fonctions et role) Tj
+1 0 0 1 50 776 Tm () Tj
+1 0 0 1 50 760 Tm (Fichier: features/simulations/math/series-simulation.tsx) Tj
+1 0 0 1 50 744 Tm (Ordre: meme ordre que dans le code) Tj
+1 0 0 1 50 728 Tm () Tj
+1 0 0 1 50 712 Tm (1. borner\(valeur, minimum, maximum\)) Tj
+1 0 0 1 50 696 Tm (   Force une valeur a rester entre un minimum et un maximum.) Tj
+1 0 0 1 50 680 Tm () Tj
+1 0 0 1 50 664 Tm (2. formaterValeur\(valeur\)) Tj
+1 0 0 1 50 648 Tm (   Transforme un nombre en texte avec 5 decimales.) Tj
+1 0 0 1 50 632 Tm (   Si la valeur nest pas finie, retourne "infini".) Tj
+1 0 0 1 50 616 Tm () Tj
+1 0 0 1 50 600 Tm (3. creerCheminSvg\(points\)) Tj
+1 0 0 1 50 584 Tm (   Transforme une liste de points x/y en chemin SVG.) Tj
+1 0 0 1 50 568 Tm (   Ce chemin sert a dessiner une courbe dans le graphique.) Tj
+1 0 0 1 50 552 Tm () Tj
+1 0 0 1 50 536 Tm (4. construireSommesPartielles\(serie, nombreTermes\)) Tj
+1 0 0 1 50 520 Tm (   Calcule S1, S2, S3... jusqua Sn a partir du terme general.) Tj
+1 0 0 1 50 504 Tm (   Stocke pour chaque indice: le numero du terme, la somme et le terme seul.) Tj
+1 0 0 1 50 488 Tm () Tj
+1 0 0 1 50 472 Tm (5. GraphiqueSommesPartielles\({ hauteur, largeur, serie, sommesPartielles }\)) Tj
+1 0 0 1 50 456 Tm (   Composant React qui dessine le grand graphique principal.) Tj
+1 0 0 1 50 440 Tm (   Il prepare les limites du repere, la grille, laxe horizontal,) Tj
+1 0 0 1 50 424 Tm (   la ligne de limite si la serie converge, puis la courbe des sommes partielles.) Tj
+1 0 0 1 50 408 Tm () Tj
+1 0 0 1 50 392 Tm (6. convertirEnPointEcran\(indice, valeur\)) Tj
+1 0 0 1 50 376 Tm (   Fonction interne a GraphiqueSommesPartielles.) Tj
+1 0 0 1 50 360 Tm (   Convertit une valeur mathematique en position pixel sur lecran.) Tj
+1 0 0 1 50 344 Tm () Tj
+1 0 0 1 50 328 Tm (7. GraphiqueBarresTermes\({ hauteur, largeur, sommesPartielles }\)) Tj
+1 0 0 1 50 312 Tm (   Composant React qui dessine les barres des termes individuels.) Tj
+1 0 0 1 50 296 Tm (   Il prend les premiers termes visibles, calcule leur hauteur relative,) Tj
+1 0 0 1 50 280 Tm (   puis affiche une barre par terme.) Tj
+1 0 0 1 50 264 Tm () Tj
+1 0 0 1 50 248 Tm (8. CurseurNombreEntier\({ etiquette, maximum, minimum, pas, surChangement, valeur }\)) Tj
+1 0 0 1 50 232 Tm (   Composant React pour modifier le nombre de termes.) Tj
+1 0 0 1 50 216 Tm (   Il gere le champ texte, le glisser sur la barre et la synchronisation de la valeur.) Tj
+1 0 0 1 50 200 Tm () Tj
+1 0 0 1 50 184 Tm (9. normaliserValeur\(prochaineValeur\)) Tj
+1 0 0 1 50 168 Tm (   Fonction interne a CurseurNombreEntier.) Tj
+1 0 0 1 50 152 Tm (   Arrondit la valeur et la garde dans les bornes autorisees.) Tj
+1 0 0 1 50 136 Tm () Tj
+1 0 0 1 50 120 Tm (10. validerValeurTexte\(\)) Tj
+1 0 0 1 50 104 Tm (    Fonction interne a CurseurNombreEntier.) Tj
+1 0 0 1 50 88 Tm (    Lit la valeur tapee dans linput, la corrige au pas voulu,) Tj
+1 0 0 1 50 72 Tm (    puis envoie la nouvelle valeur au parent.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 7 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 1492 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+1 0 0 1 50 792 Tm () Tj
+1 0 0 1 50 776 Tm (11. definirDepuisGlisser\(evenement\)) Tj
+1 0 0 1 50 760 Tm (    Fonction interne a CurseurNombreEntier.) Tj
+1 0 0 1 50 744 Tm (    Convertit la position du doigt ou de la souris sur la piste) Tj
+1 0 0 1 50 728 Tm (    en valeur numerique pour le curseur.) Tj
+1 0 0 1 50 712 Tm () Tj
+1 0 0 1 50 696 Tm (12. SimulationSeries\(\)) Tj
+1 0 0 1 50 680 Tm (    Composant principal de la page.) Tj
+1 0 0 1 50 664 Tm (    Gere letat de la serie choisie et du nombre de termes,) Tj
+1 0 0 1 50 648 Tm (    calcule les donnees a afficher, organise la mise en page,) Tj
+1 0 0 1 50 632 Tm (    affiche les graphiques, les boutons de series, le curseur et les statistiques.) Tj
+1 0 0 1 50 616 Tm () Tj
+1 0 0 1 50 600 Tm (13. translationEntete = animationPositionScroll.interpolate\(...\)) Tj
+1 0 0 1 50 584 Tm (    Ce nest pas une fonction declaree avec le mot-cle function,) Tj
+1 0 0 1 50 568 Tm (    mais c est une logique importante: elle fait glisser lentete vers le haut) Tj
+1 0 0 1 50 552 Tm (    quand on descend dans la page.) Tj
+1 0 0 1 50 536 Tm () Tj
+1 0 0 1 50 520 Tm (Notes utiles pour loral) Tj
+1 0 0 1 50 504 Tm ( - Les fonctions utilitaires font les calculs de base.) Tj
+1 0 0 1 50 488 Tm ( - Les composants Graphique... dessinent les visualisations.) Tj
+1 0 0 1 50 472 Tm ( - Le composant Curseur... gere linteraction utilisateur.) Tj
+1 0 0 1 50 456 Tm ( - SimulationSeries assemble toute la logique et tout l affichage.) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000123 00000 n 
+0000000249 00000 n 
+0000003318 00000 n 
+0000003444 00000 n 
+0000004988 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+5058
+%%EOF
