@@ -90,7 +90,7 @@ export function CoursesScreen() {
       <ThemedView lightColor={THEME.background} style={styles.page}>
         <FloatingMathSymbols showGlow={false} style={styles.mathSymbols} />
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable onPress={() => {router.dismissAll(), router.push("/(tabs)/home")}} style={styles.backButton}>
             <MaterialCommunityIcons color={THEME.ink} name="arrow-left" size={18} />
             <ThemedText lightColor={THEME.ink} style={styles.backButtonText}>
               Retour
