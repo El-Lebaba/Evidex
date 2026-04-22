@@ -12,6 +12,7 @@ import {
   findCourse,
   getCourseProgress,
   getCourseProgressDetails,
+  getCourseQuiz,
 } from '@/data/courses';
 import { db } from '@/db/mainData';
 
@@ -135,19 +136,6 @@ function renderHighlightedText(value: string) {
   });
 }
 
-function buildQuiz(courseTitle: string) {
-  return {
-    question: `Quel est le concept principal de ce cours?`,
-    choices: [
-      courseTitle,
-      'La configuration du profil',
-      'Le changement de theme',
-      'La navigation entre onglets',
-    ],
-    answerIndex: 0,
-  };
-}
-
 export default function CourseReaderScreen() {
   const params = useLocalSearchParams<{ courseId?: string; subject?: string }>();
   const subject = params.subject && isCourseSubject(params.subject) ? params.subject : undefined;
@@ -223,7 +211,7 @@ export default function CourseReaderScreen() {
   const maxSlideIndex = course.totalSlides - 1;
   const progress = savedProgressDetails.progress;
   const isLastSlide = slideIndex === maxSlideIndex;
-  const quiz = buildQuiz(course.title);
+  const quiz = getCourseQuiz(subject, courseId);
   const canGoPrevious = slideIndex > 0;
   const canGoNext = slideIndex < maxSlideIndex;
   const codeLines = slide.code ? cleanCodeText(slide.code).split('\n') : [];

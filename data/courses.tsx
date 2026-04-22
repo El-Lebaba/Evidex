@@ -23,6 +23,11 @@ export type CourseSlide = {
     theory: string;
     title: string;
 };
+export type CourseQuiz = {
+    answerIndex: number;
+    choices: string[];
+    question: string;
+};
 export type LearningCourse = {
     description: string;
     id: string;
@@ -1170,6 +1175,225 @@ export const COURSE_SUBJECTS: Record<CourseSubject, LearningCourse[]> = {
     physique: physicsCourses,
 };
 
+const COURSE_QUIZZES: Record<CourseSubject, Record<string, CourseQuiz>> = {
+    math: {
+        'derivatives-basics': {
+            question: 'Que represente une derivee sur un graphique?',
+            choices: [
+                'La pente de la tangente',
+                'La surface totale sous la courbe',
+                'La valeur la plus grande du tableau',
+                'Le nombre de points dessines',
+            ],
+            answerIndex: 0,
+        },
+        'integrals-basics': {
+            question: 'Comment peut-on interpreter une integrale graphiquement?',
+            choices: [
+                'Comme une seule multiplication',
+                'Comme une condition vraie ou fausse',
+                'Comme une aire sous une courbe',
+                'Comme le nom d une variable',
+            ],
+            answerIndex: 2,
+        },
+        'limits-basics': {
+            question: 'Pour qu une limite existe en un point, que faut-il verifier?',
+            choices: [
+                'La fonction doit toujours etre constante',
+                'Les deux cotes approchent la meme valeur',
+                'La courbe doit etre une droite',
+                'Le resultat doit etre un nombre entier',
+            ],
+            answerIndex: 1,
+        },
+    },
+    physique: {
+        'kinematics-basics': {
+            question: 'Que decrit la cinematique?',
+            choices: [
+                'Le mouvement sans etudier sa cause',
+                'La composition chimique d un objet',
+                'La couleur d une lumiere',
+                'La temperature d un systeme',
+            ],
+            answerIndex: 0,
+        },
+        'forces-basics': {
+            question: 'Selon la deuxieme loi, que determine la somme des forces?',
+            choices: [
+                'La couleur de l objet',
+                'Le volume de l objet',
+                'La charge electrique seule',
+                'L acceleration de l objet',
+            ],
+            answerIndex: 3,
+        },
+        'energy-basics': {
+            question: 'Quand les frottements sont negligeables, que devient l energie mecanique totale?',
+            choices: [
+                'Elle disparait toujours',
+                'Elle reste constante',
+                'Elle devient forcement nulle',
+                'Elle se transforme en masse uniquement',
+            ],
+            answerIndex: 1,
+        },
+    },
+    java: {
+        variables: {
+            question: 'A quoi sert une variable en Java?',
+            choices: [
+                'A stocker une valeur avec un nom',
+                'A lancer automatiquement une application',
+                'A dessiner une interface graphique',
+                'A supprimer le type d une donnee',
+            ],
+            answerIndex: 0,
+        },
+        'data-types': {
+            question: 'Quelle affirmation decrit correctement les types en Java?',
+            choices: [
+                'Un int peut devenir String tout seul',
+                'Java n utilise aucun type primitif',
+                'Une variable garde le type declare',
+                'boolean stocke du texte libre',
+            ],
+            answerIndex: 2,
+        },
+        'type-casting': {
+            question: 'A quoi sert le transtypage?',
+            choices: [
+                'A creer une boucle infinie',
+                'A comparer deux chaines avec equals',
+                'A appeler une methode sans parentheses',
+                'A convertir une valeur d un type vers un autre',
+            ],
+            answerIndex: 3,
+        },
+        strings: {
+            question: 'Quelle methode compare correctement le contenu de deux Strings?',
+            choices: [
+                '== uniquement',
+                '.length',
+                '.equals()',
+                'new',
+            ],
+            answerIndex: 2,
+        },
+        operators: {
+            question: 'Quel type d operateur sert a tester une relation comme age >= 18?',
+            choices: [
+                'Un operateur de comparaison',
+                'Un constructeur',
+                'Une boucle for',
+                'Un tableau',
+            ],
+            answerIndex: 0,
+        },
+        math: {
+            question: 'Quelle classe Java fournit des outils comme max, min, sqrt et random?',
+            choices: [
+                'String',
+                'Math',
+                'Scanner',
+                'Array',
+            ],
+            answerIndex: 1,
+        },
+        'if-statement': {
+            question: 'Quand le bloc d un if est-il execute?',
+            choices: [
+                'Quand sa condition est fausse',
+                'Avant que la condition soit testee',
+                'Quand sa condition est vraie',
+                'Seulement dans une classe vide',
+            ],
+            answerIndex: 2,
+        },
+        'else-if': {
+            question: 'Pourquoi l ordre des conditions else if est-il important?',
+            choices: [
+                'Java execute toujours le dernier bloc',
+                'Les conditions sont ignorees',
+                'else if remplace les variables',
+                'Java execute la premiere condition vraie',
+            ],
+            answerIndex: 3,
+        },
+        switch: {
+            question: 'A quoi sert le mot-cle break dans un switch?',
+            choices: [
+                'A creer une nouvelle variable',
+                'A sortir du switch apres un cas',
+                'A convertir un double en int',
+                'A comparer deux objets',
+            ],
+            answerIndex: 1,
+        },
+        'while-loop': {
+            question: 'Quelle condition fait continuer une boucle while?',
+            choices: [
+                'Sa condition reste vraie',
+                'Sa condition est toujours fausse',
+                'Le programme atteint un constructeur',
+                'Le tableau contient un String',
+            ],
+            answerIndex: 0,
+        },
+        'for-loop': {
+            question: 'Quelles sont les trois parties principales d une boucle for?',
+            choices: [
+                'Classe, objet, constructeur',
+                'Type, package, import',
+                'Initialisation, condition, mise a jour',
+                'Question, choix, reponse',
+            ],
+            answerIndex: 2,
+        },
+        arrays: {
+            question: 'Par quel index commence un tableau Java?',
+            choices: [
+                '0',
+                '1',
+                '-1',
+                'La taille du tableau',
+            ],
+            answerIndex: 0,
+        },
+        methods: {
+            question: 'Pourquoi utilise-t-on des methodes?',
+            choices: [
+                'Pour changer le type d une variable',
+                'Pour supprimer les conditions',
+                'Pour empecher tout appel de code',
+                'Pour regrouper et reutiliser du code',
+            ],
+            answerIndex: 3,
+        },
+        classes: {
+            question: 'Quelle phrase decrit une classe?',
+            choices: [
+                'Une valeur true ou false',
+                'Une aire sous une courbe',
+                'Un plan qui definit des objets',
+                'Un index de tableau uniquement',
+            ],
+            answerIndex: 2,
+        },
+        'boolean-logic': {
+            question: 'Que fait l operateur ! sur une valeur booleenne?',
+            choices: [
+                'Il inverse true et false',
+                'Il additionne deux nombres',
+                'Il cree un tableau',
+                'Il appelle une methode',
+            ],
+            answerIndex: 0,
+        },
+    },
+};
+
 const SUBJECTS_WITH_COURSES: CourseSubject[] = ['java', 'math', 'physique'];
 
 function progressKey(subject: CourseSubject, courseId: string) {
@@ -1193,6 +1417,10 @@ export function getCourseProgressDetails(subject: CourseSubject, courseId: strin
 
 export function findCourse(subject: CourseSubject, courseId: string) {
     return COURSE_SUBJECTS[subject].find((course) => course.id === courseId);
+}
+
+export function getCourseQuiz(subject: CourseSubject, courseId: string) {
+    return COURSE_QUIZZES[subject][courseId];
 }
 
 function toRecentLearningCourse(subject: CourseSubject, course: LearningCourse): RecentLearningCourse {
