@@ -1,8 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CourseCard from '@/components/cours/CourseCard';
@@ -12,7 +12,7 @@ import {
   COURSE_SUBJECTS,
   CourseSubject,
   SUBJECT_LABELS,
-  getCourseProgressMap,
+  getLearningCourseSummaries,
 } from '@/data/courses';
 import { FloatingMathSymbols } from '@/features/simulations/core/floating-math-symbols';
 
@@ -38,7 +38,7 @@ export function CoursesScreen() {
   const params = useLocalSearchParams<{ subject?: string }>();
   const initialSubject = isCourseSubject(params.subject) ? params.subject : 'java';
   const [activeSubject, setActiveSubject] = useState<CourseSubject>(initialSubject);
-  const [progressMap, setProgressMap] = useState(getCourseProgressMap);
+  const [courseSummaries, setCourseSummaries] = useState(getLearningCourseSummaries);
   const subjectMotion = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -48,12 +48,17 @@ export function CoursesScreen() {
   }, [params.subject]);
 
   useFocusEffect(
-    useCallback(() => {
-      setProgressMap(getCourseProgressMap());
-    }, [])
+      useCallback(() => {
+        setCourseSummaries(getLearningCourseSummaries());
+      }, [])
   );
 
   const courses = COURSE_SUBJECTS[activeSubject];
+  // Summaries join catalog courses to local user progress so the course tab and profile tab show the same state.
+  const courseSummaryMap = useMemo(
+      () => new Map(courseSummaries.map((summary) => [summary.id, summary])),
+      [courseSummaries],
+  );
   const totalSlides = useMemo(() => courses.reduce((total, course) => total + course.totalSlides, 0), [courses]);
 
   useEffect(() => {
@@ -72,85 +77,91 @@ export function CoursesScreen() {
   });
 
   const subjectProgress = useMemo(() => {
-    const completedSlides = courses.reduce((total, course) => {
+    const totalCourseProgress = courses.reduce((total, course) => {
       const progressKey = `${activeSubject}:${course.id}`;
-
-      if (!(progressKey in progressMap)) {
-        return total;
-      }
-
-      const currentSlide = progressMap[progressKey];
-      return total + Math.min(currentSlide + 1, course.totalSlides);
+      return total + (courseSummaryMap.get(progressKey)?.progress ?? 0);
     }, 0);
 
-    return totalSlides === 0 ? 0 : Math.round((completedSlides / totalSlides) * 100);
-  }, [activeSubject, courses, progressMap, totalSlides]);
+    return courses.length === 0 ? 0 : Math.round(totalCourseProgress / courses.length);
+  }, [activeSubject, courses, courseSummaryMap]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ThemedView lightColor={THEME.background} style={styles.page}>
-        <FloatingMathSymbols showGlow={false} style={styles.mathSymbols} />
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <ThemedText lightColor={THEME.muted} style={styles.screenKicker}>
-            Cours / {SUBJECT_LABELS[activeSubject]}
-          </ThemedText>
-
-          <Animated.View style={[styles.hero, { opacity: subjectMotion, transform: [{ translateY: subjectTranslate }] }]}>
-            <View style={styles.badge}>
-              <MaterialCommunityIcons color="#6357E8" name="code-tags" size={14} />
-              <ThemedText lightColor="#6357E8" style={styles.badgeText}>
-                Lab {SUBJECT_LABELS[activeSubject]}
+      <SafeAreaView style={styles.safeArea}>
+        <ThemedView lightColor={THEME.background} style={styles.page}>
+          <FloatingMathSymbols showGlow={false} style={styles.mathSymbols} />
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <Pressable onPress={() => {router.dismissAll(), router.push("/(tabs)/home")}} style={styles.backButton}>
+              <MaterialCommunityIcons color={THEME.ink} name="arrow-left" size={18} />
+              <ThemedText lightColor={THEME.ink} style={styles.backButtonText}>
+                Retour
               </ThemedText>
-            </View>
+            </Pressable>
 
-            <ThemedText lightColor={THEME.ink} style={styles.title}>
-              Apprendre {SUBJECT_LABELS[activeSubject]}
-            </ThemedText>
-            <ThemedText lightColor="#8f9b8e" style={styles.titleAccent}>
-              visuellement.
-            </ThemedText>
-            <ThemedText lightColor={THEME.muted} style={styles.subtitle}>
-              Mini-cours interactifs avec exemples clairs, suivi de progression et questions rapides.
+            <ThemedText lightColor={THEME.muted} style={styles.screenKicker}>
+              Cours / {SUBJECT_LABELS[activeSubject]}
             </ThemedText>
 
-            <View style={styles.statsRow}>
-              <ThemedText lightColor={THEME.muted} style={styles.statText}>
-                {courses.length} mini-cours
-              </ThemedText>
-              <ThemedText lightColor={THEME.muted} style={styles.statText}>
-                {totalSlides} diapos
-              </ThemedText>
-              <ThemedText lightColor={THEME.muted} style={styles.statText}>
-                {subjectProgress}% termine
-              </ThemedText>
-            </View>
-          </Animated.View>
+            <Animated.View style={[styles.hero, { opacity: subjectMotion, transform: [{ translateY: subjectTranslate }] }]}>
+              <View style={styles.badge}>
+                <MaterialCommunityIcons color="#6357E8" name="code-tags" size={14} />
+                <ThemedText lightColor="#6357E8" style={styles.badgeText}>
+                  Lab {SUBJECT_LABELS[activeSubject]}
+                </ThemedText>
+              </View>
 
-          <Animated.View style={[styles.courseSection, { opacity: subjectMotion, transform: [{ translateX: subjectTranslate }] }]}>
-            <ThemedText lightColor={THEME.muted} style={styles.sectionLabel}>
-              Mini-cours
-            </ThemedText>
+              <ThemedText lightColor={THEME.ink} style={styles.title}>
+                Apprendre {SUBJECT_LABELS[activeSubject]}
+              </ThemedText>
+              <ThemedText lightColor="#8f9b8e" style={styles.titleAccent}>
+                visuellement.
+              </ThemedText>
+              <ThemedText lightColor={THEME.muted} style={styles.subtitle}>
+                Mini-cours interactifs avec exemples clairs, suivi de progression et questions rapides.
+              </ThemedText>
 
-            <View style={styles.courseList}>
-              {courses.map((course, index) => {
-                const progressKey = `${activeSubject}:${course.id}`;
-                const currentSlide = progressKey in progressMap ? progressMap[progressKey] : -1;
+              <View style={styles.statsRow}>
+                <ThemedText lightColor={THEME.muted} style={styles.statText}>
+                  {courses.length} mini-cours
+                </ThemedText>
+                <ThemedText lightColor={THEME.muted} style={styles.statText}>
+                  {totalSlides} diapos
+                </ThemedText>
+                <ThemedText lightColor={THEME.muted} style={styles.statText}>
+                  {subjectProgress}% termine
+                </ThemedText>
+              </View>
+            </Animated.View>
 
-                return (
-                  <CourseCard
-                    course={course}
-                    currentSlide={currentSlide}
-                    index={index}
-                    key={course.id}
-                    subject={activeSubject}
-                  />
-                );
-              })}
-            </View>
-          </Animated.View>
-        </ScrollView>
-      </ThemedView>
-    </SafeAreaView>
+            <Animated.View style={[styles.courseSection, { opacity: subjectMotion, transform: [{ translateX: subjectTranslate }] }]}>
+              <ThemedText lightColor={THEME.muted} style={styles.sectionLabel}>
+                Mini-cours
+              </ThemedText>
+
+              <View style={styles.courseList}>
+                {courses.map((course, index) => {
+                  const progressKey = `${activeSubject}:${course.id}`;
+                  const progressDetails = courseSummaryMap.get(progressKey) ?? {
+                    completed: false,
+                    exerciseCompleted: false,
+                    highestSlideIndex: -1,
+                    progress: 0,
+                  };
+
+                  return (
+                      <CourseCard
+                          course={course}
+                          progressDetails={progressDetails}
+                          index={index}
+                          key={course.id}
+                          subject={activeSubject}
+                      />
+                  );
+                })}
+              </View>
+            </Animated.View>
+          </ScrollView>
+        </ThemedView>
+      </SafeAreaView>
   );
 }
 
@@ -182,6 +193,24 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     lineHeight: 16,
     textTransform: 'uppercase',
+  },
+  backButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: THEME.soft,
+    borderColor: THEME.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  backButtonText: {
+    color: THEME.ink,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
   },
   hero: {
     alignItems: 'center',
@@ -257,5 +286,8 @@ const styles = StyleSheet.create({
   },
   courseList: {
     gap: 14,
+    flexWrap: 'wrap',
+    flexDirection: 'row',
+    flexGrow: 1,
   },
 });
