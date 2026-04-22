@@ -862,7 +862,7 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   cardDescription: {
-    color: '#4E6254',
+    color: '#243B53',
     flex: 1,
     fontSize: 14,
     lineHeight: 21,
@@ -891,7 +891,7 @@ const styles = StyleSheet.create({
   categoryText: {
     color: '#243B53',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
     lineHeight: 16,
   },
 });

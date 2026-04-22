@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { FormulaRenderer } from '@/features/simulations/core/formula-renderer';
 import {
   CourseSubject,
   SUBJECT_LABELS,
@@ -16,13 +17,16 @@ import {
 import { db } from '@/db/mainData';
 
 const THEME = {
-  background: '#EEF5ED',
-  border: '#E2DACB',
-  ink: '#111827',
-  muted: '#5F6B7A',
-  panel: '#FFFFFF',
-  soft: '#DFE9DC',
-  purple: '#6B5CFF',
+  background: '#EAE3D2',
+  border: '#243B53',
+  ink: '#243B53',
+  muted: '#6E7F73',
+  panel: '#DDE4D5',
+  soft: '#F3F1E7',
+  blue: '#7EA6E0',
+  yellow: '#D8A94A',
+  green: '#7CCFBF',
+  red: '#D97B6C',
 };
 
 const SUBJECTS: CourseSubject[] = ['java', 'math', 'physique'];
@@ -226,7 +230,15 @@ export default function CourseReaderScreen() {
   const quiz = buildQuiz(course.title);
   const canGoPrevious = slideIndex > 0;
   const canGoNext = slideIndex < maxSlideIndex;
-  const codeLines = slide.code ? cleanCodeText(slide.code).split('\n') : [];
+  const utiliseCarteFormule = subject === 'math' || subject === 'physique';
+  const contenuDiapoTraite = useMemo(
+    () => ({
+      lignesCode: slide.code ? cleanCodeText(slide.code).split('\n') : [],
+      theorieRendue: renderHighlightedText(slide.theory),
+    }),
+    [slide.code, slide.theory]
+  );
+  const codeLines = contenuDiapoTraite.lignesCode;
 
   function goPrevious() {
     setSlideIndex((currentIndex) => Math.max(currentIndex - 1, 0));
@@ -301,10 +313,10 @@ export default function CourseReaderScreen() {
               {slide.title}
             </ThemedText>
             <ThemedText lightColor={THEME.ink} style={styles.theoryText}>
-              {renderHighlightedText(slide.theory)}
+              {contenuDiapoTraite.theorieRendue}
             </ThemedText>
 
-            {slide.code ? (
+            {slide.code && subject === 'java' ? (
               <View style={styles.codeWindow}>
                 <View style={styles.codeChrome}>
                   <View style={[styles.windowDot, { backgroundColor: '#EF4444' }]} />
@@ -323,6 +335,30 @@ export default function CourseReaderScreen() {
                       <ThemedText lightColor="#E5E7EB" style={styles.codeText}>
                         {line}
                       </ThemedText>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            {slide.code && utiliseCarteFormule ? (
+              <View style={styles.formulaCard}>
+                <View style={styles.formulaCardHeader}>
+                  <View style={styles.formulaBadge}>
+                    <MaterialCommunityIcons color={THEME.ink} name="function-variant" size={18} />
+                    <ThemedText lightColor={THEME.ink} style={styles.formulaBadgeText}>
+                      Vue mathematique
+                    </ThemedText>
+                  </View>
+                  <ThemedText lightColor={THEME.muted} style={styles.formulaHint}>
+                    Formule cle
+                  </ThemedText>
+                </View>
+
+                <View style={styles.formulaSurface}>
+                  {codeLines.map((line, index) => (
+                    <View key={`${line}-${index}`} style={styles.formulaLine}>
+                      <FormulaRenderer centered fallback={line} math={line} size="lg" />
                     </View>
                   ))}
                 </View>
@@ -375,7 +411,7 @@ export default function CourseReaderScreen() {
               pressed ? styles.pressed : null,
             ]}>
             <MaterialCommunityIcons color={THEME.ink} name="chevron-left" size={24} />
-            <ThemedText lightColor={THEME.ink} style={styles.navButtonText}>
+            <ThemedText lightColor={THEME.ink} selectable={false} style={styles.navButtonText}>
               Precedent
             </ThemedText>
           </Pressable>
@@ -388,7 +424,7 @@ export default function CourseReaderScreen() {
               !canGoNext ? styles.navButtonDisabled : null,
               pressed ? styles.pressed : null,
             ]}>
-            <ThemedText lightColor={THEME.ink} style={styles.navButtonText}>
+            <ThemedText lightColor={THEME.ink} selectable={false} style={styles.navButtonText}>
               Suivant
             </ThemedText>
             <MaterialCommunityIcons color={THEME.ink} name="chevron-right" size={24} />
@@ -495,7 +531,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressFill: {
-    backgroundColor: THEME.purple,
+    backgroundColor: THEME.yellow,
     height: '100%',
   },
   content: {
@@ -536,16 +572,16 @@ const styles = StyleSheet.create({
     lineHeight: 27,
   },
   keywordText: {
-    backgroundColor: '#ECEBFF',
+    backgroundColor: 'rgba(216, 169, 74, 0.18)',
     borderRadius: 6,
-    color: THEME.purple,
+    color: THEME.ink,
     fontWeight: '900',
     paddingHorizontal: 4,
   },
   inlineCode: {
-    backgroundColor: '#E8EEF6',
+    backgroundColor: 'rgba(126, 166, 224, 0.18)',
     borderRadius: 6,
-    color: '#0F172A',
+    color: THEME.ink,
     fontFamily: 'monospace',
     fontWeight: '900',
     paddingHorizontal: 4,
@@ -597,8 +633,66 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
   },
+  formulaCard: {
+    backgroundColor: THEME.soft,
+    borderColor: THEME.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 14,
+    overflow: 'hidden',
+    padding: 16,
+  },
+  formulaCardHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  formulaBadge: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(216, 169, 74, 0.18)',
+    borderColor: THEME.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  formulaBadgeText: {
+    color: THEME.ink,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 16,
+    textTransform: 'uppercase',
+  },
+  formulaHint: {
+    color: THEME.muted,
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 16,
+    textTransform: 'uppercase',
+  },
+  formulaSurface: {
+    backgroundColor: THEME.panel,
+    borderColor: THEME.border,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+  },
+  formulaLine: {
+    backgroundColor: 'rgba(126, 166, 224, 0.12)',
+    borderColor: 'rgba(36, 59, 83, 0.12)',
+    borderRadius: 12,
+    borderWidth: 1,
+    minHeight: 62,
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
   quizCard: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: THEME.soft,
     borderColor: THEME.border,
     borderRadius: 14,
     borderWidth: 1,
@@ -630,15 +724,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   choiceButtonSelected: {
-    borderColor: THEME.purple,
+    backgroundColor: 'rgba(126, 166, 224, 0.14)',
+    borderColor: THEME.blue,
   },
   choiceButtonCorrect: {
-    backgroundColor: '#DCFCE7',
-    borderColor: '#16A34A',
+    backgroundColor: 'rgba(124, 207, 191, 0.16)',
+    borderColor: THEME.green,
   },
   choiceButtonIncorrect: {
-    backgroundColor: '#FEE2E2',
-    borderColor: '#DC2626',
+    backgroundColor: 'rgba(217, 123, 108, 0.14)',
+    borderColor: THEME.red,
   },
   choiceText: {
     color: THEME.ink,

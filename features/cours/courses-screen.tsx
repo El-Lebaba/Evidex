@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useFocusEffect } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -23,14 +24,15 @@ function isCourseSubject(value: string | undefined): value is CourseSubject {
 }
 
 const THEME = {
-  background: '#EEF5ED',
-  border: '#E2DACB',
+  background: '#EAE3D2',
+  border: '#243B53',
   copper: '#BC8559',
-  ink: '#20242B',
-  muted: '#536165',
-  panel: '#FFFFFF',
-  sage: '#B8C7B1',
-  soft: '#DFE9DC',
+  ink: '#243B53',
+  muted: '#6E7F73',
+  panel: '#DDE4D5',
+  sage: '#B7C7B0',
+  soft: '#F3F1E7',
+  blue: '#7EA6E0',
   yellow: '#D8A94A',
 };
 
@@ -90,7 +92,12 @@ export function CoursesScreen() {
         <ThemedView lightColor={THEME.background} style={styles.page}>
           <FloatingMathSymbols showGlow={false} style={styles.mathSymbols} />
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            <Pressable onPress={() => {router.dismissAll(), router.push("/(tabs)/home")}} style={styles.backButton}>
+            <Pressable
+              onPress={() => {
+                router.dismissAll();
+                router.push('/(tabs)/home');
+              }}
+              style={styles.backButton}>
               <MaterialCommunityIcons color={THEME.ink} name="arrow-left" size={18} />
               <ThemedText lightColor={THEME.ink} style={styles.backButtonText}>
                 Retour
@@ -102,12 +109,13 @@ export function CoursesScreen() {
             </ThemedText>
 
             <Animated.View style={[styles.hero, { opacity: subjectMotion, transform: [{ translateY: subjectTranslate }] }]}>
-              <View style={styles.badge}>
-                <MaterialCommunityIcons color="#6357E8" name="code-tags" size={14} />
-                <ThemedText lightColor="#6357E8" style={styles.badgeText}>
-                  Lab {SUBJECT_LABELS[activeSubject]}
-                </ThemedText>
-              </View>
+              <Pressable onPress={() => router.push('/(tabs)/home')} style={styles.logoBadge}>
+                <Image
+                  contentFit="contain"
+                  source={require('@/assets/images/evidexe-logo.png')}
+                  style={styles.logoBadgeImage}
+                />
+              </Pressable>
 
               <ThemedText lightColor={THEME.ink} style={styles.title}>
                 Apprendre {SUBJECT_LABELS[activeSubject]}
@@ -218,22 +226,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 18,
   },
-  badge: {
+  logoBadge: {
     alignItems: 'center',
-    backgroundColor: '#ECEBFF',
-    borderColor: '#D6D3FF',
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
-  badgeText: {
-    color: THEME.ink,
-    fontSize: 13,
-    fontWeight: '800',
-    lineHeight: 18,
+  logoBadgeImage: {
+    height: 50,
+    width: 160,
   },
   title: {
     color: THEME.ink,
@@ -243,7 +244,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   titleAccent: {
-    color: '#6B5CFF',
+    color: THEME.yellow,
     fontSize: 44,
     fontWeight: '900',
     lineHeight: 48,
@@ -265,7 +266,10 @@ const styles = StyleSheet.create({
   },
   statText: {
     backgroundColor: THEME.soft,
+    borderColor: THEME.border,
     borderRadius: 999,
+    borderWidth: 1,
+    color: THEME.ink,
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 18,
