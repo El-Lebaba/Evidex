@@ -12,6 +12,7 @@ import {
   COURSE_SUBJECTS,
   CourseSubject,
   SUBJECT_LABELS,
+  getCourseProgressDetails,
   getCourseProgressMap,
 } from '@/data/courses';
 import { FloatingMathSymbols } from '@/features/simulations/core/floating-math-symbols';
@@ -133,15 +134,14 @@ export function CoursesScreen() {
 
             <View style={styles.courseList}>
               {courses.map((course, index) => {
-                const progressKey = `${activeSubject}:${course.id}`;
-                const currentSlide = progressKey in progressMap ? progressMap[progressKey] : -1;
+                const progressDetails = getCourseProgressDetails(activeSubject, course.id);
 
                 return (
                   <CourseCard
                     course={course}
-                    currentSlide={currentSlide}
                     index={index}
                     key={course.id}
+                    progressDetails={progressDetails}
                     subject={activeSubject}
                   />
                 );
