@@ -482,6 +482,11 @@ export function SimulationSeries() {
     inputRange: [0, 120],
     outputRange: [0, -HAUTEUR_TOTALE_ENTETE_SIMULATION],
   });
+  const opaciteEntete = animationPositionScroll.interpolate({
+    extrapolate: 'clamp',
+    inputRange: [0, 60, 120],
+    outputRange: [1, 0.9, 0],
+  });
 
   return (
     <SafeAreaView style={stylesSeries.safeArea} edges={['top']}>
@@ -490,6 +495,7 @@ export function SimulationSeries() {
           style={[
             stylesSeries.superpositionEntete,
             {
+              opacity: opaciteEntete,
               transform: [{ translateY: translationEntete }],
             },
           ]}>

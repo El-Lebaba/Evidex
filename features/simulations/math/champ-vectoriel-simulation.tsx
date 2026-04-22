@@ -488,7 +488,11 @@ export function ChampVectorielSimulation() {
                   ]}>
                   <ThemedText
                     lightColor={showParticles ? THEME.ink : THEME.mutedInk}
-                    style={styles.toggleButtonText}>
+                    darkColor={showParticles ? THEME.ink : THEME.mutedInk}
+                    style={[
+                      styles.toggleButtonText,
+                      showParticles ? styles.toggleButtonTextActive : undefined,
+                    ]}>
                     {showParticles ? 'Flux anime actif' : 'Afficher les particules de flux'}
                   </ThemedText>
                 </Pressable>
@@ -716,10 +720,14 @@ const styles = StyleSheet.create({
     borderColor: THEME.accent,
   },
   toggleButtonText: {
+    color: THEME.ink,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 18,
     textAlign: 'center',
+  },
+  toggleButtonTextActive: {
+    color: THEME.ink,
   },
   statsGrid: {
     gap: 12,

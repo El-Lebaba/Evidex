@@ -128,7 +128,7 @@ export const SIMULATION_CATALOG: Record<SimulationSection, SimulationEntry[]> = 
     {
       description: 'Etudie les oscillations et la periode d un pendule.',
       href: '/(tabs)/physics/pendulum',
-      icon: 'pendulum',
+      icon: 'metronome',
       status: 'soon',
       tags: ['mecanique'],
       title: 'Pendule',
@@ -176,7 +176,7 @@ export const SIMULATION_CATALOG: Record<SimulationSection, SimulationEntry[]> = 
     {
       description: 'Visualise reflexion, refraction et parcours lumineux.',
       href: '/(tabs)/physics/optics-refraction',
-      icon: 'eyeglasses',
+      icon: 'glasses',
       status: 'soon',
       tags: ['ondes'],
       title: 'Optique et refraction',
@@ -184,7 +184,7 @@ export const SIMULATION_CATALOG: Record<SimulationSection, SimulationEntry[]> = 
     {
       description: 'Etudie les orbites et les mouvements sous attraction centrale.',
       href: '/(tabs)/physics/orbital-mechanics',
-      icon: 'planet',
+      icon: 'earth',
       status: 'soon',
       tags: ['mecanique'],
       title: 'Mecanique orbitale',
