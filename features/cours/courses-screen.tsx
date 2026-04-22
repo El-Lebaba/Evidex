@@ -1,8 +1,8 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useLocalSearchParams } from 'expo-router';
+import { Image } from 'expo-image';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CourseCard from '@/components/cours/CourseCard';
@@ -96,12 +96,13 @@ export function CoursesScreen() {
           </ThemedText>
 
           <Animated.View style={[styles.hero, { opacity: subjectMotion, transform: [{ translateY: subjectTranslate }] }]}>
-            <View style={styles.badge}>
-              <MaterialCommunityIcons color="#6357E8" name="code-tags" size={14} />
-              <ThemedText lightColor="#6357E8" style={styles.badgeText}>
-                Lab {SUBJECT_LABELS[activeSubject]}
-              </ThemedText>
-            </View>
+            <Pressable onPress={() => router.push('/(tabs)/home')} style={styles.logoButton}>
+              <Image
+                contentFit="contain"
+                source={require('@/assets/images/evidexe-logo.png')}
+                style={styles.logo}
+              />
+            </Pressable>
 
             <ThemedText lightColor={THEME.ink} style={styles.title}>
               Apprendre {SUBJECT_LABELS[activeSubject]}
@@ -189,22 +190,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 18,
   },
-  badge: {
+  logoButton: {
     alignItems: 'center',
-    backgroundColor: '#ECEBFF',
-    borderColor: '#D6D3FF',
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    justifyContent: 'center',
   },
-  badgeText: {
-    color: THEME.ink,
-    fontSize: 13,
-    fontWeight: '800',
-    lineHeight: 18,
+  logo: {
+    height: 40,
+    width: 128,
   },
   title: {
     color: THEME.ink,
