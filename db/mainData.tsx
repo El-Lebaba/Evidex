@@ -7,6 +7,7 @@ export type Course = {
   courseId?: string;
   totalSlides?: number;
   highestSlideIndex?: number;
+  exerciseCompleted?: boolean;
   lastOpenedAt?: string;
 };
 
@@ -49,6 +50,8 @@ type StoredCourseProgress = {
   completed: boolean;
   totalSlides?: number;
   highestSlideIndex?: number;
+  exerciseCompleted?: boolean;
+  xpAwarded?: boolean;
   lastOpenedAt: string;
 };
 
@@ -143,12 +146,20 @@ function clampProgress(progress: number) {
   return Math.max(0, Math.min(100, Math.round(progress)));
 }
 
-function progressFromSlide(slideIndex: number, totalSlides?: number) {
+// Converts the furthest opened slide into the integer percentage stored in local user data.
+// The last theory slide is capped at 99%; the final exercise flag is required for 100%.
+function progressFromSlide(slideIndex: number, totalSlides?: number, exerciseCompleted = false) {
   if (!totalSlides || totalSlides <= 0) {
     return slideIndex >= 0 ? 1 : 0;
   }
 
   const safeSlide = Math.max(0, Math.min(Math.floor(slideIndex), totalSlides - 1));
+  const reachedLastTheorySlide = safeSlide >= totalSlides - 1;
+
+  if (reachedLastTheorySlide) {
+    return exerciseCompleted ? 100 : 99;
+  }
+
   return clampProgress(((safeSlide + 1) / totalSlides) * 100);
 }
 
@@ -273,6 +284,7 @@ function mapCourse(course: StoredCourseProgress): Course {
     courseId: course.courseId,
     totalSlides: course.totalSlides,
     highestSlideIndex: course.highestSlideIndex,
+    exerciseCompleted: Boolean(course.exerciseCompleted),
     lastOpenedAt: course.lastOpenedAt,
   };
 }
@@ -416,19 +428,57 @@ export const db = {
     return course?.highestSlideIndex ?? 0;
   },
 
-  saveCourseProgress(subject: string, courseId: string, slideIndex: number, totalSlides?: number, courseName?: string) {
-    const progress = progressFromSlide(slideIndex, totalSlides);
+  getCourseProgressDetails(subject: string, courseId: string) {
+    const userData = getActiveUserData();
+    const course = userData.courses[`${subject}:${courseId}`];
+
+    if (!course) {
+      return {
+        completed: false,
+        exerciseCompleted: false,
+        highestSlideIndex: -1,
+        progress: 0,
+      };
+    }
+
+    return {
+      completed: course.completed,
+      exerciseCompleted: Boolean(course.exerciseCompleted),
+      highestSlideIndex: course.highestSlideIndex ?? -1,
+      progress: course.progress,
+    };
+  },
+
+  saveCourseProgress(
+    subject: string,
+    courseId: string,
+    slideIndex: number,
+    totalSlides?: number,
+    courseName?: string,
+    exerciseCompleted = false,
+  ) {
+    const data = readAppData();
+    const userData = getActiveUserData(data);
+    const id = `${subject}:${courseId}`;
+    const existing = userData.courses[id];
+    const nextExerciseCompleted = Boolean(existing?.exerciseCompleted || exerciseCompleted);
+    const progress = progressFromSlide(slideIndex, totalSlides, nextExerciseCompleted);
 
     if (progress <= 0) {
       return;
     }
 
-    const data = readAppData();
-    const userData = getActiveUserData(data);
-    const id = `${subject}:${courseId}`;
-    const existing = userData.courses[id];
     const highestSlideIndex = Math.max(existing?.highestSlideIndex ?? -1, Math.max(0, Math.floor(slideIndex)));
-    const nextProgress = Math.max(existing?.progress ?? 0, progress);
+    const existingProgressUnderCurrentRule = nextExerciseCompleted ? existing?.progress ?? 0 : Math.min(existing?.progress ?? 0, 99);
+    const nextProgress = Math.max(existingProgressUnderCurrentRule, progress);
+    const shouldAwardCompletionXp = nextExerciseCompleted && nextProgress >= 100 && !existing?.xpAwarded;
+
+    if (shouldAwardCompletionXp) {
+      const user = ensureActiveUser(data);
+      user.xp = Math.max(0, user.xp + 25);
+      user.level = Math.floor(user.xp / 100) + 1;
+      user.lastSeenAt = nowIso();
+    }
 
     userData.courses[id] = {
       id,
@@ -439,8 +489,19 @@ export const db = {
       completed: nextProgress >= 100,
       totalSlides: totalSlides ?? existing?.totalSlides,
       highestSlideIndex,
+      exerciseCompleted: nextExerciseCompleted,
+      xpAwarded: Boolean(existing?.xpAwarded || shouldAwardCompletionXp),
       lastOpenedAt: nowIso(),
     };
+
+    if (nextProgress >= 100) {
+      const completedCourseCount = Object.values(userData.courses).filter((course) => course.completed).length;
+      userData.achievements['3'] = { ...defaultAchievements[2], completed: true };
+
+      if (completedCourseCount >= 5) {
+        userData.achievements['4'] = { ...defaultAchievements[3], completed: true };
+      }
+    }
 
     writeAppData(data);
   },
@@ -456,6 +517,7 @@ export const db = {
           course.highestSlideIndex,
           course.totalSlides,
           course.name,
+          course.exerciseCompleted,
         );
         return;
       }
@@ -464,7 +526,14 @@ export const db = {
         const slideIndex = course.totalSlides
           ? Math.max(0, Math.ceil((course.progress / 100) * course.totalSlides) - 1)
           : 0;
-        db.saveCourseProgress(identity.subject, identity.courseId, slideIndex, course.totalSlides, course.name);
+        db.saveCourseProgress(
+          identity.subject,
+          identity.courseId,
+          slideIndex,
+          course.totalSlides,
+          course.name,
+          course.exerciseCompleted,
+        );
       }
     });
   },
@@ -479,6 +548,7 @@ export const db = {
       patch.highestSlideIndex ?? existingProgress,
       patch.totalSlides,
       patch.name,
+      patch.exerciseCompleted,
     );
   },
 

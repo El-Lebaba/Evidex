@@ -16,562 +16,6 @@ import { db } from '@/db/mainData';
  * - "flow"       → Flowchart-style execution path
  */
 
-export const COURSES = [
-    {
-        id: "if-statement",
-        title: "The If Statement",
-        subtitle: "Conditional Logic",
-        icon: "🚦",
-        color: "from-indigo-500 to-violet-600",
-        description: "Learn how Java decides what code to run based on conditions.",
-        totalSlides: 4,
-        slides: [
-            {
-                title: "What is an If Statement?",
-                theory: "An **if statement** lets your program make decisions. It checks a condition — if the condition is `true`, the code inside runs. If it's `false`, it gets skipped entirely.",
-                code: `if (condition) {\n  // runs only when true\n}`,
-                animation: {
-                    type: "gate",
-                    value: 50,
-                    condition: "value > 100",
-                    result: false,
-                    label: "The sphere is 50 — the gate requires > 100. Blocked!"
-                }
-            },
-            {
-                title: "Making It Pass",
-                theory: "Now let's change the value to **150**. Since 150 is greater than 100, the condition becomes `true` and the code inside the if block **executes**.",
-                code: `int value = 150;\nif (value > 100) {\n  System.out.println("Big number!");\n}`,
-                animation: {
-                    type: "gate",
-                    value: 150,
-                    condition: "value > 100",
-                    result: true,
-                    label: "The sphere is 150 — the gate opens! Condition is true."
-                }
-            },
-            {
-                title: "The Else Branch",
-                theory: "What if the condition is false and we want to do something else? That's what `else` is for. It catches everything that doesn't match the `if`.",
-                code: `int value = 30;\nif (value > 100) {\n  System.out.println("Big!");\n} else {\n  System.out.println("Small!");\n}`,
-                animation: {
-                    type: "gate",
-                    value: 30,
-                    condition: "value > 100",
-                    result: false,
-                    label: "Value is 30 — it takes the else path instead."
-                }
-            },
-            {
-                title: "Else If — Multiple Paths",
-                theory: "You can chain conditions with `else if`. Java checks each one in order and runs the **first** one that's true.",
-                code: `int score = 75;\nif (score >= 90) {\n  System.out.println("A");\n} else if (score >= 70) {\n  System.out.println("B");\n} else {\n  System.out.println("C");\n}`,
-                animation: {
-                    type: "flow",
-                    paths: [
-                        { label: "score >= 90", result: false },
-                        { label: "score >= 70", result: true, output: "B" },
-                        { label: "else", result: false }
-                    ],
-                    label: "Score is 75 → skips first, matches second → prints B"
-                }
-            }
-        ]
-    },
-    {
-        id: "variables",
-        title: "Variables",
-        subtitle: "Data Storage",
-        icon: "📦",
-        color: "from-emerald-500 to-teal-600",
-        description: "Understand how Java stores and manages data in memory.",
-        totalSlides: 4,
-        slides: [
-            {
-                title: "What is a Variable?",
-                theory: "A **variable** is a named container that stores a value. Think of it like a labeled box — you give it a name and put something inside.",
-                code: `int age = 25;`,
-                animation: {
-                    type: "variable",
-                    varName: "age",
-                    varType: "int",
-                    value: 25,
-                    label: "A box labeled 'age' now holds the value 25."
-                }
-            },
-            {
-                title: "Changing Values",
-                theory: "Variables can be **reassigned**. The old value disappears and the new one takes its place.",
-                code: `int age = 25;\nage = 30; // now it's 30`,
-                animation: {
-                    type: "variable",
-                    varName: "age",
-                    varType: "int",
-                    value: 30,
-                    previousValue: 25,
-                    label: "The box 'age' updates from 25 → 30."
-                }
-            },
-            {
-                title: "Types of Variables",
-                theory: "Java is **strongly typed** — every variable must declare its type. Common types: `int` (whole numbers), `double` (decimals), `String` (text), `boolean` (true/false).",
-                code: `int count = 10;\ndouble price = 9.99;\nString name = "Java";\nboolean active = true;`,
-                animation: {
-                    type: "variable",
-                    varName: "name",
-                    varType: "String",
-                    value: '"Java"',
-                    label: "Different types of boxes for different types of data."
-                }
-            },
-            {
-                title: "Final Variables",
-                theory: "Adding `final` makes a variable **constant** — it can never be changed after being set. Use it for values that shouldn't change.",
-                code: `final double PI = 3.14159;\n// PI = 3.0; ← ERROR!`,
-                animation: {
-                    type: "variable",
-                    varName: "PI",
-                    varType: "final double",
-                    value: 3.14159,
-                    locked: true,
-                    label: "This box is sealed shut — no changes allowed!"
-                }
-            }
-        ]
-    },
-    {
-        id: "for-loop",
-        title: "For Loops",
-        subtitle: "Iteration Basics",
-        icon: "🔄",
-        color: "from-amber-500 to-orange-600",
-        description: "Repeat code a specific number of times with for loops.",
-        totalSlides: 4,
-        slides: [
-            {
-                title: "The For Loop Structure",
-                theory: "A `for` loop repeats a block of code a set number of times. It has three parts: **initialization**, **condition**, and **increment**.",
-                code: `for (int i = 0; i < 5; i++) {\n  System.out.println(i);\n}`,
-                animation: {
-                    type: "loop",
-                    current: 0,
-                    max: 5,
-                    items: [0, 1, 2, 3, 4],
-                    label: "The loop runs 5 times: i goes from 0 to 4."
-                }
-            },
-            {
-                title: "Loop Counting",
-                theory: "The variable `i` starts at 0, and after each iteration it increases by 1. When `i` reaches 5, the condition `i < 5` is false and the loop stops.",
-                code: `// Iteration 1: i = 0 → print 0\n// Iteration 2: i = 1 → print 1\n// ...\n// Iteration 5: i = 4 → print 4\n// i = 5 → STOP`,
-                animation: {
-                    type: "loop",
-                    current: 3,
-                    max: 5,
-                    items: [0, 1, 2, 3, 4],
-                    highlightIndex: 3,
-                    label: "Currently on iteration 4 (i = 3)."
-                }
-            },
-            {
-                title: "Custom Step Size",
-                theory: "You can change how much `i` increases each time. Using `i += 2` makes it skip every other number.",
-                code: `for (int i = 0; i < 10; i += 2) {\n  System.out.println(i);\n}\n// Output: 0, 2, 4, 6, 8`,
-                animation: {
-                    type: "loop",
-                    current: 0,
-                    max: 10,
-                    items: [0, 2, 4, 6, 8],
-                    label: "Stepping by 2: only even numbers."
-                }
-            },
-            {
-                title: "Nested Loops",
-                theory: "You can put a loop inside another loop. The **inner loop** runs completely for each iteration of the outer loop.",
-                code: `for (int i = 0; i < 3; i++) {\n  for (int j = 0; j < 2; j++) {\n    System.out.println(i + "," + j);\n  }\n}`,
-                animation: {
-                    type: "loop",
-                    current: 0,
-                    max: 6,
-                    items: ["0,0", "0,1", "1,0", "1,1", "2,0", "2,1"],
-                    label: "3 outer × 2 inner = 6 total iterations."
-                }
-            }
-        ]
-    },
-    {
-        id: "while-loop",
-        title: "While Loops",
-        subtitle: "Conditional Repetition",
-        icon: "⏳",
-        color: "from-rose-500 to-pink-600",
-        description: "Keep running code as long as a condition is true.",
-        totalSlides: 3,
-        slides: [
-            {
-                title: "The While Loop",
-                theory: "A `while` loop keeps running **as long as** a condition is true. Unlike `for`, you don't always know how many times it'll run.",
-                code: `int count = 0;\nwhile (count < 3) {\n  System.out.println(count);\n  count++;\n}`,
-                animation: {
-                    type: "loop",
-                    current: 0,
-                    max: 3,
-                    items: [0, 1, 2],
-                    label: "Keeps going while count < 3."
-                }
-            },
-            {
-                title: "Infinite Loops (Danger!)",
-                theory: "If the condition **never** becomes false, the loop runs forever. This is called an **infinite loop** — it will crash your program.",
-                code: `// DON'T DO THIS!\nwhile (true) {\n  System.out.println("Forever!");\n}`,
-                animation: {
-                    type: "loop",
-                    current: 0,
-                    max: 999,
-                    items: ["♾️", "♾️", "♾️", "♾️", "♾️"],
-                    label: "Danger! This never stops."
-                }
-            },
-            {
-                title: "Do-While Loop",
-                theory: "A `do-while` loop runs the code **at least once**, then checks the condition. The check happens at the end, not the beginning.",
-                code: `int x = 10;\ndo {\n  System.out.println(x);\n  x++;\n} while (x < 3);\n// Prints 10 (runs once!)`,
-                animation: {
-                    type: "loop",
-                    current: 0,
-                    max: 1,
-                    items: [10],
-                    label: "Runs once even though 10 < 3 is false."
-                }
-            }
-        ]
-    },
-    {
-        id: "methods",
-        title: "Methods",
-        subtitle: "Reusable Code",
-        icon: "⚡",
-        color: "from-cyan-500 to-blue-600",
-        description: "Write code once, use it many times with methods.",
-        totalSlides: 4,
-        slides: [
-            {
-                title: "What is a Method?",
-                theory: "A **method** is a block of code with a name. Instead of writing the same code over and over, you write it once and **call** it whenever you need it.",
-                code: `public static void greet() {\n  System.out.println("Hello!");\n}\n\n// Call it:\ngreet(); // prints "Hello!"`,
-                animation: {
-                    type: "flow",
-                    paths: [
-                        { label: "main()", result: true },
-                        { label: "→ greet()", result: true, output: "Hello!" }
-                    ],
-                    label: "main() calls greet(), which prints Hello!"
-                }
-            },
-            {
-                title: "Parameters",
-                theory: "Methods can accept **parameters** — values you pass in when calling them. This makes them flexible.",
-                code: `public static void greet(String name) {\n  System.out.println("Hello " + name);\n}\n\ngreet("Alice"); // Hello Alice\ngreet("Bob");   // Hello Bob`,
-                animation: {
-                    type: "flow",
-                    paths: [
-                        { label: 'greet("Alice")', result: true, output: "Hello Alice" },
-                        { label: 'greet("Bob")', result: true, output: "Hello Bob" }
-                    ],
-                    label: "Same method, different input → different output."
-                }
-            },
-            {
-                title: "Return Values",
-                theory: "Methods can **return** a value back to whoever called them. Use a return type instead of `void`.",
-                code: `public static int add(int a, int b) {\n  return a + b;\n}\n\nint result = add(3, 7); // result = 10`,
-                animation: {
-                    type: "variable",
-                    varName: "result",
-                    varType: "int",
-                    value: 10,
-                    label: "add(3, 7) computes and returns 10."
-                }
-            },
-            {
-                title: "Method Overloading",
-                theory: "You can have multiple methods with the **same name** but different parameters. Java picks the right one based on what you pass in.",
-                code: `static int add(int a, int b) {\n  return a + b;\n}\nstatic double add(double a, double b) {\n  return a + b;\n}\n\nadd(3, 7);      // calls int version\nadd(3.5, 2.1);  // calls double version`,
-                animation: {
-                    type: "comparison",
-                    left: { label: "add(3, 7)", value: "int → 10" },
-                    right: { label: "add(3.5, 2.1)", value: "double → 5.6" },
-                    label: "Same name, different types → different method."
-                }
-            }
-        ]
-    },
-    {
-        id: "arrays",
-        title: "Arrays",
-        subtitle: "Data Collections",
-        icon: "📊",
-        color: "from-violet-500 to-purple-600",
-        description: "Store multiple values in a single variable.",
-        totalSlides: 3,
-        slides: [
-            {
-                title: "Creating an Array",
-                theory: "An **array** holds multiple values of the same type. Each value has an **index** starting from 0.",
-                code: `int[] numbers = {10, 20, 30, 40, 50};\n\nSystem.out.println(numbers[0]); // 10\nSystem.out.println(numbers[2]); // 30`,
-                animation: {
-                    type: "loop",
-                    current: 0,
-                    max: 5,
-                    items: [10, 20, 30, 40, 50],
-                    label: "5 slots, indexed 0 through 4."
-                }
-            },
-            {
-                title: "Modifying Elements",
-                theory: "You can change any element by accessing its index and assigning a new value.",
-                code: `int[] numbers = {10, 20, 30};\nnumbers[1] = 99;\n// Now: {10, 99, 30}`,
-                animation: {
-                    type: "variable",
-                    varName: "numbers[1]",
-                    varType: "int",
-                    value: 99,
-                    previousValue: 20,
-                    label: "Index 1 changes from 20 → 99."
-                }
-            },
-            {
-                title: "Looping Through Arrays",
-                theory: "Use a `for` loop to go through every element. The array's `.length` property tells you how many elements it has.",
-                code: `int[] nums = {10, 20, 30};\nfor (int i = 0; i < nums.length; i++) {\n  System.out.println(nums[i]);\n}`,
-                animation: {
-                    type: "loop",
-                    current: 0,
-                    max: 3,
-                    items: [10, 20, 30],
-                    label: "Loop visits each element one by one."
-                }
-            }
-        ]
-    },
-    {
-        id: "strings",
-        title: "Strings",
-        subtitle: "Text Handling",
-        icon: "💬",
-        color: "from-sky-500 to-blue-600",
-        description: "Work with text data in Java.",
-        totalSlides: 3,
-        slides: [
-            {
-                title: "Creating Strings",
-                theory: "A `String` is a sequence of characters wrapped in double quotes. Strings are **objects** in Java, not primitive types.",
-                code: `String greeting = "Hello, World!";\nSystem.out.println(greeting);`,
-                animation: {
-                    type: "variable",
-                    varName: "greeting",
-                    varType: "String",
-                    value: '"Hello, World!"',
-                    label: "A String variable holding text."
-                }
-            },
-            {
-                title: "String Methods",
-                theory: "Strings come with useful methods: `.length()` gives the length, `.toUpperCase()` converts to uppercase, `.substring()` extracts a portion.",
-                code: `String s = "Hello";\ns.length();        // 5\ns.toUpperCase();   // "HELLO"\ns.substring(0, 3); // "Hel"`,
-                animation: {
-                    type: "comparison",
-                    left: { label: ".toUpperCase()", value: '"HELLO"' },
-                    right: { label: ".substring(0,3)", value: '"Hel"' },
-                    label: "Methods transform strings without changing the original."
-                }
-            },
-            {
-                title: "String Concatenation",
-                theory: "Use `+` to join strings together. You can also combine strings with other types — Java automatically converts them.",
-                code: `String first = "Hello";\nString second = "World";\nString full = first + " " + second;\n// "Hello World"\n\nint age = 25;\nString msg = "Age: " + age;\n// "Age: 25"`,
-                animation: {
-                    type: "variable",
-                    varName: "full",
-                    varType: "String",
-                    value: '"Hello World"',
-                    label: "Two strings joined into one."
-                }
-            }
-        ]
-    },
-    {
-        id: "classes",
-        title: "Classes & Objects",
-        subtitle: "OOP Basics",
-        icon: "🏗️",
-        color: "from-fuchsia-500 to-pink-600",
-        description: "Build your own types with classes and objects.",
-        totalSlides: 4,
-        slides: [
-            {
-                title: "What is a Class?",
-                theory: "A **class** is a blueprint for creating objects. It defines what data (fields) and behavior (methods) an object will have.",
-                code: `public class Dog {\n  String name;\n  int age;\n\n  void bark() {\n    System.out.println("Woof!");\n  }\n}`,
-                animation: {
-                    type: "variable",
-                    varName: "Dog",
-                    varType: "class",
-                    value: "{ name, age, bark() }",
-                    label: "A blueprint with fields and methods."
-                }
-            },
-            {
-                title: "Creating Objects",
-                theory: "Use `new` to create an **instance** of a class. Each object has its own copy of the fields.",
-                code: `Dog myDog = new Dog();\nmyDog.name = "Rex";\nmyDog.age = 3;\nmyDog.bark(); // "Woof!"`,
-                animation: {
-                    type: "variable",
-                    varName: "myDog",
-                    varType: "Dog",
-                    value: '{ name: "Rex", age: 3 }',
-                    label: "An object created from the Dog blueprint."
-                }
-            },
-            {
-                title: "Constructors",
-                theory: "A **constructor** is a special method that runs when you create an object. It initializes the fields.",
-                code: `public class Dog {\n  String name;\n  int age;\n\n  Dog(String name, int age) {\n    this.name = name;\n    this.age = age;\n  }\n}\n\nDog d = new Dog("Rex", 3);`,
-                animation: {
-                    type: "flow",
-                    paths: [
-                        { label: 'new Dog("Rex", 3)', result: true },
-                        { label: "constructor runs", result: true },
-                        { label: "object ready", result: true, output: "{ Rex, 3 }" }
-                    ],
-                    label: "The constructor sets up the new object."
-                }
-            },
-            {
-                title: "Multiple Objects",
-                theory: "You can create as many objects from one class as you want. Each is independent with its own data.",
-                code: `Dog a = new Dog("Rex", 3);\nDog b = new Dog("Max", 5);\n\na.bark(); // "Woof!"\nb.bark(); // "Woof!"\n// Same behavior, different data`,
-                animation: {
-                    type: "comparison",
-                    left: { label: "Dog a", value: '{ "Rex", 3 }' },
-                    right: { label: "Dog b", value: '{ "Max", 5 }' },
-                    label: "Two objects from the same blueprint."
-                }
-            }
-        ]
-    },
-    {
-        id: "switch",
-        title: "Switch Statement",
-        subtitle: "Multi-Way Branching",
-        icon: "🔀",
-        color: "from-lime-500 to-green-600",
-        description: "Choose between many options cleanly with switch.",
-        totalSlides: 3,
-        slides: [
-            {
-                title: "The Switch Statement",
-                theory: "A `switch` checks a variable against multiple **cases**. It's cleaner than a long chain of if/else if statements.",
-                code: `int day = 3;\nswitch (day) {\n  case 1: System.out.println("Mon"); break;\n  case 2: System.out.println("Tue"); break;\n  case 3: System.out.println("Wed"); break;\n  default: System.out.println("Other");\n}`,
-                animation: {
-                    type: "flow",
-                    paths: [
-                        { label: "case 1 (Mon)", result: false },
-                        { label: "case 2 (Tue)", result: false },
-                        { label: "case 3 (Wed)", result: true, output: "Wed" },
-                        { label: "default", result: false }
-                    ],
-                    label: "day = 3 → matches case 3 → prints Wed"
-                }
-            },
-            {
-                title: "The Break Keyword",
-                theory: "Without `break`, Java **falls through** to the next case. This is usually a bug, so always include break.",
-                code: `int x = 1;\nswitch (x) {\n  case 1: System.out.println("A");\n  // no break! Falls through!\n  case 2: System.out.println("B");\n  break;\n}\n// Prints: A and B`,
-                animation: {
-                    type: "flow",
-                    paths: [
-                        { label: "case 1 → prints A", result: true, output: "A" },
-                        { label: "falls to case 2 → prints B", result: true, output: "B" }
-                    ],
-                    label: "Without break, execution falls through!"
-                }
-            },
-            {
-                title: "Default Case",
-                theory: "The `default` case runs when **none** of the other cases match. Think of it as the `else` of a switch.",
-                code: `int day = 9;\nswitch (day) {\n  case 1: System.out.println("Mon"); break;\n  case 2: System.out.println("Tue"); break;\n  default: System.out.println("Unknown");\n}`,
-                animation: {
-                    type: "flow",
-                    paths: [
-                        { label: "case 1", result: false },
-                        { label: "case 2", result: false },
-                        { label: "default", result: true, output: "Unknown" }
-                    ],
-                    label: "day = 9 → no match → default runs."
-                }
-            }
-        ]
-    },
-    {
-        id: "boolean-logic",
-        title: "Boolean Logic",
-        subtitle: "True or False",
-        icon: "🧠",
-        color: "from-red-500 to-rose-600",
-        description: "Master AND, OR, NOT and boolean expressions.",
-        totalSlides: 4,
-        slides: [
-            {
-                title: "Boolean Values",
-                theory: "A `boolean` can only be **true** or **false**. They're the foundation of all decision-making in code.",
-                code: `boolean isJavaFun = true;\nboolean isBoring = false;\n\nif (isJavaFun) {\n  System.out.println("Yes!");\n}`,
-                animation: {
-                    type: "gate",
-                    value: "true",
-                    condition: "isJavaFun == true",
-                    result: true,
-                    label: "isJavaFun is true → the gate opens!"
-                }
-            },
-            {
-                title: "AND Operator (&&)",
-                theory: "The `&&` (AND) operator returns true only if **both** conditions are true. If either is false, the result is false.",
-                code: `int age = 25;\nboolean hasID = true;\n\nif (age >= 18 && hasID) {\n  System.out.println("Entry allowed");\n}`,
-                animation: {
-                    type: "comparison",
-                    left: { label: "age >= 18", value: "true ✓" },
-                    right: { label: "hasID", value: "true ✓" },
-                    label: "Both true → AND result is true."
-                }
-            },
-            {
-                title: "OR Operator (||)",
-                theory: "The `||` (OR) operator returns true if **at least one** condition is true. Both must be false for the result to be false.",
-                code: `boolean isWeekend = false;\nboolean isHoliday = true;\n\nif (isWeekend || isHoliday) {\n  System.out.println("Day off!");\n}`,
-                animation: {
-                    type: "comparison",
-                    left: { label: "isWeekend", value: "false ✗" },
-                    right: { label: "isHoliday", value: "true ✓" },
-                    label: "One is true → OR result is true."
-                }
-            },
-            {
-                title: "NOT Operator (!)",
-                theory: "The `!` (NOT) operator **flips** a boolean. True becomes false, false becomes true.",
-                code: `boolean isRaining = false;\n\nif (!isRaining) {\n  System.out.println("Go outside!");\n}\n// !false = true → prints!`,
-                animation: {
-                    type: "gate",
-                    value: "!false",
-                    condition: "!isRaining",
-                    result: true,
-                    label: "NOT flips false → true. Gate opens!"
-                }
-            }
-        ]
-    }
-];
-
 export type CourseSubject = 'java' | 'math' | 'physique';
 
 export type CourseSlide = {
@@ -579,7 +23,6 @@ export type CourseSlide = {
     theory: string;
     title: string;
 };
-
 export type LearningCourse = {
     description: string;
     id: string;
@@ -588,9 +31,13 @@ export type LearningCourse = {
     title: string;
     totalSlides: number;
 };
-
 export type CourseProgressMap = Record<string, number>;
-
+export type CourseProgressDetails = {
+    completed: boolean;
+    exerciseCompleted: boolean;
+    highestSlideIndex: number;
+    progress: number;
+};
 export type RecentLearningCourse = {
     id: string;
     courseId: string;
@@ -599,6 +46,8 @@ export type RecentLearningCourse = {
     progress: number;
     completed: boolean;
     totalSlides: number;
+    highestSlideIndex: number;
+    exerciseCompleted: boolean;
 };
 
 const mathCourses: LearningCourse[] = [
@@ -749,305 +198,971 @@ const physicsCourses: LearningCourse[] = [
     },
 ];
 
+const javaCourses = [
+    {
+        id: "variables",
+        title: "Variables",
+        subtitle: "Types de données",
+        icon: "📦",
+        color: "from-emerald-500 to-teal-600",
+        description: "Comprendre comment Java stocke et gère les données en mémoire.",
+        totalSlides: 6,
+        slides: [
+            {
+                title: "Qu’est-ce qu’une variable ?",
+                theory: "Une **variable** est un conteneur nommé qui stocke une valeur. On peut l’imaginer comme une boîte avec une étiquette : on lui donne un nom, puis on y place une donnée.",
+                code: `int age = 25;`,
+                animation: {
+                    type: "variable",
+                    varName: "age",
+                    varType: "int",
+                    value: 25,
+                    label: "Une boîte nommée 'age' contient maintenant la valeur 25."
+                }
+            },
+            {
+                title: "Déclarer et assigner une valeur",
+                theory: "Pour créer une variable en Java, on choisit d’abord un **type**, puis un **nom**, puis on peut lui assigner une valeur avec `=`. On peut aussi la déclarer d’abord, puis lui donner une valeur plus tard.",
+                code: `String nom = "Jean";\nint nombre;\nnombre = 15;\nSystem.out.println(nom);\nSystem.out.println(nombre);`,
+                animation: {
+                    type: "variable",
+                    varName: "nombre",
+                    varType: "int",
+                    value: 15,
+                    label: "La variable est déclarée, puis reçoit sa valeur plus tard."
+                }
+            },
+            {
+                title: "Modifier une variable",
+                theory: "Une variable peut être **réassignée**. L’ancienne valeur est remplacée par la nouvelle. En Java, cela n’ajoute pas une nouvelle variable : cela met à jour la même boîte.",
+                code: `int age = 25;\nage = 30; // maintenant age vaut 30`,
+                animation: {
+                    type: "variable",
+                    varName: "age",
+                    varType: "int",
+                    value: 30,
+                    previousValue: 25,
+                    label: "La boîte 'age' passe de 25 → 30."
+                }
+            },
+            {
+                title: "Types courants de variables",
+                theory: "Java est un langage **fortement typé** : chaque variable doit avoir un type précis. Les types les plus courants sont `int` (entiers), `double` (nombres décimaux), `String` (texte), `char` (un seul caractère) et `boolean` (vrai/faux).",
+                code: `int count = 10;\ndouble price = 9.99;\nString name = "Java";\nchar grade = 'A';\nboolean active = true;`,
+                animation: {
+                    type: "variable",
+                    varName: "name",
+                    varType: "String",
+                    value: '"Java"',
+                    label: "Chaque type représente une catégorie différente de données."
+                }
+            },
+            {
+                title: "Variables finales (`final`)",
+                theory: "Le mot-clé `final` rend une variable **constante**. Une fois sa valeur définie, elle ne peut plus être modifiée. C’est utile pour des valeurs fixes comme `PI` ou des limites qui ne doivent jamais changer.",
+                code: `final double PI = 3.14159;\n// PI = 3.0; // ERREUR`,
+                animation: {
+                    type: "variable",
+                    varName: "PI",
+                    varType: "final double",
+                    value: 3.14159,
+                    locked: true,
+                    label: "Cette boîte est verrouillée : aucune modification n’est autorisée."
+                }
+            },
+            {
+                title: "Le mot-clé `var`",
+                theory: "Depuis Java 10, `var` permet au compilateur de **déduire automatiquement** le type à partir de la valeur assignée. C’est pratique pour alléger le code, mais le type reste fixé une fois choisi. `var` doit obligatoirement être utilisé avec une valeur dès la déclaration.",
+                code: `var x = 5;         // int\nvar prix = 9.99;   // double\nvar lettre = 'D';  // char\nvar actif = true;  // boolean\nvar texte = "Bonjour"; // String\n\n// var y; // ERREUR`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "var x = 5", value: "int" },
+                    right: { label: 'var texte = "Bonjour"', value: "String" },
+                    label: "Le compilateur choisit le type automatiquement selon la valeur."
+                }
+            }
+        ]
+    },
+    {
+        id: "data-types",
+        title: "Types de données",
+        subtitle: "Primitifs et non primitifs",
+        icon: "🧩",
+        color: "from-green-500 to-emerald-600",
+        description: "Comprendre les différents types de données en Java.",
+        totalSlides: 5,
+        slides: [
+            {
+                title: "Les grandes familles de types",
+                theory: "En Java, les types de données se divisent en deux groupes : les **types primitifs** et les **types non primitifs**. Les primitifs stockent directement une valeur simple. Les non primitifs, comme `String`, les tableaux et les classes, représentent des objets ou des structures plus complexes.",
+                code: `int myNum = 5;\nfloat myFloatNum = 5.99f;\nchar myLetter = 'D';\nboolean myBool = true;\nString myText = "Hello";`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "Primitifs", value: "int, double, char, boolean..." },
+                    right: { label: "Non primitifs", value: "String, tableaux, classes..." },
+                    label: "Deux grandes familles de types en Java."
+                }
+            },
+            {
+                title: "Les 8 types primitifs",
+                theory: "Java possède **huit types primitifs** : `byte`, `short`, `int`, `long`, `float`, `double`, `boolean` et `char`. Ils servent à représenter des nombres, des caractères et des valeurs logiques.",
+                code: `byte b = 100;\nshort s = 5000;\nint i = 100000;\nlong l = 15000000000L;\nfloat f = 5.75f;\ndouble d = 19.99d;\nboolean ok = true;\nchar c = 'A';`,
+                animation: {
+                    type: "variable",
+                    varName: "i",
+                    varType: "int",
+                    value: 100000,
+                    label: "Chaque type primitif a un rôle et une capacité de stockage différente."
+                }
+            },
+            {
+                title: "Entiers et nombres décimaux",
+                theory: "Les types entiers (`byte`, `short`, `int`, `long`) servent à stocker des nombres sans décimales. Les types à virgule (`float`, `double`) servent pour les nombres décimaux. En pratique, `int` est souvent le choix par défaut pour les entiers et `double` pour les calculs décimaux, car il offre une meilleure précision que `float`.",
+                code: `int age = 25;\ndouble price = 19.99;\nfloat note = 5.75f;\nlong population = 8000000000L;`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "int", value: "nombres entiers" },
+                    right: { label: "double", value: "nombres décimaux" },
+                    label: "Choisir le bon type dépend de la nature de la donnée."
+                }
+            },
+            {
+                title: "Le type `char` et le type `boolean`",
+                theory: "Le type `char` stocke **un seul caractère** entre apostrophes, comme `'A'`. Le type `boolean` stocke uniquement `true` ou `false`. Ces deux types sont très utilisés dans les conditions et la logique de programme.",
+                code: `char grade = 'B';\nboolean isJavaFun = true;\n\nSystem.out.println(grade);\nSystem.out.println(isJavaFun);`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "char", value: "'B'" },
+                    right: { label: "boolean", value: "true" },
+                    label: "Un caractère d’un côté, une valeur logique de l’autre."
+                }
+            },
+            {
+                title: "Un type ne change pas tout seul",
+                theory: "Une fois qu’une variable est déclarée avec un type, elle **ne peut pas devenir un autre type** plus tard. Cette règle rend Java plus sûr, car le compilateur empêche les mélanges incorrects. Pour convertir un type en un autre, il faut utiliser le transtypage.",
+                code: `int myNum = 5;\n// myNum = "Bonjour"; // ERREUR\n\nString myText = "Salut";\n// myText = 123; // ERREUR`,
+                animation: {
+                    type: "gate",
+                    value: '"Bonjour"',
+                    condition: "assigner un String à un int",
+                    result: false,
+                    label: "Java bloque les assignations incompatibles."
+                }
+            }
+        ]
+    },
+    {
+        id: "type-casting",
+        title: "Transtypage",
+        subtitle: "Conversion de types",
+        icon: "🔁",
+        color: "from-teal-500 to-cyan-600",
+        description: "Convertir une valeur d’un type à un autre en Java.",
+        totalSlides: 4,
+        slides: [
+            {
+                title: "Qu’est-ce que le transtypage ?",
+                theory: "Le **transtypage** consiste à convertir une donnée d’un type vers un autre. Par exemple, transformer un `int` en `double` ou un `double` en `int`.",
+                code: `int myInt = 9;\ndouble myDouble = myInt;`,
+                animation: {
+                    type: "flow",
+                    paths: [
+                        { label: "int 9", result: true },
+                        { label: "conversion", result: true },
+                        { label: "double 9.0", result: true, output: "9.0" }
+                    ],
+                    label: "Une valeur peut être convertie d’un type à un autre."
+                }
+            },
+            {
+                title: "Conversion élargissante (automatique)",
+                theory: "La conversion **élargissante** transforme un type plus petit vers un type plus grand, par exemple `int` vers `double`. Elle est automatique, car il n’y a généralement pas de perte d’information.",
+                code: `int myInt = 9;\ndouble myDouble = myInt; // conversion automatique\n\nSystem.out.println(myInt);    // 9\nSystem.out.println(myDouble); // 9.0`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "int", value: "9" },
+                    right: { label: "double", value: "9.0" },
+                    label: "Le passage vers un type plus large se fait automatiquement."
+                }
+            },
+            {
+                title: "Conversion réductrice (manuelle)",
+                theory: "La conversion **réductrice** transforme un type plus grand vers un type plus petit, par exemple `double` vers `int`. Elle doit être faite manuellement avec des parenthèses, car elle peut provoquer une **perte d’information**, comme la suppression des décimales.",
+                code: `double myDouble = 9.78d;\nint myInt = (int) myDouble;\n\nSystem.out.println(myDouble); // 9.78\nSystem.out.println(myInt);    // 9`,
+                animation: {
+                    type: "variable",
+                    varName: "myInt",
+                    varType: "int",
+                    value: 9,
+                    previousValue: 9.78,
+                    label: "Le transtypage vers `int` retire la partie décimale."
+                }
+            },
+            {
+                title: "Exemple concret : calculer un pourcentage",
+                theory: "Le transtypage est très utile dans les calculs. Si on divise deux `int`, le résultat reste entier. En convertissant l’un des deux en `double`, on obtient un résultat décimal plus précis.",
+                code: `int maxScore = 500;\nint userScore = 423;\n\ndouble percentage = (double) userScore / maxScore * 100.0d;\nSystem.out.println("Pourcentage : " + percentage);`,
+                animation: {
+                    type: "flow",
+                    paths: [
+                        { label: "423 / 500", result: true },
+                        { label: "cast vers double", result: true },
+                        { label: "84.6", result: true, output: "84.6" }
+                    ],
+                    label: "Le cast en `double` permet un calcul précis."
+                }
+            }
+        ]
+    },
+    {
+        id: "strings",
+        title: "Strings",
+        subtitle: "Manipulation de texte",
+        icon: "💬",
+        color: "from-sky-500 to-blue-600",
+        description: "Travailler avec le texte en Java.",
+        totalSlides: 5,
+        slides: [
+            {
+                title: "Créer une String",
+                theory: "Une `String` est une suite de caractères entourée de guillemets doubles. En Java, `String` est un **type non primitif** : c’est un objet, pas un type primitif.",
+                code: `String greeting = "Hello, World!";\nSystem.out.println(greeting);`,
+                animation: {
+                    type: "variable",
+                    varName: "greeting",
+                    varType: "String",
+                    value: '"Hello, World!"',
+                    label: "Une variable String contenant du texte."
+                }
+            },
+            {
+                title: "Longueur et accès aux caractères",
+                theory: "Les chaînes ont des méthodes utiles. `.length()` donne le nombre de caractères. `.charAt(index)` permet d’accéder à un caractère précis. Les index commencent toujours à **0**.",
+                code: `String txt = "Hello";\nSystem.out.println(txt.length());   // 5\nSystem.out.println(txt.charAt(0)); // H\nSystem.out.println(txt.charAt(4)); // o`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "index 0", value: '"H"' },
+                    right: { label: "index 4", value: '"o"' },
+                    label: "Les positions dans une String commencent à 0."
+                }
+            },
+            {
+                title: "Méthodes utiles sur les Strings",
+                theory: "Les Strings possèdent de nombreuses méthodes. Par exemple, `.toUpperCase()` met tout en majuscules, `.toLowerCase()` met en minuscules, `.trim()` enlève les espaces au début et à la fin, et `.indexOf()` trouve la position d’un texte dans la chaîne.",
+                code: `String txt = "   Hello World   ";\nSystem.out.println(txt.toUpperCase());\nSystem.out.println(txt.toLowerCase());\nSystem.out.println(txt.trim());\nSystem.out.println("Please locate where 'locate' occurs!".indexOf("locate"));`,
+                animation: {
+                    type: "comparison",
+                    left: { label: ".toUpperCase()", value: '"HELLO WORLD"' },
+                    right: { label: ".trim()", value: '"Hello World"' },
+                    label: "Les méthodes transforment ou analysent le texte."
+                }
+            },
+            {
+                title: "Concaténation de chaînes",
+                theory: "On peut utiliser l’opérateur `+` pour **assembler** plusieurs chaînes. On peut aussi combiner du texte avec des nombres : Java convertit automatiquement les autres types en texte quand on concatène avec une `String`.",
+                code: `String first = "Bonjour";\nString second = "Monde";\nString full = first + " " + second;\n\nint age = 25;\nString msg = "Âge : " + age;\n\nSystem.out.println(full);\nSystem.out.println(msg);`,
+                animation: {
+                    type: "variable",
+                    varName: "full",
+                    varType: "String",
+                    value: '"Bonjour Monde"',
+                    label: "Deux chaînes sont fusionnées en une seule."
+                }
+            },
+            {
+                title: "Comparer des Strings",
+                theory: "Pour comparer deux chaînes, on utilise `.equals()` et non `==`. La méthode `equals()` compare le **contenu** du texte. C’est la manière correcte de vérifier si deux Strings représentent la même chose.",
+                code: `String txt1 = "Hello";\nString txt2 = "Hello";\nString txt3 = "Salut";\n\nSystem.out.println(txt1.equals(txt2)); // true\nSystem.out.println(txt1.equals(txt3)); // false`,
+                animation: {
+                    type: "comparison",
+                    left: { label: '"Hello".equals("Hello")', value: "true" },
+                    right: { label: '"Hello".equals("Salut")', value: "false" },
+                    label: "On compare le contenu, pas seulement la référence."
+                }
+            }
+        ]
+    },
+    {
+        id: "operators",
+        title: "Opérateurs",
+        subtitle: "Calculs et comparaisons",
+        icon: "➕",
+        color: "from-yellow-500 to-amber-600",
+        description: "Utiliser les opérateurs Java pour calculer, comparer et construire des expressions.",
+        totalSlides: 4,
+        slides: [
+            {
+                title: "Les opérateurs arithmétiques",
+                theory: "Les opérateurs servent à effectuer des actions sur des valeurs ou des variables. Les plus courants sont `+`, `-`, `*`, `/` et `%`. Ils permettent d’additionner, soustraire, multiplier, diviser ou obtenir le reste d’une division.",
+                code: `int a = 10;\nint b = 3;\n\nSystem.out.println(a + b); // 13\nSystem.out.println(a - b); // 7\nSystem.out.println(a * b); // 30\nSystem.out.println(a / b); // 3\nSystem.out.println(a % b); // 1`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "a + b", value: "13" },
+                    right: { label: "a % b", value: "1" },
+                    label: "Les opérateurs arithmétiques réalisent des calculs de base."
+                }
+            },
+            {
+                title: "L’opérateur `+` avec des variables",
+                theory: "L’opérateur `+` peut additionner deux valeurs, une variable et une valeur, ou deux variables. Il est très utilisé dans les expressions numériques, mais aussi dans la concaténation de chaînes.",
+                code: `int sum1 = 100 + 50;\nint sum2 = sum1 + 250;\nint sum3 = sum2 + sum2;\n\nSystem.out.println(sum1);\nSystem.out.println(sum2);\nSystem.out.println(sum3);`,
+                animation: {
+                    type: "flow",
+                    paths: [
+                        { label: "100 + 50", result: true, output: "150" },
+                        { label: "150 + 250", result: true, output: "400" },
+                        { label: "400 + 400", result: true, output: "800" }
+                    ],
+                    label: "Une expression peut réutiliser le résultat précédent."
+                }
+            },
+            {
+                title: "Opérateurs de comparaison",
+                theory: "Les opérateurs de comparaison servent à produire des résultats `true` ou `false`. On utilise notamment `<`, `<=`, `>`, `>=`, `==` et `!=`. Ils sont indispensables dans les conditions.",
+                code: `int x = 20;\nint y = 18;\n\nSystem.out.println(x > y);  // true\nSystem.out.println(x == y); // false\nSystem.out.println(x != y); // true`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "x > y", value: "true" },
+                    right: { label: "x == y", value: "false" },
+                    label: "Les comparaisons produisent toujours un booléen."
+                }
+            },
+            {
+                title: "Opérateurs logiques",
+                theory: "Les opérateurs logiques permettent de combiner plusieurs conditions. `&&` signifie ET, `||` signifie OU, et `!` signifie NON. Ils sont très utiles dans les structures conditionnelles.",
+                code: `int age = 25;\nboolean hasID = true;\nboolean isHoliday = false;\n\nSystem.out.println(age >= 18 && hasID); // true\nSystem.out.println(isHoliday || hasID);  // true\nSystem.out.println(!isHoliday);          // true`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "age >= 18 && hasID", value: "true" },
+                    right: { label: "!isHoliday", value: "true" },
+                    label: "Les opérateurs logiques combinent des conditions."
+                }
+            }
+        ]
+    },
+    {
+        id: "math",
+        title: "Math",
+        subtitle: "Calculs mathématiques",
+        icon: "🧮",
+        color: "from-orange-500 to-red-600",
+        description: "Utiliser la classe Math pour effectuer des calculs utiles.",
+        totalSlides: 4,
+        slides: [
+            {
+                title: "Valeurs max, min et absolues",
+                theory: "La classe `Math` propose plusieurs méthodes pratiques. `Math.max(x, y)` renvoie la plus grande valeur, `Math.min(x, y)` la plus petite, et `Math.abs(x)` la valeur absolue.",
+                code: `System.out.println(Math.max(5, 10)); // 10\nSystem.out.println(Math.min(5, 10)); // 5\nSystem.out.println(Math.abs(-4.7));  // 4.7`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "Math.max(5, 10)", value: "10" },
+                    right: { label: "Math.abs(-4.7)", value: "4.7" },
+                    label: "La classe Math fournit des outils prêts à l’emploi."
+                }
+            },
+            {
+                title: "Racines et puissances",
+                theory: "`Math.sqrt(x)` calcule la racine carrée, et `Math.pow(x, y)` élève `x` à la puissance `y`. Il faut noter que `Math.pow()` retourne toujours un `double`, même si le résultat semble entier.",
+                code: `System.out.println(Math.sqrt(64));   // 8.0\nSystem.out.println(Math.pow(2, 8)); // 256.0`,
+                animation: {
+                    type: "flow",
+                    paths: [
+                        { label: "sqrt(64)", result: true, output: "8.0" },
+                        { label: "pow(2, 8)", result: true, output: "256.0" }
+                    ],
+                    label: "Certaines méthodes retournent toujours un double."
+                }
+            },
+            {
+                title: "Arrondir des nombres",
+                theory: "Java propose plusieurs méthodes pour l’arrondi. `Math.round(x)` arrondit à l’entier le plus proche. `Math.ceil(x)` arrondit vers le haut. `Math.floor(x)` arrondit vers le bas.",
+                code: `System.out.println(Math.round(4.6)); // 5\nSystem.out.println(Math.ceil(4.1));  // 5.0\nSystem.out.println(Math.floor(4.9)); // 4.0`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "Math.ceil(4.1)", value: "5.0" },
+                    right: { label: "Math.floor(4.9)", value: "4.0" },
+                    label: "Chaque méthode suit une règle d’arrondi différente."
+                }
+            },
+            {
+                title: "Nombres aléatoires",
+                theory: "`Math.random()` renvoie un nombre aléatoire entre `0.0` inclus et `1.0` exclu. Pour obtenir un entier dans une plage précise, on combine `Math.random()` avec une multiplication et un cast.",
+                code: `double randomValue = Math.random();\nint randomNum = (int)(Math.random() * 101); // 0 à 100\n\nSystem.out.println(randomValue);\nSystem.out.println(randomNum);`,
+                animation: {
+                    type: "variable",
+                    varName: "randomNum",
+                    varType: "int",
+                    value: 42,
+                    label: "Après multiplication et cast, on obtient un entier dans l’intervalle voulu."
+                }
+            }
+        ]
+    },
+    {
+        id: "if-statement",
+        title: "Le if",
+        subtitle: "Logique conditionnelle",
+        icon: "🚦",
+        color: "from-indigo-500 to-violet-600",
+        description: "Apprendre comment Java décide quel code exécuter selon une condition.",
+        totalSlides: 5,
+        slides: [
+            {
+                title: "Qu’est-ce qu’un if ?",
+                theory: "Une instruction **if** permet au programme de prendre une décision. Elle vérifie une condition. Si la condition vaut `true`, le bloc est exécuté. Si elle vaut `false`, il est ignoré.",
+                code: `if (condition) {\n  // s'exécute seulement si la condition est vraie\n}`,
+                animation: {
+                    type: "gate",
+                    value: 50,
+                    condition: "value > 100",
+                    result: false,
+                    label: "La sphère vaut 50 — la porte exige > 100. Accès refusé."
+                }
+            },
+            {
+                title: "Conditions avec comparaisons",
+                theory: "Les conditions d’un `if` utilisent souvent des opérateurs de comparaison comme `<`, `>`, `==` ou `!=`. Le résultat doit toujours être un booléen.",
+                code: `int x = 20;\nint y = 18;\n\nif (x > y) {\n  System.out.println("x est plus grand que y");\n}`,
+                animation: {
+                    type: "gate",
+                    value: "20 > 18",
+                    condition: "x > y",
+                    result: true,
+                    label: "La condition est vraie, donc le bloc s’exécute."
+                }
+            },
+            {
+                title: "Tester directement un booléen",
+                theory: "On peut aussi utiliser directement une variable booléenne dans un `if`. Écrire `if (isLightOn)` est plus clair que `if (isLightOn == true)`.",
+                code: `boolean isLightOn = true;\n\nif (isLightOn) {\n  System.out.println("La lumière est allumée.");\n}`,
+                animation: {
+                    type: "gate",
+                    value: "true",
+                    condition: "isLightOn",
+                    result: true,
+                    label: "Un booléen peut être utilisé directement comme condition."
+                }
+            },
+            {
+                title: "Le bloc else",
+                theory: "Quand la condition du `if` est fausse, on peut utiliser `else` pour exécuter un autre bloc. `else` agit comme la solution de rechange.",
+                code: `int value = 30;\nif (value > 100) {\n  System.out.println("Grand !");\n} else {\n  System.out.println("Petit !");\n}`,
+                animation: {
+                    type: "gate",
+                    value: 30,
+                    condition: "value > 100",
+                    result: false,
+                    label: "La condition échoue, donc le chemin `else` est utilisé."
+                }
+            },
+            {
+                title: "Toujours utiliser les accolades",
+                theory: "Même si Java permet parfois d’écrire un `if` sans accolades pour une seule ligne, il est bien plus sûr de **toujours** utiliser `{ }`. Sans accolades, seule la première ligne appartient au `if`, ce qui peut créer des bugs subtils.",
+                code: `int x = 20;\nint y = 18;\n\nif (x > y) {\n  System.out.println("x est plus grand que y");\n  System.out.println("Ces deux lignes font partie du if");\n}\n\nSystem.out.println("Cette ligne est en dehors du if");`,
+                animation: {
+                    type: "flow",
+                    paths: [
+                        { label: "condition vraie", result: true },
+                        { label: "bloc entre accolades", result: true },
+                        { label: "code extérieur", result: true }
+                    ],
+                    label: "Les accolades rendent le comportement du code clair et sûr."
+                }
+            }
+        ]
+    },
+    {
+        id: "else-if",
+        title: "Else If",
+        subtitle: "Conditions multiples",
+        icon: "🪜",
+        color: "from-purple-500 to-indigo-600",
+        description: "Tester plusieurs possibilités dans l’ordre.",
+        totalSlides: 3,
+        slides: [
+            {
+                title: "Le `else if`",
+                theory: "L’instruction `else if` permet de tester une nouvelle condition si la première condition du `if` est fausse. Java vérifie les conditions dans l’ordre et exécute **le premier bloc vrai**.",
+                code: `int score = 75;\nif (score >= 90) {\n  System.out.println("A");\n} else if (score >= 70) {\n  System.out.println("B");\n} else {\n  System.out.println("C");\n}`,
+                animation: {
+                    type: "flow",
+                    paths: [
+                        { label: "score >= 90", result: false },
+                        { label: "score >= 70", result: true, output: "B" },
+                        { label: "else", result: false }
+                    ],
+                    label: "Java s’arrête dès qu’une condition est vraie."
+                }
+            },
+            {
+                title: "Exemple avec le temps",
+                theory: "On peut enchaîner plusieurs conditions pour afficher des résultats différents selon la situation. Ici, le message dépend de l’heure de la journée.",
+                code: `int time = 16;\n\nif (time < 12) {\n  System.out.println("Bonjour.");\n} else if (time < 18) {\n  System.out.println("Bonne journée.");\n} else {\n  System.out.println("Bonsoir.");\n}`,
+                animation: {
+                    type: "flow",
+                    paths: [
+                        { label: "time < 12", result: false },
+                        { label: "time < 18", result: true, output: "Bonne journée." },
+                        { label: "else", result: false }
+                    ],
+                    label: "La deuxième condition gagne ici."
+                }
+            },
+            {
+                title: "Ordre des conditions",
+                theory: "L’ordre des `if` et `else if` est important. Java teste de haut en bas. Si une condition large est placée trop tôt, elle peut empêcher les suivantes d’être atteintes.",
+                code: `int score = 95;\n\nif (score >= 70) {\n  System.out.println("Réussi");\n} else if (score >= 90) {\n  System.out.println("Excellent");\n}\n// "Excellent" ne sera jamais affiché ici`,
+                animation: {
+                    type: "gate",
+                    value: 95,
+                    condition: "score >= 70 en premier",
+                    result: true,
+                    label: "Une condition trop générale placée en premier peut masquer les autres."
+                }
+            }
+        ]
+    },
+    {
+        id: "switch",
+        title: "Switch",
+        subtitle: "Choix parmi plusieurs cas",
+        icon: "🔀",
+        color: "from-lime-500 to-green-600",
+        description: "Choisir proprement entre plusieurs possibilités avec switch.",
+        totalSlides: 3,
+        slides: [
+            {
+                title: "L’instruction switch",
+                theory: "Une instruction `switch` compare une expression à plusieurs **cas** possibles. C’est souvent plus lisible qu’une longue suite de `if / else if` lorsqu’on veut tester plusieurs valeurs précises.",
+                code: `int day = 3;\nswitch (day) {\n  case 1: System.out.println("Lundi"); break;\n  case 2: System.out.println("Mardi"); break;\n  case 3: System.out.println("Mercredi"); break;\n  default: System.out.println("Autre");\n}`,
+                animation: {
+                    type: "flow",
+                    paths: [
+                        { label: "case 1 (Lundi)", result: false },
+                        { label: "case 2 (Mardi)", result: false },
+                        { label: "case 3 (Mercredi)", result: true, output: "Mercredi" },
+                        { label: "default", result: false }
+                    ],
+                    label: "day = 3 → correspond au case 3 → affiche Mercredi."
+                }
+            },
+            {
+                title: "Le mot-clé `break`",
+                theory: "Le mot-clé `break` arrête l’exécution du `switch` après le cas trouvé. Sans `break`, Java continue dans les cas suivants : c’est ce qu’on appelle le **fall-through**. C’est parfois voulu, mais le plus souvent c’est une erreur.",
+                code: `int x = 1;\nswitch (x) {\n  case 1:\n    System.out.println("A");\n  case 2:\n    System.out.println("B");\n    break;\n}\n// Affiche A puis B`,
+                animation: {
+                    type: "flow",
+                    paths: [
+                        { label: "case 1 → affiche A", result: true, output: "A" },
+                        { label: "tombe dans case 2 → affiche B", result: true, output: "B" }
+                    ],
+                    label: "Sans `break`, l’exécution continue dans les cas suivants."
+                }
+            },
+            {
+                title: "Le cas `default`",
+                theory: "Le bloc `default` s’exécute si **aucun** des autres cas ne correspond. C’est l’équivalent d’un `else` dans un `switch`.",
+                code: `int day = 9;\nswitch (day) {\n  case 1: System.out.println("Lundi"); break;\n  case 2: System.out.println("Mardi"); break;\n  default: System.out.println("Inconnu");\n}`,
+                animation: {
+                    type: "flow",
+                    paths: [
+                        { label: "case 1", result: false },
+                        { label: "case 2", result: false },
+                        { label: "default", result: true, output: "Inconnu" }
+                    ],
+                    label: "Aucun cas ne correspond → `default` s’exécute."
+                }
+            }
+        ]
+    },
+    {
+        id: "while-loop",
+        title: "Boucles while",
+        subtitle: "Répétition conditionnelle",
+        icon: "⏳",
+        color: "from-rose-500 to-pink-600",
+        description: "Exécuter du code tant qu’une condition reste vraie.",
+        totalSlides: 4,
+        slides: [
+            {
+                title: "La boucle while",
+                theory: "Une boucle `while` répète un bloc de code **tant que** sa condition est vraie. Elle est utile quand on ne sait pas exactement combien de fois le code devra se répéter.",
+                code: `int count = 0;\nwhile (count < 3) {\n  System.out.println(count);\n  count++;\n}`,
+                animation: {
+                    type: "loop",
+                    current: 0,
+                    max: 3,
+                    items: [0, 1, 2],
+                    label: "La boucle continue tant que `count < 3`."
+                }
+            },
+            {
+                title: "Ne pas oublier la mise à jour",
+                theory: "Si la variable utilisée dans la condition n’est jamais modifiée, la condition peut rester vraie indéfiniment. C’est ainsi qu’on crée une **boucle infinie** par erreur.",
+                code: `// ATTENTION\nwhile (true) {\n  System.out.println("Toujours...");\n}`,
+                animation: {
+                    type: "loop",
+                    current: 0,
+                    max: 999,
+                    items: ["♾️", "♾️", "♾️", "♾️", "♾️"],
+                    label: "Si la condition ne devient jamais fausse, la boucle ne s’arrête pas."
+                }
+            },
+            {
+                title: "Condition fausse dès le départ",
+                theory: "Si la condition d’une boucle `while` est fausse dès le début, le bloc de code **ne s’exécute jamais**. C’est une différence importante avec `do / while`.",
+                code: `int i = 10;\n\nwhile (i < 5) {\n  System.out.println("Ceci ne sera jamais affiché");\n  i++;\n}`,
+                animation: {
+                    type: "gate",
+                    value: 10,
+                    condition: "i < 5",
+                    result: false,
+                    label: "La boucle est ignorée dès le départ."
+                }
+            },
+            {
+                title: "La boucle do / while",
+                theory: "La boucle `do / while` exécute le bloc **au moins une fois**, puis vérifie la condition. Même si la condition est fausse au départ, le code s’exécute une première fois.",
+                code: `int i = 10;\n\ndo {\n  System.out.println("i vaut " + i);\n  i++;\n} while (i < 5);`,
+                animation: {
+                    type: "loop",
+                    current: 0,
+                    max: 1,
+                    items: [10],
+                    label: "Le bloc s’exécute une fois avant la vérification."
+                }
+            }
+        ]
+    },
+    {
+        id: "for-loop",
+        title: "Boucles for",
+        subtitle: "Itération contrôlée",
+        icon: "🔄",
+        color: "from-amber-500 to-orange-600",
+        description: "Répéter du code un nombre précis de fois avec for.",
+        totalSlides: 5,
+        slides: [
+            {
+                title: "La structure d’une boucle for",
+                theory: "Une boucle `for` est idéale quand on sait **combien de fois** on veut répéter un bloc. Elle contient trois parties : l’initialisation, la condition et la mise à jour.",
+                code: `for (int i = 0; i < 5; i++) {\n  System.out.println(i);\n}`,
+                animation: {
+                    type: "loop",
+                    current: 0,
+                    max: 5,
+                    items: [0, 1, 2, 3, 4],
+                    label: "La boucle s’exécute 5 fois : `i` va de 0 à 4."
+                }
+            },
+            {
+                title: "Comprendre les trois parties",
+                theory: "`int i = 0` s’exécute une seule fois au début. `i < 5` est vérifié avant chaque tour. `i++` s’exécute après chaque itération. Ce schéma rend la boucle très compacte et lisible.",
+                code: `for (int i = 0; i < 5; i++) {\n  System.out.println(i);\n}`,
+                animation: {
+                    type: "loop",
+                    current: 3,
+                    max: 5,
+                    items: [0, 1, 2, 3, 4],
+                    highlightIndex: 3,
+                    label: "Ici, on est à l’itération où `i = 3`."
+                }
+            },
+            {
+                title: "Pas personnalisé",
+                theory: "On peut changer la manière dont la variable évolue. Par exemple, avec `i += 2`, la boucle avance de 2 en 2 au lieu de 1 en 1.",
+                code: `for (int i = 0; i <= 10; i += 2) {\n  System.out.println(i);\n}\n// 0, 2, 4, 6, 8, 10`,
+                animation: {
+                    type: "loop",
+                    current: 0,
+                    max: 10,
+                    items: [0, 2, 4, 6, 8, 10],
+                    label: "La boucle saute un nombre sur deux."
+                }
+            },
+            {
+                title: "Boucles imbriquées",
+                theory: "On peut placer une boucle dans une autre. La boucle intérieure s’exécute entièrement à chaque tour de la boucle extérieure.",
+                code: `for (int i = 0; i < 3; i++) {\n  for (int j = 0; j < 2; j++) {\n    System.out.println(i + "," + j);\n  }\n}`,
+                animation: {
+                    type: "loop",
+                    current: 0,
+                    max: 6,
+                    items: ["0,0", "0,1", "1,0", "1,1", "2,0", "2,1"],
+                    label: "3 tours extérieurs × 2 tours intérieurs = 6 itérations."
+                }
+            },
+            {
+                title: "La boucle for-each",
+                theory: "La boucle **for-each** sert à parcourir directement tous les éléments d’un tableau ou d’une collection. Elle est plus simple qu’une boucle `for` classique lorsqu’on n’a pas besoin de l’index.",
+                code: `String[] cars = {"Volvo", "BMW", "Ford", "Mazda"};\n\nfor (String car : cars) {\n  System.out.println(car);\n}`,
+                animation: {
+                    type: "loop",
+                    current: 0,
+                    max: 4,
+                    items: ["Volvo", "BMW", "Ford", "Mazda"],
+                    label: "La boucle visite chaque élément du tableau, un par un."
+                }
+            }
+        ]
+    },
+    {
+        id: "arrays",
+        title: "Tableaux",
+        subtitle: "Collections de données",
+        icon: "📊",
+        color: "from-violet-500 to-purple-600",
+        description: "Stocker plusieurs valeurs dans une seule variable.",
+        totalSlides: 4,
+        slides: [
+            {
+                title: "Créer un tableau",
+                theory: "Un **tableau** stocke plusieurs valeurs du même type. Chaque élément possède un **index** qui commence à 0. Les tableaux sont très utiles pour regrouper plusieurs données liées.",
+                code: `int[] numbers = {10, 20, 30, 40, 50};\n\nSystem.out.println(numbers[0]); // 10\nSystem.out.println(numbers[2]); // 30`,
+                animation: {
+                    type: "loop",
+                    current: 0,
+                    max: 5,
+                    items: [10, 20, 30, 40, 50],
+                    label: "5 cases numérotées de 0 à 4."
+                }
+            },
+            {
+                title: "Modifier un élément",
+                theory: "On peut modifier une valeur précise d’un tableau en utilisant son index. Le tableau reste le même, mais une de ses cases reçoit une nouvelle valeur.",
+                code: `int[] numbers = {10, 20, 30};\nnumbers[1] = 99;\n// Devient {10, 99, 30}`,
+                animation: {
+                    type: "variable",
+                    varName: "numbers[1]",
+                    varType: "int",
+                    value: 99,
+                    previousValue: 20,
+                    label: "L’élément à l’index 1 change de 20 → 99."
+                }
+            },
+            {
+                title: "La longueur d’un tableau",
+                theory: "La propriété `.length` indique combien d’éléments un tableau contient. Elle est souvent utilisée dans les boucles pour éviter de dépasser la taille du tableau.",
+                code: `String[] cars = {"Volvo", "BMW", "Ford", "Mazda"};\nSystem.out.println(cars.length); // 4`,
+                animation: {
+                    type: "variable",
+                    varName: "cars.length",
+                    varType: "int",
+                    value: 4,
+                    label: "Le tableau contient exactement 4 éléments."
+                }
+            },
+            {
+                title: "Créer un tableau avec `new`",
+                theory: "On peut aussi créer un tableau vide avec `new`, en précisant sa taille, puis remplir ses cases plus tard. Si les valeurs sont déjà connues, la syntaxe raccourcie est généralement plus simple.",
+                code: `String[] cars = new String[4];\ncars[0] = "Volvo";\ncars[1] = "BMW";\ncars[2] = "Ford";\ncars[3] = "Mazda";\n\nfor (String car : cars) {\n  System.out.println(car);\n}`,
+                animation: {
+                    type: "loop",
+                    current: 0,
+                    max: 4,
+                    items: ["Volvo", "BMW", "Ford", "Mazda"],
+                    label: "On réserve 4 cases, puis on les remplit ensuite."
+                }
+            }
+        ]
+    },
+    {
+        id: "methods",
+        title: "Méthodes",
+        subtitle: "Code réutilisable",
+        icon: "⚡",
+        color: "from-cyan-500 to-blue-600",
+        description: "Écrire du code une fois et le réutiliser avec des méthodes.",
+        totalSlides: 5,
+        slides: [
+            {
+                title: "Qu’est-ce qu’une méthode ?",
+                theory: "Une **méthode** est un bloc de code avec un nom. Au lieu de répéter le même code plusieurs fois, on le place dans une méthode et on l’appelle quand on en a besoin.",
+                code: `public class Main {\n  static void myMethod() {\n    System.out.println("Je viens d'être exécutée !");\n  }\n}`,
+                animation: {
+                    type: "variable",
+                    varName: "myMethod",
+                    varType: "method",
+                    value: "{ ... }",
+                    label: "Une méthode encapsule un comportement réutilisable."
+                }
+            },
+            {
+                title: "Appeler une méthode",
+                theory: "Pour exécuter une méthode, on écrit son nom suivi de parenthèses. Une méthode peut être appelée une seule fois ou plusieurs fois selon le besoin.",
+                code: `public class Main {\n  static void myMethod() {\n    System.out.println("Je viens d'être exécutée !");\n  }\n\n  public static void main(String[] args) {\n    myMethod();\n    myMethod();\n  }\n}`,
+                animation: {
+                    type: "flow",
+                    paths: [
+                        { label: "main()", result: true },
+                        { label: "→ myMethod()", result: true, output: "Je viens d'être exécutée !" },
+                        { label: "→ myMethod()", result: true, output: "Je viens d'être exécutée !" }
+                    ],
+                    label: "Une même méthode peut être réutilisée plusieurs fois."
+                }
+            },
+            {
+                title: "Paramètres",
+                theory: "Une méthode peut recevoir des **paramètres**. Ce sont des valeurs qu’on lui transmet au moment de l’appel. Cela rend la méthode plus flexible, car elle peut agir différemment selon les données reçues.",
+                code: `public static void greet(String name) {\n  System.out.println("Bonjour " + name);\n}\n\ngreet("Alice");\ngreet("Bob");`,
+                animation: {
+                    type: "flow",
+                    paths: [
+                        { label: 'greet("Alice")', result: true, output: "Bonjour Alice" },
+                        { label: 'greet("Bob")', result: true, output: "Bonjour Bob" }
+                    ],
+                    label: "La même méthode produit un résultat différent selon l’argument."
+                }
+            },
+            {
+                title: "Valeurs de retour",
+                theory: "Certaines méthodes **retournent** un résultat. Dans ce cas, on utilise un type de retour à la place de `void`, puis `return` pour renvoyer la valeur calculée.",
+                code: `public static int add(int a, int b) {\n  return a + b;\n}\n\nint result = add(3, 7); // 10`,
+                animation: {
+                    type: "variable",
+                    varName: "result",
+                    varType: "int",
+                    value: 10,
+                    label: "La méthode calcule puis renvoie une valeur au code appelant."
+                }
+            },
+            {
+                title: "Surcharge de méthodes",
+                theory: "La **surcharge** permet d’avoir plusieurs méthodes avec le même nom, mais des paramètres différents. Java choisit automatiquement la bonne version selon les arguments passés.",
+                code: `static int add(int a, int b) {\n  return a + b;\n}\n\nstatic double add(double a, double b) {\n  return a + b;\n}\n\nadd(3, 7);      // version int\nadd(3.5, 2.1);  // version double`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "add(3, 7)", value: "int → 10" },
+                    right: { label: "add(3.5, 2.1)", value: "double → 5.6" },
+                    label: "Même nom, signatures différentes, comportements adaptés."
+                }
+            }
+        ]
+    },
+    {
+        id: "classes",
+        title: "Classes et objets",
+        subtitle: "Bases de la POO",
+        icon: "🏗️",
+        color: "from-fuchsia-500 to-pink-600",
+        description: "Créer ses propres types avec les classes et les objets.",
+        totalSlides: 4,
+        slides: [
+            {
+                title: "Qu’est-ce qu’une classe ?",
+                theory: "Une **classe** est un plan de construction pour créer des objets. Elle définit les données (attributs) et les comportements (méthodes) que ses objets posséderont.",
+                code: `public class Dog {\n  String name;\n  int age;\n\n  void bark() {\n    System.out.println("Woof!");\n  }\n}`,
+                animation: {
+                    type: "variable",
+                    varName: "Dog",
+                    varType: "class",
+                    value: "{ name, age, bark() }",
+                    label: "Une classe est un modèle qui décrit des objets."
+                }
+            },
+            {
+                title: "Créer un objet",
+                theory: "On utilise `new` pour créer une **instance** d’une classe. Chaque objet possède ses propres valeurs pour les attributs définis par la classe.",
+                code: `Dog myDog = new Dog();\nmyDog.name = "Rex";\nmyDog.age = 3;\nmyDog.bark();`,
+                animation: {
+                    type: "variable",
+                    varName: "myDog",
+                    varType: "Dog",
+                    value: '{ name: "Rex", age: 3 }',
+                    label: "L’objet est créé à partir du plan `Dog`."
+                }
+            },
+            {
+                title: "Les constructeurs",
+                theory: "Un **constructeur** est une méthode spéciale exécutée lors de la création d’un objet. Il sert généralement à initialiser les attributs directement.",
+                code: `public class Dog {\n  String name;\n  int age;\n\n  Dog(String name, int age) {\n    this.name = name;\n    this.age = age;\n  }\n}\n\nDog d = new Dog("Rex", 3);`,
+                animation: {
+                    type: "flow",
+                    paths: [
+                        { label: 'new Dog("Rex", 3)', result: true },
+                        { label: "constructeur", result: true },
+                        { label: "objet prêt", result: true, output: "{ Rex, 3 }" }
+                    ],
+                    label: "Le constructeur prépare l’objet dès sa création."
+                }
+            },
+            {
+                title: "Plusieurs objets d’une même classe",
+                theory: "On peut créer plusieurs objets à partir d’une seule classe. Ils partagent la même structure, mais chacun garde ses propres données.",
+                code: `Dog a = new Dog("Rex", 3);\nDog b = new Dog("Max", 5);\n\na.bark();\nb.bark();`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "Dog a", value: '{ "Rex", 3 }' },
+                    right: { label: "Dog b", value: '{ "Max", 5 }' },
+                    label: "Même classe, plusieurs objets indépendants."
+                }
+            }
+        ]
+    },
+    {
+        id: "boolean-logic",
+        title: "Logique booléenne",
+        subtitle: "Vrai ou faux",
+        icon: "🧠",
+        color: "from-red-500 to-rose-600",
+        description: "Maîtriser AND, OR, NOT et les expressions booléennes.",
+        totalSlides: 4,
+        slides: [
+            {
+                title: "Les valeurs booléennes",
+                theory: "Un `boolean` ne peut contenir que **`true`** ou **`false`**. Ces valeurs sont à la base de toutes les décisions prises par un programme.",
+                code: `boolean isJavaFun = true;\nboolean isBoring = false;\n\nif (isJavaFun) {\n  System.out.println("Oui !");\n}`,
+                animation: {
+                    type: "gate",
+                    value: "true",
+                    condition: "isJavaFun == true",
+                    result: true,
+                    label: "isJavaFun vaut true → la porte s’ouvre."
+                }
+            },
+            {
+                title: "L’opérateur ET (`&&`)",
+                theory: "L’opérateur `&&` renvoie `true` seulement si **les deux conditions** sont vraies. Si une seule est fausse, le résultat devient faux.",
+                code: `int age = 25;\nboolean hasID = true;\n\nif (age >= 18 && hasID) {\n  System.out.println("Entrée autorisée");\n}`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "age >= 18", value: "true ✓" },
+                    right: { label: "hasID", value: "true ✓" },
+                    label: "Deux conditions vraies → résultat vrai."
+                }
+            },
+            {
+                title: "L’opérateur OU (`||`)",
+                theory: "L’opérateur `||` renvoie `true` si **au moins une** des conditions est vraie. Les deux doivent être fausses pour produire `false`.",
+                code: `boolean isWeekend = false;\nboolean isHoliday = true;\n\nif (isWeekend || isHoliday) {\n  System.out.println("Jour de repos !");\n}`,
+                animation: {
+                    type: "comparison",
+                    left: { label: "isWeekend", value: "false ✗" },
+                    right: { label: "isHoliday", value: "true ✓" },
+                    label: "Une seule condition vraie suffit avec OR."
+                }
+            },
+            {
+                title: "L’opérateur NON (`!`)",
+                theory: "L’opérateur `!` inverse une valeur booléenne. `true` devient `false`, et `false` devient `true`. C’est très utile pour exprimer une négation claire.",
+                code: `boolean isRaining = false;\n\nif (!isRaining) {\n  System.out.println("Sors dehors !");\n}`,
+                animation: {
+                    type: "gate",
+                    value: "!false",
+                    condition: "!isRaining",
+                    result: true,
+                    label: "Le NOT inverse la condition : false devient true."
+                }
+            }
+        ]
+    }
+];
+
 export const SUBJECT_LABELS: Record<CourseSubject, string> = {
     java: 'Java',
     math: 'Math',
     physique: 'Physique',
 };
-
-const rawJavaCourses = COURSES as unknown as LearningCourse[];
-const javaCourseOrder = [
-    'variables',
-    'strings',
-    'boolean-logic',
-    'if-statement',
-    'switch',
-    'for-loop',
-    'while-loop',
-    'arrays',
-    'methods',
-    'classes',
-];
-
-const javaCourseTranslations: Record<string, Omit<LearningCourse, 'id'>> = {
-    variables: {
-        title: 'Variables',
-        subtitle: 'Stockage de donnees',
-        description: 'Comprendre comment Java stocke et modifie des valeurs en memoire.',
-        totalSlides: 4,
-        slides: [
-            {
-                title: 'Qu est-ce qu une variable?',
-                theory: 'Une **variable** est un conteneur nomme qui garde une valeur. On lui donne un nom, puis on place une donnee dedans pour la reutiliser plus tard.',
-                code: 'int age = 25;',
-            },
-            {
-                title: 'Changer une valeur',
-                theory: 'Une variable peut etre **reassignee**. L ancienne valeur est remplacee par la nouvelle valeur.',
-                code: 'int age = 25;\nage = 30; // maintenant age vaut 30',
-            },
-            {
-                title: 'Les types',
-                theory: 'Java est **fortement type**: chaque variable doit declarer son type. Les types courants sont `int`, `double`, `String` et `boolean`.',
-                code: 'int count = 10;\ndouble price = 9.99;\nString name = "Java";\nboolean active = true;',
-            },
-            {
-                title: 'Variables final',
-                theory: 'Le mot-cle `final` rend une variable **constante**. Une fois la valeur donnee, elle ne peut plus changer.',
-                code: 'final double PI = 3.14159;\n// PI = 3.0; // erreur',
-            },
-        ],
-    },
-    strings: {
-        title: 'Chaines de caracteres',
-        subtitle: 'Texte',
-        description: 'Manipuler du texte avec String, concatener et utiliser des methodes utiles.',
-        totalSlides: 3,
-        slides: [
-            {
-                title: 'Creer une String',
-                theory: 'Une `String` est une suite de caracteres entouree par des guillemets. En Java, une **String** est un objet.',
-                code: 'String message = "Bonjour Java";\nSystem.out.println(message);',
-            },
-            {
-                title: 'Methodes de String',
-                theory: 'Les chaines possedent des **methodes** comme `.length()`, `.toUpperCase()` et `.substring()` pour lire ou transformer le texte.',
-                code: 'String s = "Bonjour";\ns.length();\ns.toUpperCase();\ns.substring(0, 3);',
-            },
-            {
-                title: 'Concatener',
-                theory: 'L operateur `+` permet de joindre plusieurs textes. Java peut aussi convertir une valeur numerique en texte pendant la concatenation.',
-                code: 'String nom = "Ada";\nint age = 16;\nString phrase = nom + " a " + age + " ans";',
-            },
-        ],
-    },
-    'boolean-logic': {
-        title: 'Booleens',
-        subtitle: 'Vrai ou faux',
-        description: 'Maitriser true, false, AND, OR et NOT dans les conditions.',
-        totalSlides: 4,
-        slides: [
-            {
-                title: 'Valeurs booleennes',
-                theory: 'Un `boolean` ne peut contenir que `true` ou `false`. C est la base des **decisions** dans un programme.',
-                code: 'boolean isReady = true;\nboolean isClosed = false;',
-            },
-            {
-                title: 'Operateur AND',
-                theory: 'L operateur `&&` vaut true seulement si les **deux conditions** sont vraies.',
-                code: 'if (age >= 18 && hasId) {\n  System.out.println("Autorise");\n}',
-            },
-            {
-                title: 'Operateur OR',
-                theory: 'L operateur `||` vaut true si **au moins une condition** est vraie.',
-                code: 'if (isWeekend || isHoliday) {\n  System.out.println("Repos");\n}',
-            },
-            {
-                title: 'Operateur NOT',
-                theory: 'L operateur `!` inverse un booleen: `true` devient `false`, et `false` devient `true`.',
-                code: 'boolean raining = false;\nif (!raining) {\n  System.out.println("Sortir");\n}',
-            },
-        ],
-    },
-    'if-statement': {
-        title: 'If...Else',
-        subtitle: 'Conditions',
-        description: 'Faire executer des blocs differents selon une condition.',
-        totalSlides: 4,
-        slides: [
-            {
-                title: 'Le if',
-                theory: 'Un `if` permet au programme de prendre une **decision**. Si la condition est `true`, le bloc s execute.',
-                code: 'if (condition) {\n  // execute seulement si condition est true\n}',
-            },
-            {
-                title: 'Condition vraie',
-                theory: 'Quand la condition devient `true`, Java entre dans le bloc et execute les instructions.',
-                code: 'int value = 150;\nif (value > 100) {\n  System.out.println("Grand nombre");\n}',
-            },
-            {
-                title: 'La branche else',
-                theory: '`else` sert a definir ce qui arrive quand la condition du `if` est `false`.',
-                code: 'int value = 30;\nif (value > 100) {\n  System.out.println("Grand");\n} else {\n  System.out.println("Petit");\n}',
-            },
-            {
-                title: 'Else if',
-                theory: '`else if` permet de tester plusieurs chemins. Java execute le **premier** chemin dont la condition est vraie.',
-                code: 'int score = 75;\nif (score >= 90) {\n  System.out.println("A");\n} else if (score >= 70) {\n  System.out.println("B");\n} else {\n  System.out.println("C");\n}',
-            },
-        ],
-    },
-    switch: {
-        title: 'Switch',
-        subtitle: 'Choix multiples',
-        description: 'Choisir proprement entre plusieurs cas possibles.',
-        totalSlides: 3,
-        slides: [
-            {
-                title: 'Le switch',
-                theory: 'Un `switch` compare une valeur a plusieurs **case**. Il remplace parfois une longue chaine de if/else.',
-                code: 'int day = 3;\nswitch (day) {\n  case 1: System.out.println("Lun"); break;\n  case 2: System.out.println("Mar"); break;\n  case 3: System.out.println("Mer"); break;\n  default: System.out.println("Autre");\n}',
-            },
-            {
-                title: 'Le mot-cle break',
-                theory: 'Sans `break`, Java continue dans le cas suivant. On utilise `break` pour sortir du switch au bon moment.',
-                code: 'switch (x) {\n  case 1: System.out.println("A"); break;\n  case 2: System.out.println("B"); break;\n}',
-            },
-            {
-                title: 'Le cas default',
-                theory: '`default` s execute quand aucun autre cas ne correspond. C est l equivalent du **else** dans un switch.',
-                code: 'switch (day) {\n  case 1: System.out.println("Lundi"); break;\n  default: System.out.println("Inconnu");\n}',
-            },
-        ],
-    },
-    'for-loop': {
-        title: 'Boucles for',
-        subtitle: 'Iteration controlee',
-        description: 'Repeter du code un nombre controle de fois.',
-        totalSlides: 4,
-        slides: [
-            {
-                title: 'Structure d une boucle for',
-                theory: 'Une boucle `for` repete un bloc avec trois parties: **initialisation**, **condition** et **increment**.',
-                code: 'for (int i = 0; i < 5; i++) {\n  System.out.println(i);\n}',
-            },
-            {
-                title: 'Compter les tours',
-                theory: 'La variable `i` change a chaque tour. Quand la condition devient `false`, la boucle s arrete.',
-                code: '// i = 0, 1, 2, 3, 4\n// i = 5 -> stop',
-            },
-            {
-                title: 'Changer le pas',
-                theory: 'On peut modifier l **increment**. Par exemple `i += 2` saute un nombre sur deux.',
-                code: 'for (int i = 0; i < 10; i += 2) {\n  System.out.println(i);\n}',
-            },
-            {
-                title: 'Boucles imbriquees',
-                theory: 'Une boucle peut etre placee dans une autre. La **boucle interne** se termine pour chaque tour de la boucle externe.',
-                code: 'for (int i = 0; i < 3; i++) {\n  for (int j = 0; j < 2; j++) {\n    System.out.println(i + "," + j);\n  }\n}',
-            },
-        ],
-    },
-    'while-loop': {
-        title: 'Boucles while',
-        subtitle: 'Repetition conditionnelle',
-        description: 'Repeter du code tant qu une condition reste vraie.',
-        totalSlides: 3,
-        slides: [
-            {
-                title: 'La boucle while',
-                theory: 'Une boucle `while` continue **tant que** sa condition est vraie. Elle est utile quand le nombre de tours n est pas connu.',
-                code: 'int count = 0;\nwhile (count < 3) {\n  System.out.println(count);\n  count++;\n}',
-            },
-            {
-                title: 'Boucle infinie',
-                theory: 'Si la condition ne devient jamais `false`, la boucle tourne sans fin. C est une **boucle infinie**.',
-                code: 'while (true) {\n  System.out.println("Toujours");\n}',
-            },
-            {
-                title: 'Do while',
-                theory: 'Une boucle `do while` execute le bloc au moins une fois, puis verifie la condition.',
-                code: 'int x = 10;\ndo {\n  System.out.println(x);\n} while (x < 3);',
-            },
-        ],
-    },
-    arrays: {
-        title: 'Tableaux',
-        subtitle: 'Collections fixes',
-        description: 'Stocker plusieurs valeurs du meme type dans une seule variable.',
-        totalSlides: 3,
-        slides: [
-            {
-                title: 'Creer un tableau',
-                theory: 'Un **tableau** contient plusieurs valeurs du meme type. Chaque valeur possede un **index** qui commence a 0.',
-                code: 'int[] numbers = {10, 20, 30};\nSystem.out.println(numbers[0]);',
-            },
-            {
-                title: 'Modifier un element',
-                theory: 'On modifie un element avec son `index`, puis on lui donne une nouvelle valeur.',
-                code: 'int[] numbers = {10, 20, 30};\nnumbers[1] = 99;',
-            },
-            {
-                title: 'Parcourir un tableau',
-                theory: 'Une boucle `for` permet de visiter chaque element. La propriete `.length` donne la taille du tableau.',
-                code: 'for (int i = 0; i < numbers.length; i++) {\n  System.out.println(numbers[i]);\n}',
-            },
-        ],
-    },
-    methods: {
-        title: 'Methodes',
-        subtitle: 'Code reutilisable',
-        description: 'Regrouper des instructions dans des blocs reutilisables.',
-        totalSlides: 4,
-        slides: [
-            {
-                title: 'Qu est-ce qu une methode?',
-                theory: 'Une **methode** est un bloc de code avec un nom. On l appelle quand on veut reutiliser cette logique.',
-                code: 'public static void greet() {\n  System.out.println("Bonjour");\n}\n\ngreet();',
-            },
-            {
-                title: 'Parametres',
-                theory: 'Les **parametres** sont des valeurs envoyees a une methode pour la rendre flexible.',
-                code: 'public static void greet(String name) {\n  System.out.println("Bonjour " + name);\n}',
-            },
-            {
-                title: 'Valeur de retour',
-                theory: 'Une methode peut `return` une valeur au code qui l a appelee.',
-                code: 'public static int add(int a, int b) {\n  return a + b;\n}',
-            },
-            {
-                title: 'Surcharge',
-                theory: 'La **surcharge** permet d avoir plusieurs methodes avec le meme nom mais des parametres differents.',
-                code: 'static int add(int a, int b) { return a + b; }\nstatic double add(double a, double b) { return a + b; }',
-            },
-        ],
-    },
-    classes: {
-        title: 'Classes et objets',
-        subtitle: 'Bases de la POO',
-        description: 'Organiser le code avec des classes, des objets, des champs et des methodes.',
-        totalSlides: 4,
-        slides: [
-            {
-                title: 'Qu est-ce qu une classe?',
-                theory: 'Une **classe** est un plan qui sert a creer des objets. Elle definit les donnees et les comportements.',
-                code: 'public class Dog {\n  String name;\n  int age;\n\n  void bark() {\n    System.out.println("Woof");\n  }\n}',
-            },
-            {
-                title: 'Creer un objet',
-                theory: 'Le mot-cle `new` cree une **instance** de la classe. Chaque objet garde ses propres valeurs.',
-                code: 'Dog myDog = new Dog();\nmyDog.name = "Rex";\nmyDog.age = 3;',
-            },
-            {
-                title: 'Constructeur',
-                theory: 'Un **constructeur** s execute quand on cree un objet. Il initialise souvent les champs.',
-                code: 'Dog(String name, int age) {\n  this.name = name;\n  this.age = age;\n}',
-            },
-            {
-                title: 'Plusieurs objets',
-                theory: 'Une meme classe peut creer plusieurs **objets** independants, chacun avec ses propres donnees.',
-                code: 'Dog a = new Dog("Rex", 3);\nDog b = new Dog("Max", 5);',
-            },
-        ],
-    },
-};
-
-const javaCourses = javaCourseOrder
-    .map((courseId) => {
-        const fallbackCourse = rawJavaCourses.find((course) => course.id === courseId);
-        const translation = javaCourseTranslations[courseId];
-
-        if (!fallbackCourse || !translation) {
-            return fallbackCourse;
-        }
-
-        return {
-            ...fallbackCourse,
-            ...translation,
-            id: fallbackCourse.id,
-        };
-    })
-    .filter((course): course is LearningCourse => Boolean(course));
 
 export const COURSE_SUBJECTS: Record<CourseSubject, LearningCourse[]> = {
     java: javaCourses,
@@ -1071,40 +1186,67 @@ export function getCourseProgress(subject: CourseSubject, courseId: string) {
     return db.getCourseProgress(subject, courseId);
 }
 
+export function getCourseProgressDetails(subject: CourseSubject, courseId: string): CourseProgressDetails {
+    db.init();
+    return db.getCourseProgressDetails(subject, courseId);
+}
+
 export function findCourse(subject: CourseSubject, courseId: string) {
     return COURSE_SUBJECTS[subject].find((course) => course.id === courseId);
 }
 
-function toRecentLearningCourse(subject: CourseSubject, course: LearningCourse, progressMap: CourseProgressMap): RecentLearningCourse {
+function toRecentLearningCourse(subject: CourseSubject, course: LearningCourse): RecentLearningCourse {
     const key = progressKey(subject, course.id);
-    const currentSlide = progressMap[key] ?? -1;
-    const safeSlide = currentSlide >= 0 ? Math.min(currentSlide, Math.max(course.totalSlides - 1, 0)) : -1;
-    const progress = safeSlide < 0 || course.totalSlides === 0 ? 0 : Math.round(((safeSlide + 1) / course.totalSlides) * 100);
+    const progressDetails = getCourseProgressDetails(subject, course.id);
 
     return {
         id: key,
         courseId: course.id,
         subject,
         name: `${SUBJECT_LABELS[subject]} - ${course.title}`,
-        progress,
-        completed: progress >= 100,
+        progress: progressDetails.progress,
+        completed: progressDetails.completed,
         totalSlides: course.totalSlides,
+        highestSlideIndex: progressDetails.highestSlideIndex,
+        exerciseCompleted: progressDetails.exerciseCompleted,
     };
 }
 
 export function getLearningCourseSummaries() {
-    const progressMap = getCourseProgressMap();
-
+    // Builds one tracking summary for every real course in the catalog so course tabs and profile use identical IDs.
     return SUBJECTS_WITH_COURSES.flatMap((subject) =>
-        COURSE_SUBJECTS[subject].map((course) => toRecentLearningCourse(subject, course, progressMap))
+        COURSE_SUBJECTS[subject].map((course) => toRecentLearningCourse(subject, course))
     );
 }
 
 export function getRecentLearningCourses(limit = 6) {
-    const summaries = getLearningCourseSummaries();
-    const byId = new Map(summaries.map((course) => [course.id, course]));
+    db.init();
+    // Keeps the profile panel limited to recently opened catalog courses, ignoring stale local records for removed courses.
+    const allCoursesById = new Map(
+        SUBJECTS_WITH_COURSES.flatMap((subject) =>
+            COURSE_SUBJECTS[subject].map((course) => [progressKey(subject, course.id), { subject, course }] as const)
+        )
+    );
     const orderedRecents = db.getRecentCourses(limit)
-        .map((course) => byId.get(String(course.id)))
+        .map((storedCourse) => {
+            const catalogCourse = allCoursesById.get(String(storedCourse.id));
+
+            if (!catalogCourse) {
+                return undefined;
+            }
+
+            return {
+                id: String(storedCourse.id),
+                courseId: catalogCourse.course.id,
+                subject: catalogCourse.subject,
+                name: `${SUBJECT_LABELS[catalogCourse.subject]} - ${catalogCourse.course.title}`,
+                progress: storedCourse.progress,
+                completed: storedCourse.completed,
+                totalSlides: catalogCourse.course.totalSlides,
+                highestSlideIndex: storedCourse.highestSlideIndex ?? -1,
+                exerciseCompleted: Boolean(storedCourse.exerciseCompleted),
+            };
+        })
         .filter((course): course is RecentLearningCourse => Boolean(course));
 
     return orderedRecents.slice(0, limit);

@@ -1,13 +1,13 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import {Href, Link, router} from 'expo-router';
+import { Href, router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { CourseSubject, LearningCourse, SUBJECT_LABELS } from '@/data/courses';
+import { CourseProgressDetails, CourseSubject, LearningCourse, SUBJECT_LABELS } from '@/data/courses';
 
 type CourseCardProps = {
   course: LearningCourse;
-  currentSlide: number;
+  progressDetails: CourseProgressDetails;
   index: number;
   subject: CourseSubject;
 };
@@ -28,12 +28,12 @@ const subjectIcons: Record<CourseSubject, keyof typeof MaterialCommunityIcons.gl
   physique: 'atom',
 };
 
-export default function CourseCard({ course, currentSlide, index, subject }: CourseCardProps) {
+export default function CourseCard({ course, progressDetails, index, subject }: CourseCardProps) {
   const accent = accentColors[index % accentColors.length];
-  const hasStarted = currentSlide >= 0;
-  const safeSlide = hasStarted ? Math.min(currentSlide, Math.max(course.totalSlides - 1, 0)) : 0;
-  const progress =
-    !hasStarted || course.totalSlides === 0 ? 0 : Math.round(((safeSlide + 1) / course.totalSlides) * 100);
+  // Course cards display saved tracking only; progress changes happen inside the reader/exercise flow.
+  const hasStarted = progressDetails.progress > 0;
+  const progress = progressDetails.progress;
+  const exerciseStatus = progressDetails.exerciseCompleted ? 'exercice termine' : 'exercice a faire';
   const href = {
     pathname: '/(tabs)/cours/sujet/courseId',
     params: { courseId: course.id, subject },
@@ -41,7 +41,7 @@ export default function CourseCard({ course, currentSlide, index, subject }: Cou
 
   return (
       <Pressable
-          onPress={() => router.push(href)}
+          onPress={() => router.replace(href)}
           style={({ pressed }) => [
               styles.card,
             { borderTopColor: accent },
@@ -78,6 +78,11 @@ export default function CourseCard({ course, currentSlide, index, subject }: Cou
             <ThemedText lightColor={THEME.muted} style={styles.slideText}>
               {hasStarted ? `${progress}%` : 'demarrer'}
             </ThemedText>
+            {hasStarted ? (
+              <ThemedText lightColor={progressDetails.exerciseCompleted ? '#10A77A' : '#F59E0B'} style={styles.slideText}>
+                {exerciseStatus}
+              </ThemedText>
+            ) : null}
           </View>
           <View style={[styles.openButton, { backgroundColor: `${accent}12` }]}>
             <MaterialCommunityIcons color={accent} name="chevron-right" size={22} />
