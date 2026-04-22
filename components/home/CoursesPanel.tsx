@@ -11,6 +11,7 @@ const colors = {
   text: '#243B53',
   muted: '#6E7F73',
   green: '#7CCFBF',
+  yellow: '#D8A94A',
   red: '#D97B6C',
   grid: '#B7C7B0',
 };
@@ -22,6 +23,7 @@ const darkColors = {
   text: '#F3F1E7',
   muted: '#B7C7B0',
   green: '#7CCFBF',
+  yellow: '#E0B95A',
   red: '#E08A7B',
   grid: '#6E7F73',
 };
@@ -34,6 +36,8 @@ export type Course = {
   subject?: CourseSubject;
   courseId?: string;
   totalSlides?: number;
+  highestSlideIndex?: number;
+  exerciseCompleted?: boolean;
 };
 
 type CoursesPanelProps = {
@@ -54,8 +58,9 @@ export default function CoursesPanel({
       return;
     }
 
+    // Profile cards are read-only launchers; the reader decides the correct resume page from saved progress.
     router.push({
-      pathname: '/(tabs)/cours/[subject]/[courseId]',
+      pathname: '/(tabs)/cours/sujet/courseId',
       params: { courseId: course.courseId, subject: course.subject },
     } as unknown as Href);
   }
@@ -96,6 +101,13 @@ export default function CoursesPanel({
                   <Text style={[styles.courseName, { color: theme.text }]}>{course.name}</Text>
                   <Text style={[styles.courseSubject, { color: theme.muted }]}>
                     {course.progress}% termine
+                  </Text>
+                  <Text
+                    style={[
+                      styles.exerciseText,
+                      { color: course.exerciseCompleted ? theme.green : theme.yellow },
+                    ]}>
+                    {course.exerciseCompleted ? 'Exercice termine' : 'Exercice a completer'}
                   </Text>
                 </View>
                 <View style={[styles.openButton, { backgroundColor: theme.background }]}>
@@ -203,6 +215,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     lineHeight: 16,
+  },
+  exerciseText: {
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 15,
+    textTransform: 'uppercase',
   },
   openButton: {
     alignItems: 'center',

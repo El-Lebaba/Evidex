@@ -11,7 +11,9 @@ import {
   SUBJECT_LABELS,
   findCourse,
   getCourseProgress,
+  getCourseProgressDetails,
 } from '@/data/courses';
+import { db } from '@/db/mainData';
 
 const THEME = {
   background: '#EEF5ED',
@@ -161,23 +163,43 @@ export default function CourseReaderScreen() {
   }, [course, courseId, subject]);
 
   const [slideIndex, setSlideIndex] = useState(initialSlide);
-  const [savedProgress, setSavedProgress] = useState(initialSlide);
+  const [savedProgressDetails, setSavedProgressDetails] = useState(() =>
+    subject && courseId ? getCourseProgressDetails(subject, courseId) : {
+      completed: false,
+      exerciseCompleted: false,
+      highestSlideIndex: -1,
+      progress: 0,
+    }
+  );
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
 
   useEffect(() => {
     setSlideIndex(initialSlide);
-    setSavedProgress(initialSlide);
+    setSavedProgressDetails(
+      subject && courseId ? getCourseProgressDetails(subject, courseId) : {
+        completed: false,
+        exerciseCompleted: false,
+        highestSlideIndex: -1,
+        progress: 0,
+      }
+    );
     setSelectedAnswer(null);
-  }, [initialSlide]);
+  }, [courseId, initialSlide, subject]);
 
+  // Each opened page is persisted immediately so the home/profile cards can show the same integer percentage.
   useEffect(() => {
     if (subject && courseId && course) {
-      setSavedProgress((currentSavedProgress) => {
-        const nextSavedProgress = Math.max(currentSavedProgress, slideIndex);
-        return nextSavedProgress;
-      });
+      db.saveCourseProgress(
+        subject,
+        courseId,
+        slideIndex,
+        course.totalSlides,
+        `${SUBJECT_LABELS[subject]} - ${course.title}`,
+        savedProgressDetails.exerciseCompleted,
+      );
+      setSavedProgressDetails(getCourseProgressDetails(subject, courseId));
     }
-  }, [course, courseId, slideIndex, subject]);
+  }, [course, courseId, savedProgressDetails.exerciseCompleted, slideIndex, subject]);
 
   if (!subject || !courseId || !course) {
     return (
@@ -199,7 +221,7 @@ export default function CourseReaderScreen() {
 
   const slide = course.slides[slideIndex];
   const maxSlideIndex = course.totalSlides - 1;
-  const progress = Math.round(((savedProgress + 1) / course.totalSlides) * 100);
+  const progress = savedProgressDetails.progress;
   const isLastSlide = slideIndex === maxSlideIndex;
   const quiz = buildQuiz(course.title);
   const canGoPrevious = slideIndex > 0;
@@ -219,6 +241,23 @@ export default function CourseReaderScreen() {
       pathname: '/(tabs)/cours',
       params: { subject },
     } as unknown as Href);
+  }
+
+  function chooseAnswer(answerIndex: number) {
+    setSelectedAnswer(answerIndex);
+
+    // The final exercise acts as the 100% gate: correct answer sets the boolean flag and awards XP in db once.
+    if (answerIndex === quiz.answerIndex && subject && courseId && course) {
+      db.saveCourseProgress(
+        subject,
+        courseId,
+        maxSlideIndex,
+        course.totalSlides,
+        `${SUBJECT_LABELS[subject]} - ${course.title}`,
+        true,
+      );
+      setSavedProgressDetails(getCourseProgressDetails(subject, courseId));
+    }
   }
 
   return (
@@ -307,7 +346,7 @@ export default function CourseReaderScreen() {
                     return (
                       <Pressable
                         key={choice}
-                        onPress={() => setSelectedAnswer(index)}
+                        onPress={() => chooseAnswer(index)}
                         style={[
                           styles.choiceButton,
                           selected ? styles.choiceButtonSelected : null,
