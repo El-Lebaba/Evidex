@@ -6,6 +6,7 @@ import {
   Easing,
   Image,
   PanResponder,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -35,8 +36,8 @@ const palette = {
 const homeLogo = require('@/assets/images/evidexe-logo.png');
 const studyingBoy = require('@/assets/images/studying-boy-hq.png');
 const NOMBRE_VIGNETTES_ACCUEIL = 3;
-const INDEX_CENTRAL_VIGNETTES = 2;
-const OFFSETS_VIGNETTES_VISIBLES = [-2, -1, 0, 1, 2] as const;
+const SLOT_DEPART_VIGNETTES = 1;
+const ORDRE_DEFILEMENT_VIGNETTES = [2, 0, 1, 2, 0] as const;
 
 type BubbleSpec = {
   height: number;
@@ -110,6 +111,20 @@ function wrapSlideIndex(index: number) {
   return (index + NOMBRE_VIGNETTES_ACCUEIL) % NOMBRE_VIGNETTES_ACCUEIL;
 }
 
+function getCircularOffset(slideIndex: number, activeIndex: number) {
+  const directOffset = slideIndex - activeIndex;
+
+  if (directOffset > 1) {
+    return directOffset - NOMBRE_VIGNETTES_ACCUEIL;
+  }
+
+  if (directOffset < -1) {
+    return directOffset + NOMBRE_VIGNETTES_ACCUEIL;
+  }
+
+  return directOffset;
+}
+
 type PropsVignetteAccueil = {
   slideWidth: number;
   panelHeight: number;
@@ -129,20 +144,23 @@ export default function HomeScreen() {
   const hauteurPanneauAccueil = isCompact ? Math.max(height - 150, 570) : Math.max(height - 146, 700);
   const [expandedPanel, setExpandedPanel] = useState<'cours' | 'simulations' | null>(null);
   const [featuresAnchorY, setFeaturesAnchorY] = useState(0);
-  const [indexVignetteAccueil, setIndexVignetteAccueil] = useState(0);
+  const [indexRenduVignetteAccueil, setIndexRenduVignetteAccueil] = useState(0);
+  const [indexPointVignetteAccueil, setIndexPointVignetteAccueil] = useState(0);
   const [userLevel, setUserLevel] = useState(1);
   const [userXp, setUserXp] = useState(0);
   const [activeCourses, setActiveCourses] = useState(0);
 
   const expandProgress = useRef(new Animated.Value(0)).current;
-  const translationXVignettesAccueil = useRef(new Animated.Value(-(INDEX_CENTRAL_VIGNETTES * slideWidth))).current;
+  const translationWebVignettesAccueil = useRef(new Animated.Value(0)).current;
   const bubbleDrift = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef<ScrollView | null>(null);
+  const scrollVignettesRef = useRef<ScrollView | null>(null);
   const autoAdvanceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const dragStartX = useRef(0);
-  const animationVignettesEnCours = useRef(false);
+  const normalisationVignetteTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const animationWebVignetteId = useRef(0);
+  const slotVignetteCourant = useRef(SLOT_DEPART_VIGNETTES);
   const indexVignetteAccueilCourant = useRef(0);
-  const currentTranslateX = useRef(0);
+  const indexVignetteCibleCourant = useRef(0);
   const coursesExpanded = expandedPanel === 'cours';
   const simulationsExpanded = expandedPanel === 'simulations';
   const expandedTitle = coursesExpanded ? 'Choisis ta matiere' : 'Choisis ta section';
@@ -158,15 +176,6 @@ export default function HomeScreen() {
   const bubblesProfil = useMemo(
     () => createSlideBubbles(slideWidth - 12, hauteurPanneauAccueil, isCompact, 91),
     [hauteurPanneauAccueil, isCompact, slideWidth],
-  );
-  const vignettesVisibles = useMemo(
-    () =>
-      OFFSETS_VIGNETTES_VISIBLES.map((offset) => ({
-        indexReel: wrapSlideIndex(indexVignetteAccueil + offset),
-        indexSlot: offset + INDEX_CENTRAL_VIGNETTES,
-        offset,
-      })),
-    [indexVignetteAccueil],
   );
 
   const expandedCards = [
@@ -229,16 +238,6 @@ export default function HomeScreen() {
   }, [expandedPanel, featuresAnchorY]);
 
   useEffect(() => {
-    const listenerId = translationXVignettesAccueil.addListener(({ value }) => {
-      currentTranslateX.current = value;
-    });
-
-    return () => {
-      translationXVignettesAccueil.removeListener(listenerId);
-    };
-  }, [translationXVignettesAccueil]);
-
-  useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(bubbleDrift, {
@@ -264,21 +263,86 @@ export default function HomeScreen() {
   }, [bubbleDrift]);
 
   useEffect(() => {
-    const nextX = -(INDEX_CENTRAL_VIGNETTES * slideWidth);
-    translationXVignettesAccueil.setValue(nextX);
-    currentTranslateX.current = nextX;
-  }, [slideWidth, translationXVignettesAccueil]);
+    translationWebVignettesAccueil.setValue(0);
+    requestAnimationFrame(() => {
+      scrollVignettesRef.current?.scrollTo({
+        animated: false,
+        x: slotVignetteCourant.current * slideWidth,
+      });
+    });
+  }, [slideWidth, translationWebVignettesAccueil]);
 
   const synchroniserPositionVignettesAccueil = useCallback(
     (realIndex: number) => {
+      translationWebVignettesAccueil.setValue(0);
       indexVignetteAccueilCourant.current = realIndex;
-      setIndexVignetteAccueil(realIndex);
-
-      const nextX = -(INDEX_CENTRAL_VIGNETTES * slideWidth);
-      translationXVignettesAccueil.setValue(nextX);
-      currentTranslateX.current = nextX;
+      setIndexRenduVignetteAccueil(realIndex);
+      setIndexPointVignetteAccueil(realIndex);
     },
-    [slideWidth, translationXVignettesAccueil],
+    [translationWebVignettesAccueil],
+  );
+
+  const getStyleVignetteWeb = useCallback(
+    (slideIndex: number) => {
+      const offset = getCircularOffset(slideIndex, indexRenduVignetteAccueil);
+      const basePosition = offset * slideWidth;
+      const inputRange = [-slideWidth, 0, slideWidth];
+
+      return {
+        left: 0,
+        opacity: translationWebVignettesAccueil.interpolate({
+          inputRange,
+          outputRange:
+            offset === 0
+              ? [0.34, 1, 0.34]
+              : [offset === 1 ? 1 : 0.08, 0.34, offset === -1 ? 1 : 0.08],
+          extrapolate: 'clamp',
+        }),
+        position: 'absolute' as const,
+        transform: [
+          {
+            translateX: Animated.add(translationWebVignettesAccueil, basePosition),
+          },
+          {
+            scale: translationWebVignettesAccueil.interpolate({
+              inputRange,
+              outputRange:
+                offset === 0
+                  ? [0.96, 1, 0.96]
+                  : [offset === 1 ? 1 : 0.96, 0.96, offset === -1 ? 1 : 0.96],
+              extrapolate: 'clamp',
+            }),
+          },
+        ],
+        zIndex: 2 - Math.abs(offset),
+      };
+    },
+    [indexRenduVignetteAccueil, slideWidth, translationWebVignettesAccueil],
+  );
+
+  const animerVignetteWeb = useCallback(
+    (translationCible: number, indexVignetteCible: number) => {
+      const animationId = animationWebVignetteId.current + 1;
+      animationWebVignetteId.current = animationId;
+      indexVignetteCibleCourant.current = indexVignetteCible;
+
+      setIndexPointVignetteAccueil(indexVignetteCible);
+      translationWebVignettesAccueil.stopAnimation();
+      Animated.spring(translationWebVignettesAccueil, {
+        damping: 28,
+        mass: 0.85,
+        stiffness: 210,
+        toValue: translationCible,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (!finished || animationWebVignetteId.current !== animationId) {
+          return;
+        }
+
+        synchroniserPositionVignettesAccueil(indexVignetteCible);
+      });
+    },
+    [synchroniserPositionVignettesAccueil, translationWebVignettesAccueil],
   );
 
   const cardWidth = expandProgress.interpolate({
@@ -314,55 +378,74 @@ export default function HomeScreen() {
     });
   }, [featuresAnchorY]);
 
-  function getSlideAnimatedStyle(trackIndex: number) {
-    const inputRange = [-(trackIndex + 1) * slideWidth, -trackIndex * slideWidth, -(trackIndex - 1) * slideWidth];
-    return {
-      opacity: translationXVignettesAccueil.interpolate({
-        inputRange,
-        outputRange: [0.32, 1, 0.32],
-        extrapolate: 'clamp',
-      }),
-      transform: [
-        {
-          translateY: translationXVignettesAccueil.interpolate({
-            inputRange,
-            outputRange: [16, 0, 16],
-            extrapolate: 'clamp',
-          }),
-        },
-        {
-          scale: translationXVignettesAccueil.interpolate({
-            inputRange,
-            outputRange: [0.96, 1, 0.96],
-            extrapolate: 'clamp',
-          }),
-        },
-      ],
-    };
-  }
+  const defilerVersSlotVignette = useCallback(
+    (slotCible: number, animated = true) => {
+      slotVignetteCourant.current = slotCible;
+      scrollVignettesRef.current?.scrollTo({
+        animated,
+        x: slotCible * slideWidth,
+      });
+    },
+    [slideWidth],
+  );
 
-  const animerVersVignette = useCallback((indexPisteCible: number, indexVignetteCible: number) => {
-    animationVignettesEnCours.current = true;
-    translationXVignettesAccueil.stopAnimation((valeurCourante) => {
-      currentTranslateX.current = valeurCourante;
-    });
+  const gererFinDefilementVignettes = useCallback(
+    (offsetX: number) => {
+      if (normalisationVignetteTimeout.current) {
+        clearTimeout(normalisationVignetteTimeout.current);
+        normalisationVignetteTimeout.current = null;
+      }
 
-    Animated.spring(translationXVignettesAccueil, {
-      damping: 22,
-      mass: 0.9,
-      stiffness: 190,
-      toValue: -(indexPisteCible * slideWidth),
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      animationVignettesEnCours.current = false;
+      let slot = Math.round(offsetX / slideWidth);
+      slot = Math.max(0, Math.min(ORDRE_DEFILEMENT_VIGNETTES.length - 1, slot));
 
-      if (!finished) {
+      const indexReel = ORDRE_DEFILEMENT_VIGNETTES[slot];
+      synchroniserPositionVignettesAccueil(indexReel);
+
+      if (slot === 0) {
+        slotVignetteCourant.current = 3;
+        requestAnimationFrame(() => defilerVersSlotVignette(3, false));
         return;
       }
 
-      synchroniserPositionVignettesAccueil(indexVignetteCible);
-    });
-  }, [slideWidth, synchroniserPositionVignettesAccueil, translationXVignettesAccueil]);
+      if (slot === ORDRE_DEFILEMENT_VIGNETTES.length - 1) {
+        slotVignetteCourant.current = 1;
+        requestAnimationFrame(() => defilerVersSlotVignette(1, false));
+        return;
+      }
+
+      slotVignetteCourant.current = slot;
+    },
+    [defilerVersSlotVignette, slideWidth, synchroniserPositionVignettesAccueil],
+  );
+
+  const normaliserApresAnimationWeb = useCallback(
+    (slotCible: number) => {
+      if (normalisationVignetteTimeout.current) {
+        clearTimeout(normalisationVignetteTimeout.current);
+      }
+
+      normalisationVignetteTimeout.current = setTimeout(() => {
+        gererFinDefilementVignettes(slotCible * slideWidth);
+      }, 360);
+    },
+    [gererFinDefilementVignettes, slideWidth],
+  );
+
+  const gererDefilementVignettes = useCallback(
+    (offsetX: number) => {
+      const slot = Math.max(
+        0,
+        Math.min(ORDRE_DEFILEMENT_VIGNETTES.length - 1, Math.round(offsetX / slideWidth)),
+      );
+      const indexReel = ORDRE_DEFILEMENT_VIGNETTES[slot];
+
+      if (indexPointVignetteAccueil !== indexReel) {
+        setIndexPointVignetteAccueil(indexReel);
+      }
+    },
+    [indexPointVignetteAccueil, slideWidth],
+  );
 
   const scheduleAutoAdvance = useCallback(
     (nextIndex: number) => {
@@ -371,22 +454,28 @@ export default function HomeScreen() {
       }
       autoAdvanceTimeout.current = setTimeout(() => {
         const indexVignetteSuivante = wrapSlideIndex(nextIndex + 1);
-        const nextTrackIndex = INDEX_CENTRAL_VIGNETTES + 1;
 
-        animerVersVignette(nextTrackIndex, indexVignetteSuivante);
+        if (Platform.OS === 'web') {
+          animerVignetteWeb(-slideWidth, indexVignetteSuivante);
+          return;
+        }
+
+        const slotSuivant = slotVignetteCourant.current + 1;
+        setIndexPointVignetteAccueil(indexVignetteSuivante);
+        defilerVersSlotVignette(slotSuivant);
       }, 15000);
     },
-    [animerVersVignette],
+    [animerVignetteWeb, defilerVersSlotVignette, slideWidth],
   );
 
   useEffect(() => {
-    scheduleAutoAdvance(indexVignetteAccueil);
+    scheduleAutoAdvance(indexPointVignetteAccueil);
     return () => {
       if (autoAdvanceTimeout.current) {
         clearTimeout(autoAdvanceTimeout.current);
       }
     };
-  }, [indexVignetteAccueil, scheduleAutoAdvance]);
+  }, [indexPointVignetteAccueil, scheduleAutoAdvance]);
 
   useEffect(() => {
     if (typeof document === 'undefined') {
@@ -407,58 +496,59 @@ export default function HomeScreen() {
     };
   }, [scheduleAutoAdvance, synchroniserPositionVignettesAccueil]);
 
-  const gestionGlisserVignettesAccueil = useMemo(
+  const gestionGlisserSourisVignettes = useMemo(
     () =>
-      PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) =>
-        !animationVignettesEnCours.current &&
-        Math.abs(gestureState.dx) > 6 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
-      onPanResponderGrant: () => {
-        if (autoAdvanceTimeout.current) {
-          clearTimeout(autoAdvanceTimeout.current);
-        }
-        animationVignettesEnCours.current = false;
-        translationXVignettesAccueil.stopAnimation((valeurCourante) => {
-          currentTranslateX.current = valeurCourante;
-          dragStartX.current = valeurCourante;
-        });
-      },
-      onPanResponderMove: (_, gestureState) => {
-        const nextX = dragStartX.current + gestureState.dx;
-        const minX = -((OFFSETS_VIGNETTES_VISIBLES.length - 1) * slideWidth);
-        translationXVignettesAccueil.setValue(
-          Math.max(minX - 24, Math.min(slideWidth - 24, nextX)),
-        );
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        const threshold = slideWidth * 0.18;
-        let nextTrackIndex = INDEX_CENTRAL_VIGNETTES;
-        let indexVignetteSuivante = indexVignetteAccueilCourant.current;
+      Platform.OS === 'web'
+        ? PanResponder.create({
+            onMoveShouldSetPanResponder: (_, gestureState) =>
+              Math.abs(gestureState.dx) > 6 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
+            onPanResponderGrant: () => {
+              if (autoAdvanceTimeout.current) {
+                clearTimeout(autoAdvanceTimeout.current);
+                autoAdvanceTimeout.current = null;
+              }
+              animationWebVignetteId.current += 1;
+              if (indexVignetteAccueilCourant.current !== indexVignetteCibleCourant.current) {
+                synchroniserPositionVignettesAccueil(indexVignetteCibleCourant.current);
+              }
+              translationWebVignettesAccueil.stopAnimation();
+            },
+            onPanResponderMove: (_, gestureState) => {
+              translationWebVignettesAccueil.setValue(
+                Math.max(-slideWidth - 36, Math.min(slideWidth + 36, gestureState.dx)),
+              );
+            },
+            onPanResponderRelease: (_, gestureState) => {
+              const seuil = slideWidth * 0.18;
+              let translationCible = 0;
+              let indexVignetteCible = indexVignetteAccueilCourant.current;
 
-        if (gestureState.dx <= -threshold || gestureState.vx <= -0.45) {
-          nextTrackIndex = INDEX_CENTRAL_VIGNETTES + 1;
-          indexVignetteSuivante = wrapSlideIndex(indexVignetteAccueilCourant.current + 1);
-        } else if (gestureState.dx >= threshold || gestureState.vx >= 0.45) {
-          nextTrackIndex = INDEX_CENTRAL_VIGNETTES - 1;
-          indexVignetteSuivante = wrapSlideIndex(indexVignetteAccueilCourant.current - 1);
-        }
+              if (gestureState.dx <= -seuil || gestureState.vx <= -0.45) {
+                translationCible = -slideWidth;
+                indexVignetteCible = wrapSlideIndex(indexVignetteAccueilCourant.current + 1);
+              } else if (gestureState.dx >= seuil || gestureState.vx >= 0.45) {
+                translationCible = slideWidth;
+                indexVignetteCible = wrapSlideIndex(indexVignetteAccueilCourant.current - 1);
+              }
 
-        animerVersVignette(nextTrackIndex, indexVignetteSuivante);
-      },
-      onPanResponderTerminate: () => {
-        animerVersVignette(INDEX_CENTRAL_VIGNETTES, indexVignetteAccueilCourant.current);
-      },
-    }),
-    [animerVersVignette, slideWidth, translationXVignettesAccueil],
+              if (translationCible === 0) {
+                setIndexPointVignetteAccueil(indexVignetteAccueilCourant.current);
+              }
+              animerVignetteWeb(translationCible, indexVignetteCible);
+            },
+            onPanResponderTerminate: () => {
+              animerVignetteWeb(0, indexVignetteAccueilCourant.current);
+            },
+          })
+        : null,
+    [animerVignetteWeb, slideWidth, synchroniserPositionVignettesAccueil, translationWebVignettesAccueil],
   );
 
-  function renderVignetteAccueil(trackIndex: number, realIndex: number, offset: number) {
-    const animatedStyle = getSlideAnimatedStyle(trackIndex);
-
+  function renderVignetteAccueil(realIndex: number, slotKey: string, animatedStyle: any = null) {
     if (realIndex === 0) {
       return (
         <VignetteAccueilMarque
-          key={`vignette-accueil-${offset}-marque`}
+          key={slotKey}
           animatedStyle={animatedStyle}
           bubbles={bubblesMarque}
           driftProgress={bubbleDrift}
@@ -473,7 +563,7 @@ export default function HomeScreen() {
     if (realIndex === 1) {
       return (
         <VignetteAccueilAPropos
-          key={`vignette-accueil-${offset}-apropos`}
+          key={slotKey}
           animatedStyle={animatedStyle}
           bubbles={bubblesAPropos}
           driftProgress={bubbleDrift}
@@ -487,7 +577,7 @@ export default function HomeScreen() {
 
     return (
       <VignetteAccueilProfil
-        key={`vignette-accueil-${offset}-profil`}
+        key={slotKey}
         activeCourses={activeCourses}
         animatedStyle={animatedStyle}
         bubbles={bubblesProfil}
@@ -516,24 +606,47 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          <View {...gestionGlisserVignettesAccueil.panHandlers} style={styles.fenetreVignettesAccueil}>
-            <Animated.View
-              style={[
-                styles.pisteVignettesAccueil,
-                {
-                  transform: [{ translateX: translationXVignettesAccueil }],
-                  width: slideWidth * OFFSETS_VIGNETTES_VISIBLES.length,
-                },
-              ]}>
-              {vignettesVisibles.map(({ indexReel, indexSlot, offset }) =>
-                renderVignetteAccueil(indexSlot, indexReel, offset),
-              )}
-            </Animated.View>
+          <View
+            {...(gestionGlisserSourisVignettes?.panHandlers ?? {})}
+            style={styles.fenetreVignettesAccueil}>
+            {Platform.OS === 'web' ? (
+              <View style={{ height: hauteurPanneauAccueil, width: slideWidth }}>
+                {[0, 1, 2].map((realIndex) =>
+                  renderVignetteAccueil(
+                    realIndex,
+                    `vignette-accueil-web-${realIndex}`,
+                    getStyleVignetteWeb(realIndex),
+                  ),
+                )}
+              </View>
+            ) : (
+              <ScrollView
+                contentOffset={{ x: SLOT_DEPART_VIGNETTES * slideWidth, y: 0 }}
+                decelerationRate="fast"
+                horizontal
+                onMomentumScrollEnd={(event) => gererFinDefilementVignettes(event.nativeEvent.contentOffset.x)}
+                onScroll={(event) => gererDefilementVignettes(event.nativeEvent.contentOffset.x)}
+                onScrollBeginDrag={() => {
+                  if (autoAdvanceTimeout.current) {
+                    clearTimeout(autoAdvanceTimeout.current);
+                    autoAdvanceTimeout.current = null;
+                  }
+                }}
+                pagingEnabled
+                ref={scrollVignettesRef}
+                scrollEventThrottle={16}
+                showsHorizontalScrollIndicator={false}
+                style={{ height: hauteurPanneauAccueil, width: slideWidth }}>
+                {ORDRE_DEFILEMENT_VIGNETTES.map((realIndex, slotIndex) =>
+                  renderVignetteAccueil(realIndex, `vignette-accueil-slot-${slotIndex}`),
+                )}
+              </ScrollView>
+            )}
           </View>
 
           <View style={styles.rangeePointsAccueil}>
             {[0, 1, 2].map((index) => (
-              <View key={`dot-${index}`} style={[styles.pointAccueil, indexVignetteAccueil === index ? styles.pointAccueilActif : null]} />
+              <View key={`dot-${index}`} style={[styles.pointAccueil, indexPointVignetteAccueil === index ? styles.pointAccueilActif : null]} />
             ))}
           </View>
         </View>
@@ -859,7 +972,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     userSelect: 'none',
   },
-  vignetteAccueil: { paddingRight: 12 },
+  vignetteAccueil: {
+    paddingRight: 12,
+    userSelect: 'none',
+  },
   panneauAccueil: {
     backgroundColor: palette.sage,
     borderRadius: 38,
@@ -867,6 +983,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingTop: 18,
     position: 'relative',
+    userSelect: 'none',
   },
   panneauAccueilSecondaire: { backgroundColor: palette.sageDeep },
   panneauAccueilCompact: {
