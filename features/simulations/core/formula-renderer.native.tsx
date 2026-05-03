@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import katex from 'katex';
 import { WebView } from 'react-native-webview';
@@ -18,7 +18,7 @@ const FONT_SIZE = {
   lg: 1.18,
 } as const;
 
-export function FormulaRenderer({
+function FormulaRendererComponent({
   fallback,
   math,
   centered = false,
@@ -85,6 +85,8 @@ export function FormulaRenderer({
     </View>
   );
 }
+
+export const FormulaRenderer = memo(FormulaRendererComponent);
 
 const styles = StyleSheet.create({
   wrap: {

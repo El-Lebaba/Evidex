@@ -137,8 +137,8 @@ export const SIMULATION_CATALOG: Record<SimulationSection, SimulationEntry[]> = 
       description: 'Visualise les trajectoires balistiques et les lancers obliques.',
       href: '/(tabs)/physics/projectile-motion',
       icon: 'chart-timeline-variant',
-      status: 'soon',
-      tags: ['mecanique'],
+      status: 'ready',
+      tags: ['mecanique', 'trajectoire', 'vecteurs'],
       title: 'Mouvement projectile',
     },
     {

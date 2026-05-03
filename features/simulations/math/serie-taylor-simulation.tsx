@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   GestureResponderEvent,
@@ -539,29 +539,37 @@ function TaylorGraph({
       }),
     [activeFunction, graphHeight, graphWidth, order]
   );
+  const horizontalGrid = useMemo(
+    () => Array.from({ length: 9 }, (_, index) => (index / 8) * graphHeight),
+    [graphHeight]
+  );
+  const verticalGrid = useMemo(
+    () => Array.from({ length: 13 }, (_, index) => (index / 12) * graphWidth),
+    [graphWidth]
+  );
 
   return (
     <View style={[styles.graph, { height: graphHeight, width: graphWidth }]}>
       <Svg height={graphHeight} width={graphWidth}>
         <Rect fill={THEME.panel} height={graphHeight} width={graphWidth} x={0} y={0} />
-        {Array.from({ length: 9 }, (_, index) => (
+        {horizontalGrid.map((y, index) => (
           <Line
             key={`h-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
             x1={0}
             x2={graphWidth}
-            y1={(index / 8) * graphHeight}
-            y2={(index / 8) * graphHeight}
+            y1={y}
+            y2={y}
           />
         ))}
-        {Array.from({ length: 13 }, (_, index) => (
+        {verticalGrid.map((x, index) => (
           <Line
             key={`v-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
-            x1={(index / 12) * graphWidth}
-            x2={(index / 12) * graphWidth}
+            x1={x}
+            x2={x}
             y1={0}
             y2={graphHeight}
           />
@@ -645,7 +653,7 @@ function TermsSlider({
     setTypedValue(String(resolvedValue));
   };
 
-  const setFromEvent = (event: GestureResponderEvent) => {
+  const setFromEvent = useCallback((event: GestureResponderEvent) => {
     event.currentTarget.measure((_x, _y, measuredWidth, _height, pageX) => {
       const position = clamp(event.nativeEvent.pageX - pageX, 0, measuredWidth);
       const ratio = measuredWidth === 0 ? 0 : position / measuredWidth;
@@ -656,7 +664,7 @@ function TermsSlider({
       );
       onChange(nextValue);
     });
-  };
+  }, [onChange]);
 
   const panResponder = useMemo(
     () =>
