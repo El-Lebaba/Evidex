@@ -1,5 +1,5 @@
-import { LineSimulationScreen } from '@/features/simulations/core/line-simulation-screen';
+import { ProjectileMotionSimulation } from '@/features/simulations/physics/projectile-motion-simulation';
 
 export default function ProjectileMotionScreen() {
-  return <LineSimulationScreen title="Projectile Motion" type="physics" />;
+  return <ProjectileMotionSimulation />;
 }
