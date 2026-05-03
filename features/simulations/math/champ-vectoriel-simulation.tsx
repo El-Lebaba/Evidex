@@ -138,9 +138,10 @@ function VectorFieldGraph({
   graphWidth: number;
   showParticles: boolean;
 }) {
-  const particlesRef = useRef<Particle[]>(
-    Array.from({ length: PARTICLE_COUNT }, () => randomParticle())
-  );
+  const particlesRef = useRef<Particle[] | null>(null);
+  if (particlesRef.current === null) {
+    particlesRef.current = Array.from({ length: PARTICLE_COUNT }, () => randomParticle());
+  }
   const [frame, setFrame] = useState(0);
 
   useEffect(() => {
@@ -149,7 +150,8 @@ function VectorFieldGraph({
     }
 
     const interval = setInterval(() => {
-      particlesRef.current = particlesRef.current.map((particle) => {
+      const currentParticles = particlesRef.current ?? [];
+      particlesRef.current = currentParticles.map((particle) => {
         const vx = field.p(particle.x, particle.y);
         const vy = field.q(particle.x, particle.y);
         const magnitude = Math.sqrt(vx * vx + vy * vy) + 0.001;
@@ -234,11 +236,19 @@ function VectorFieldGraph({
 
   const particles = useMemo(
     () =>
-      particlesRef.current.map((particle, index) => ({
+      (particlesRef.current ?? []).map((particle, index) => ({
         key: `particle-${frame}-${index}`,
         ...toScreenPoint(particle.x, particle.y, graphWidth, graphHeight),
       })),
     [frame, graphHeight, graphWidth]
+  );
+  const horizontalGrid = useMemo(
+    () => Array.from({ length: 9 }, (_, index) => (index / 8) * graphHeight),
+    [graphHeight]
+  );
+  const verticalGrid = useMemo(
+    () => Array.from({ length: 9 }, (_, index) => (index / 8) * graphWidth),
+    [graphWidth]
   );
 
   return (
@@ -246,24 +256,24 @@ function VectorFieldGraph({
       <Svg height={graphHeight} width={graphWidth}>
         <Rect fill={THEME.panel} height={graphHeight} width={graphWidth} x={0} y={0} />
 
-        {Array.from({ length: 9 }, (_, index) => (
+        {horizontalGrid.map((y, index) => (
           <Line
             key={`grid-h-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
             x1={0}
             x2={graphWidth}
-            y1={(index / 8) * graphHeight}
-            y2={(index / 8) * graphHeight}
+            y1={y}
+            y2={y}
           />
         ))}
-        {Array.from({ length: 9 }, (_, index) => (
+        {verticalGrid.map((x, index) => (
           <Line
             key={`grid-v-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
-            x1={(index / 8) * graphWidth}
-            x2={(index / 8) * graphWidth}
+            x1={x}
+            x2={x}
             y1={0}
             y2={graphHeight}
           />

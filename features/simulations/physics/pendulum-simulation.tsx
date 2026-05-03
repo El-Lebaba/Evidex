@@ -177,6 +177,10 @@ function PendulumGraph({
   const bobRadius = 18;
   const angleDeg = (angle * 180) / Math.PI;
   const trailD = trail.length > 1 ? trailPath(trail) : '';
+  const horizontalGrid = useMemo(
+    () => Array.from({ length: 8 }, (_, index) => (index / 7) * graphHeight),
+    [graphHeight]
+  );
 
   return (
     <View style={[styles.graph, { height: graphHeight, width: graphWidth }]}>
@@ -190,15 +194,15 @@ function PendulumGraph({
         </Defs>
 
         <Rect fill={THEME.panel} height={graphHeight} width={graphWidth} x={0} y={0} />
-        {Array.from({ length: 8 }, (_, index) => (
+        {horizontalGrid.map((y, index) => (
           <Line
             key={`grid-h-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
             x1={0}
             x2={graphWidth}
-            y1={(index / 7) * graphHeight}
-            y2={(index / 7) * graphHeight}
+            y1={y}
+            y2={y}
           />
         ))}
 
@@ -232,6 +236,7 @@ export function PendulumSimulation() {
   const [, setFrame] = useState(0);
   const scrollY = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
+  const graphMetricsRef = useRef({ graphHeight: 0, graphWidth: 0 });
   const stateRef = useRef<PendulumState>({
     angle: (45 * Math.PI) / 180,
     angularVelocity: 0,
@@ -260,6 +265,16 @@ export function PendulumSimulation() {
 
       state.angularVelocity = (state.angularVelocity + angularAcceleration * dt) * damping;
       state.angle += state.angularVelocity * dt;
+
+      const { graphHeight, graphWidth } = graphMetricsRef.current;
+      if (graphHeight > 0 && graphWidth > 0) {
+        const visualLength = clamp((lengthCm / 250) * graphHeight * 0.66, 90, graphHeight * 0.7);
+        state.trail.push(polarToPoint(graphWidth / 2, 52, visualLength, state.angle));
+        if (state.trail.length > 56) {
+          state.trail.shift();
+        }
+      }
+
       setFrame((current) => current + 1);
     }, 16);
 
@@ -275,6 +290,7 @@ export function PendulumSimulation() {
     ? clamp(Math.round(graphWidth * 0.64), 460, 680)
     : clamp(Math.round(graphWidth * 0.82), 360, 540);
   const sideWidth = isWide ? contentWidth - graphWidth - 20 : contentWidth;
+  graphMetricsRef.current = { graphHeight, graphWidth };
   const state = stateRef.current;
   const lengthM = lengthCm / 100;
   const period = 2 * Math.PI * Math.sqrt(lengthM / gravity);
@@ -283,15 +299,6 @@ export function PendulumSimulation() {
   const totalEnergy = kineticEnergy + potentialEnergy || 1;
   const kineticPercent = clamp((kineticEnergy / totalEnergy) * 100, 0, 100);
   const potentialPercent = 100 - kineticPercent;
-  const visualLength = clamp((lengthCm / 250) * graphHeight * 0.66, 90, graphHeight * 0.7);
-  const pivotX = graphWidth / 2;
-  const pivotY = 52;
-  const bob = polarToPoint(pivotX, pivotY, visualLength, state.angle);
-
-  state.trail.push(bob);
-  if (state.trail.length > 56) {
-    state.trail.shift();
-  }
 
   const headerTranslateY = scrollY.interpolate({
     extrapolate: 'clamp',

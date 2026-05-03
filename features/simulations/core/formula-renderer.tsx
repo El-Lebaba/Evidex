@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -18,11 +19,13 @@ const FONT_SIZE = {
   xxl: 44,
 } as const;
 
-export function FormulaRenderer({
+function FormulaRendererComponent({
   fallback,
   centered = false,
   size = 'md',
 }: FormulaRendererProps) {
+  const displayFormula = useMemo(() => formatFormulaForDisplay(fallback), [fallback]);
+
   return (
     <ThemedText
       lightColor="#000000"
@@ -31,10 +34,12 @@ export function FormulaRenderer({
         centered ? styles.centered : undefined,
         { fontSize: FONT_SIZE[size], lineHeight: FONT_SIZE[size] + 6 },
       ]}>
-      {formatFormulaForDisplay(fallback)}
+      {displayFormula}
     </ThemedText>
   );
 }
+
+export const FormulaRenderer = memo(FormulaRendererComponent);
 
 const styles = StyleSheet.create({
   fallback: {

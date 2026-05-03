@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   GestureResponderEvent,
@@ -192,6 +192,14 @@ function SlopeFieldGraph({
     () => buildSolutionPath(equation, y0, graphWidth, graphHeight),
     [equation, graphHeight, graphWidth, y0]
   );
+  const horizontalGrid = useMemo(
+    () => Array.from({ length: 9 }, (_, index) => (index / 8) * graphHeight),
+    [graphHeight]
+  );
+  const verticalGrid = useMemo(
+    () => Array.from({ length: 9 }, (_, index) => (index / 8) * graphWidth),
+    [graphWidth]
+  );
   const startPoint = getScreenPoint(DOMAIN.xMin, y0, graphWidth, graphHeight, DOMAIN);
 
   return (
@@ -199,24 +207,24 @@ function SlopeFieldGraph({
       <Svg height={graphHeight} width={graphWidth}>
         <Rect fill={THEME.panel} height={graphHeight} width={graphWidth} x={0} y={0} />
 
-        {Array.from({ length: 9 }, (_, index) => (
+        {horizontalGrid.map((y, index) => (
           <Line
             key={`h-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
             x1={0}
             x2={graphWidth}
-            y1={(index / 8) * graphHeight}
-            y2={(index / 8) * graphHeight}
+            y1={y}
+            y2={y}
           />
         ))}
-        {Array.from({ length: 9 }, (_, index) => (
+        {verticalGrid.map((x, index) => (
           <Line
             key={`v-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
-            x1={(index / 8) * graphWidth}
-            x2={(index / 8) * graphWidth}
+            x1={x}
+            x2={x}
             y1={0}
             y2={graphHeight}
           />
@@ -310,10 +318,10 @@ function NumericSlider({
     setTypedValue(integer ? String(Math.round(value)) : value.toFixed(2));
   }, [integer, value]);
 
-  const normalizeValue = (nextValue: number) => {
+  const normalizeValue = useCallback((nextValue: number) => {
     const clamped = clamp(nextValue, min, max);
     return integer ? Math.round(clamped) : Number(clamped.toFixed(2));
-  };
+  }, [integer, max, min]);
 
   const commitTypedValue = () => {
     const normalized = typedValue.replace(',', '.').trim();
@@ -329,7 +337,7 @@ function NumericSlider({
     setTypedValue(integer ? String(Math.round(resolvedValue)) : resolvedValue.toFixed(2));
   };
 
-  const setFromEvent = (event: GestureResponderEvent) => {
+  const setFromEvent = useCallback((event: GestureResponderEvent) => {
     event.currentTarget.measure((_x, _y, measuredWidth, _height, pageX) => {
       const position = clamp(event.nativeEvent.pageX - pageX, 0, measuredWidth);
       const ratio = measuredWidth === 0 ? 0 : position / measuredWidth;
@@ -337,7 +345,7 @@ function NumericSlider({
       const snappedValue = normalizeValue(Math.round(rawValue / step) * step);
       onChange(snappedValue);
     });
-  };
+  }, [max, min, normalizeValue, onChange, step]);
 
   const panResponder = useMemo(
     () =>
@@ -351,7 +359,7 @@ function NumericSlider({
         onStartShouldSetPanResponder: () => true,
         onStartShouldSetPanResponderCapture: () => true,
       }),
-    [max, min, onChange, step]
+    [setFromEvent]
   );
 
   const percent = ((value - min) / (max - min || 1)) * 100;

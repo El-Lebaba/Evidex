@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   GestureResponderEvent,
@@ -188,29 +188,37 @@ function DerivativeGraph({
         : [],
     [graphHeight, graphWidth, slope, x0, y0]
   );
+  const horizontalGrid = useMemo(
+    () => Array.from({ length: 9 }, (_, index) => (index / 8) * graphHeight),
+    [graphHeight]
+  );
+  const verticalGrid = useMemo(
+    () => Array.from({ length: 11 }, (_, index) => (index / 10) * graphWidth),
+    [graphWidth]
+  );
 
   return (
     <View style={[styles.graph, { height: graphHeight, width: graphWidth }]}>
       <Svg height={graphHeight} width={graphWidth}>
         <Rect fill={THEME.panel} height={graphHeight} width={graphWidth} x={0} y={0} />
-        {Array.from({ length: 9 }, (_, index) => (
+        {horizontalGrid.map((y, index) => (
           <Line
             key={`h-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
             x1={0}
             x2={graphWidth}
-            y1={(index / 8) * graphHeight}
-            y2={(index / 8) * graphHeight}
+            y1={y}
+            y2={y}
           />
         ))}
-        {Array.from({ length: 11 }, (_, index) => (
+        {verticalGrid.map((x, index) => (
           <Line
             key={`v-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
-            x1={(index / 10) * graphWidth}
-            x2={(index / 10) * graphWidth}
+            x1={x}
+            x2={x}
             y1={0}
             y2={graphHeight}
           />
@@ -237,7 +245,7 @@ function DerivativeGraph({
         <View style={styles.legendItem}>
           <View style={[styles.legendLine, styles.legendDashed, { backgroundColor: THEME.derivative }]} />
           <ThemedText lightColor={THEME.mutedInk} style={styles.legendText}>
-            f'(x)
+            {"f'(x)"}
           </ThemedText>
         </View>
         <View style={styles.legendItem}>
@@ -292,7 +300,7 @@ function XSlider({
     setTypedValue(clampedValue.toFixed(2));
   };
 
-  const setFromEvent = (event: GestureResponderEvent) => {
+  const setFromEvent = useCallback((event: GestureResponderEvent) => {
     const width = event.currentTarget.measure((_x, _y, measuredWidth, _height, pageX) => {
       const position = clamp(event.nativeEvent.pageX - pageX, 0, measuredWidth);
       const nextValue = TRACK_MIN + (position / measuredWidth) * (TRACK_MAX - TRACK_MIN);
@@ -300,7 +308,7 @@ function XSlider({
     });
 
     return width;
-  };
+  }, [onChange]);
 
   const panResponder = useMemo(
     () =>
@@ -314,7 +322,7 @@ function XSlider({
         onPanResponderTerminationRequest: () => false,
         onShouldBlockNativeResponder: () => true,
       }),
-    [onChange]
+    [setFromEvent]
   );
 
   const percent = ((value - TRACK_MIN) / (TRACK_MAX - TRACK_MIN)) * 100;

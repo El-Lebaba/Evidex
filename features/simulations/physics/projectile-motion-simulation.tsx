@@ -192,15 +192,27 @@ function ProjectileGraph({
   const groundY = graphHeight - 42;
   const xScale = graphWidth / Math.max(values.range * 1.16, 12);
   const yScale = (groundY - 26) / Math.max(values.maxHeight * 1.35, 5);
-  const trajectoryD = createTrajectoryPath({
-    flightTime: values.flightTime,
-    gravity,
-    groundY,
-    vx: values.vx,
-    vy0: values.vy0,
-    xScale,
-    yScale,
-  });
+  const trajectoryD = useMemo(
+    () =>
+      createTrajectoryPath({
+        flightTime: values.flightTime,
+        gravity,
+        groundY,
+        vx: values.vx,
+        vy0: values.vy0,
+        xScale,
+        yScale,
+      }),
+    [gravity, groundY, values.flightTime, values.vx, values.vy0, xScale, yScale]
+  );
+  const horizontalGrid = useMemo(
+    () => Array.from({ length: 8 }, (_, index) => (index / 7) * groundY),
+    [groundY]
+  );
+  const verticalGrid = useMemo(
+    () => Array.from({ length: 9 }, (_, index) => (index / 8) * graphWidth),
+    [graphWidth]
+  );
 
   const activeTime = clamp(elapsed, 0, values.flightTime);
   const currentX = values.vx * activeTime;
@@ -223,24 +235,24 @@ function ProjectileGraph({
         </Defs>
 
         <Rect fill={THEME.panel} height={graphHeight} width={graphWidth} x={0} y={0} />
-        {Array.from({ length: 8 }, (_, index) => (
+        {horizontalGrid.map((y, index) => (
           <Line
             key={`grid-h-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
             x1={0}
             x2={graphWidth}
-            y1={(index / 7) * groundY}
-            y2={(index / 7) * groundY}
+            y1={y}
+            y2={y}
           />
         ))}
-        {Array.from({ length: 9 }, (_, index) => (
+        {verticalGrid.map((x, index) => (
           <Line
             key={`grid-v-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
-            x1={(index / 8) * graphWidth}
-            x2={(index / 8) * graphWidth}
+            x1={x}
+            x2={x}
             y1={0}
             y2={groundY}
           />

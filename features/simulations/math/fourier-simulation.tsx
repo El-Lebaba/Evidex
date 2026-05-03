@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   GestureResponderEvent,
@@ -192,30 +192,38 @@ function FourierWaveGraph({
       };
     });
   }, [graphHeight, graphWidth, nTerms, phase, showComponents, signal]);
+  const horizontalGrid = useMemo(
+    () => Array.from({ length: 9 }, (_, index) => (index / 8) * graphHeight),
+    [graphHeight]
+  );
+  const verticalGrid = useMemo(
+    () => Array.from({ length: 9 }, (_, index) => (index / 8) * graphWidth),
+    [graphWidth]
+  );
 
   return (
     <View style={[styles.graph, { height: graphHeight, width: graphWidth }]}>
       <Svg height={graphHeight} width={graphWidth}>
         <Rect fill={THEME.panel} height={graphHeight} width={graphWidth} x={0} y={0} />
 
-        {Array.from({ length: 9 }, (_, index) => (
+        {horizontalGrid.map((y, index) => (
           <Line
             key={`h-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
             x1={0}
             x2={graphWidth}
-            y1={(index / 8) * graphHeight}
-            y2={(index / 8) * graphHeight}
+            y1={y}
+            y2={y}
           />
         ))}
-        {Array.from({ length: 9 }, (_, index) => (
+        {verticalGrid.map((x, index) => (
           <Line
             key={`v-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
-            x1={(index / 8) * graphWidth}
-            x2={(index / 8) * graphWidth}
+            x1={x}
+            x2={x}
             y1={0}
             y2={graphHeight}
           />
@@ -379,7 +387,7 @@ function HarmonicSlider({
   onChange: (value: number) => void;
   value: number;
 }) {
-  const setFromEvent = (event: GestureResponderEvent) => {
+  const setFromEvent = useCallback((event: GestureResponderEvent) => {
     event.currentTarget.measure((_x, _y, measuredWidth, _height, pageX) => {
       const position = clamp(event.nativeEvent.pageX - pageX, 0, measuredWidth);
       const ratio = measuredWidth === 0 ? 0 : position / measuredWidth;
@@ -390,7 +398,7 @@ function HarmonicSlider({
       );
       onChange(nextValue);
     });
-  };
+  }, [onChange]);
 
   const panResponder = useMemo(
     () =>
@@ -404,7 +412,7 @@ function HarmonicSlider({
         onStartShouldSetPanResponder: () => true,
         onStartShouldSetPanResponderCapture: () => true,
       }),
-    [onChange]
+    [setFromEvent]
   );
 
   const percent = ((value - HARMONIC_MIN) / (HARMONIC_MAX - HARMONIC_MIN || 1)) * 100;
@@ -468,7 +476,10 @@ export function FourierSimulation() {
 
   const activeSignal = SIGNALS[signalIndex];
   const approximationAtPiOver2 = fourierApprox(Math.PI / 2, nTerms, activeSignal);
-  const strongestCoefficient = Math.max(...Array.from({ length: nTerms }, (_, index) => Math.abs(activeSignal.coeff(index + 1))));
+  const strongestCoefficient = useMemo(
+    () => Math.max(...Array.from({ length: nTerms }, (_, index) => Math.abs(activeSignal.coeff(index + 1)))),
+    [activeSignal, nTerms]
+  );
   const headerTranslateY = scrollY.interpolate({
     inputRange: [0, 120],
     outputRange: [0, -SIMULATION_HEADER_TOTAL_HEIGHT],

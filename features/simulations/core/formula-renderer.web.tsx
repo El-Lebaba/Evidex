@@ -1,5 +1,5 @@
 import katex from 'katex';
-import { useEffect } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 
 type FormulaRendererProps = {
   fallback: string;
@@ -8,13 +8,7 @@ type FormulaRendererProps = {
   size?: 'sm' | 'md' | 'lg';
 };
 
-const FONT_SIZE = {
-  sm: 0.92,
-  md: 1.05,
-  lg: 1.18,
-} as const;
-
-export function FormulaRenderer({ fallback, math, centered = false, size = 'md' }: FormulaRendererProps) {
+function FormulaRendererComponent({ fallback, math, centered = false, size = 'md' }: FormulaRendererProps) {
   useEffect(() => {
     if (typeof document === 'undefined') {
       return;
@@ -32,11 +26,15 @@ export function FormulaRenderer({ fallback, math, centered = false, size = 'md' 
     document.head.appendChild(link);
   }, []);
 
-  const markup = katex.renderToString(math || fallback, {
-    displayMode: false,
-    output: 'html',
-    throwOnError: false,
-  });
+  const markup = useMemo(
+    () =>
+      katex.renderToString(math || fallback, {
+        displayMode: false,
+        output: 'html',
+        throwOnError: false,
+      }),
+    [fallback, math]
+  );
 
   return (
     <div
@@ -52,3 +50,5 @@ export function FormulaRenderer({ fallback, math, centered = false, size = 'md' 
     />
   );
 }
+
+export const FormulaRenderer = memo(FormulaRendererComponent);

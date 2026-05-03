@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   GestureResponderEvent,
@@ -168,10 +168,6 @@ const THEME = {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
-}
-
-function formatNumber(value: number) {
-  return Number.isFinite(value) ? value.toFixed(3) : '--';
 }
 
 function getScreenPoint(x: number, y: number, width: number, height: number, domain: Domain): Point {
@@ -462,31 +458,39 @@ function IntegralGraph({
       positive: positivePoints.join(' '),
     };
   }, [a, activeFunction, b, graphHeight, graphWidth, integralKind]);
+  const horizontalGrid = useMemo(
+    () => Array.from({ length: 9 }, (_, index) => (index / 8) * graphHeight),
+    [graphHeight]
+  );
+  const verticalGrid = useMemo(
+    () => Array.from({ length: 9 }, (_, index) => (index / 8) * graphWidth),
+    [graphWidth]
+  );
 
   return (
     <View style={[styles.graph, { height: graphHeight, width: graphWidth }]}>
       <Svg height={graphHeight} width={graphWidth}>
         <Rect fill={THEME.panel} height={graphHeight} width={graphWidth} x={0} y={0} />
 
-        {Array.from({ length: 9 }, (_, index) => (
+        {horizontalGrid.map((y, index) => (
           <Line
             key={`h-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
             x1={0}
             x2={graphWidth}
-            y1={(index / 8) * graphHeight}
-            y2={(index / 8) * graphHeight}
+            y1={y}
+            y2={y}
           />
         ))}
 
-        {Array.from({ length: 9 }, (_, index) => (
+        {verticalGrid.map((x, index) => (
           <Line
             key={`v-${index}`}
             stroke={THEME.gridSoft}
             strokeWidth={1}
-            x1={(index / 8) * graphWidth}
-            x2={(index / 8) * graphWidth}
+            x1={x}
+            x2={x}
             y1={0}
             y2={graphHeight}
           />
@@ -623,10 +627,10 @@ function NumericSlider({
     setTypedValue(integer ? String(Math.round(value)) : value.toFixed(2));
   }, [integer, value]);
 
-  const normalizeValue = (nextValue: number) => {
+  const normalizeValue = useCallback((nextValue: number) => {
     const clampedValue = clamp(nextValue, min, max);
     return integer ? Math.round(clampedValue) : Number(clampedValue.toFixed(2));
-  };
+  }, [integer, max, min]);
 
   const visualMin = displayMin ?? min;
   const visualMax = displayMax ?? max;
@@ -645,7 +649,7 @@ function NumericSlider({
     setTypedValue(integer ? String(Math.round(resolvedValue)) : resolvedValue.toFixed(2));
   };
 
-  const setFromEvent = (event: GestureResponderEvent) => {
+  const setFromEvent = useCallback((event: GestureResponderEvent) => {
     event.currentTarget.measure((_x, _y, measuredWidth, _height, pageX) => {
       const position = clamp(event.nativeEvent.pageX - pageX, 0, measuredWidth);
       const ratio = measuredWidth === 0 ? 0 : position / measuredWidth;
@@ -653,7 +657,7 @@ function NumericSlider({
       const snappedValue = normalizeValue(Math.round(rawValue / step) * step);
       onChange(snappedValue);
     });
-  };
+  }, [normalizeValue, onChange, step, visualMax, visualMin]);
 
   const panResponder = useMemo(
     () =>
@@ -667,7 +671,7 @@ function NumericSlider({
         onPanResponderTerminationRequest: () => false,
         onShouldBlockNativeResponder: () => true,
       }),
-    [onChange, step, visualMax, visualMin]
+    [setFromEvent]
   );
 
   const percent = ((value - visualMin) / (visualMax - visualMin || 1)) * 100;

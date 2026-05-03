@@ -212,30 +212,38 @@ function GraphiqueSommesPartielles({
   const cheminCourbe = pointsCourbe.length > 1 ? creerCheminSvg(pointsCourbe) : '';
   const positionAxeHorizontal = convertirEnPointEcran(1, 0).y;
   const positionLimite = serie.converge ? convertirEnPointEcran(1, serie.limiteExacte).y : null;
+  const grilleHorizontale = useMemo(
+    () => Array.from({ length: 6 }, (_, indexLigne) => (indexLigne / 5) * hauteur),
+    [hauteur]
+  );
+  const grilleVerticale = useMemo(
+    () => Array.from({ length: 6 }, (_, indexLigne) => (indexLigne / 5) * largeur),
+    [largeur]
+  );
 
   return (
     <View style={[stylesSeries.graphique, { height: hauteur, width: largeur }]}>
       <Svg height={hauteur} width={largeur}>
         <Rect fill={PALETTE_SERIES.panneau} height={hauteur} width={largeur} x={0} y={0} />
 
-        {Array.from({ length: 6 }, (_, indexLigne) => (
+        {grilleHorizontale.map((y, indexLigne) => (
           <Line
             key={`grille-h-${indexLigne}`}
             stroke={PALETTE_SERIES.grilleDouce}
             strokeWidth={1}
             x1={0}
             x2={largeur}
-            y1={(indexLigne / 5) * hauteur}
-            y2={(indexLigne / 5) * hauteur}
+            y1={y}
+            y2={y}
           />
         ))}
-        {Array.from({ length: 6 }, (_, indexLigne) => (
+        {grilleVerticale.map((x, indexLigne) => (
           <Line
             key={`grille-v-${indexLigne}`}
             stroke={PALETTE_SERIES.grilleDouce}
             strokeWidth={1}
-            x1={(indexLigne / 5) * largeur}
-            x2={(indexLigne / 5) * largeur}
+            x1={x}
+            x2={x}
             y1={0}
             y2={hauteur}
           />
