@@ -117,20 +117,20 @@ export const SIMULATION_CATALOG: Record<SimulationSection, SimulationEntry[]> = 
   ],
   physics: [
     {
-      description: 'Observe l attraction gravitationnelle et les effets de la chute.',
+      description: 'Manipule masses et distance pour visualiser la loi de gravitation.',
       featured: true,
       href: '/(tabs)/physics/gravity',
-      icon: 'arrow-down-bold',
-      status: 'soon',
-      tags: ['mecanique'],
+      icon: 'orbit-variant',
+      status: 'ready',
+      tags: ['mecanique', 'forces'],
       title: 'Gravite',
     },
     {
       description: 'Etudie les oscillations et la periode d un pendule.',
       href: '/(tabs)/physics/pendulum',
       icon: 'metronome',
-      status: 'soon',
-      tags: ['mecanique'],
+      status: 'ready',
+      tags: ['mecanique', 'energie', 'oscillations'],
       title: 'Pendule',
     },
     {

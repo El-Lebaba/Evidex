@@ -1,5 +1,5 @@
-import { LineSimulationScreen } from '@/features/simulations/core/line-simulation-screen';
+import { GravitySimulation } from '@/features/simulations/physics/gravity-simulation';
 
 export default function GravityScreen() {
-  return <LineSimulationScreen title="Gravity" type="physics" />;
+  return <GravitySimulation />;
 }
