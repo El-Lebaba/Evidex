@@ -4,20 +4,20 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { FormulaRenderer } from '@/features/simulations/core/formula-renderer';
+import { TexteTheme } from '@/components/texte-theme';
+import { VueTheme } from '@/components/vue-theme';
+import { RenduFormule } from '@/features/simulations/core/rendu-formule';
 import {
-  CourseSubject,
-  SUBJECT_LABELS,
-  findCourse,
-  getCourseProgress,
-  getCourseProgressDetails,
-  getCourseQuiz,
-} from '@/data/courses';
-import { db } from '@/db/mainData';
+  MatiereCours,
+  ETIQUETTES_MATIERES,
+  trouverCours,
+  obtenirProgressionCours,
+  obtenirDetailsProgressionCours,
+  obtenirQuizCours,
+} from '@/data/cours';
+import { donneesLocales } from '@/db/donnees-principales';
 
-const THEME = {
+const themeActif = {
   background: '#EAE3D2',
   border: '#243B53',
   ink: '#243B53',
@@ -30,10 +30,10 @@ const THEME = {
   red: '#D97B6C',
 };
 
-const SUBJECTS: CourseSubject[] = ['java', 'math', 'physique'];
+const SUBJECTS: MatiereCours[] = ['java', 'mathematiques', 'physique'];
 
-function isCourseSubject(value: string): value is CourseSubject {
-  return SUBJECTS.includes(value as CourseSubject);
+function isCourseSubject(value: string): value is MatiereCours {
+  return SUBJECTS.includes(value as MatiereCours);
 }
 
 const highlightedKeywords = [
@@ -140,23 +140,23 @@ function renderHighlightedText(value: string) {
   });
 }
 
-export default function CourseReaderScreen() {
+export default function EcranLectureCours() {
   const params = useLocalSearchParams<{ courseId?: string; subject?: string }>();
   const subject = params.subject && isCourseSubject(params.subject) ? params.subject : undefined;
   const courseId = params.courseId;
-  const course = subject && courseId ? findCourse(subject, courseId) : undefined;
+  const CoursLocal = subject && courseId ? trouverCours(subject, courseId) : undefined;
 
   const initialSlide = useMemo(() => {
-    if (!subject || !courseId || !course) {
+    if (!subject || !courseId || !CoursLocal) {
       return 0;
     }
 
-    return Math.min(getCourseProgress(subject, courseId), Math.max(course.totalSlides - 1, 0));
-  }, [course, courseId, subject]);
+    return Math.min(obtenirProgressionCours(subject, courseId), Math.max(CoursLocal.totalSlides - 1, 0));
+  }, [CoursLocal, courseId, subject]);
 
   const [slideIndex, setSlideIndex] = useState(initialSlide);
   const [savedProgressDetails, setSavedProgressDetails] = useState(() =>
-    subject && courseId ? getCourseProgressDetails(subject, courseId) : {
+    subject && courseId ? obtenirDetailsProgressionCours(subject, courseId) : {
       completed: false,
       exerciseCompleted: false,
       highestSlideIndex: -1,
@@ -168,7 +168,7 @@ export default function CourseReaderScreen() {
   useEffect(() => {
     setSlideIndex(initialSlide);
     setSavedProgressDetails(
-      subject && courseId ? getCourseProgressDetails(subject, courseId) : {
+      subject && courseId ? obtenirDetailsProgressionCours(subject, courseId) : {
         completed: false,
         exerciseCompleted: false,
         highestSlideIndex: -1,
@@ -180,52 +180,49 @@ export default function CourseReaderScreen() {
 
   // Each opened page is persisted immediately so the home/profile cards can show the same integer percentage.
   useEffect(() => {
-    if (subject && courseId && course) {
-      db.saveCourseProgress(
+    if (subject && courseId && CoursLocal) {
+      donneesLocales.saveCourseProgress(
         subject,
         courseId,
         slideIndex,
-        course.totalSlides,
-        `${SUBJECT_LABELS[subject]} - ${course.title}`,
+        CoursLocal.totalSlides,
+        `${ETIQUETTES_MATIERES[subject]} - ${CoursLocal.title}`,
         savedProgressDetails.exerciseCompleted,
       );
-      setSavedProgressDetails(getCourseProgressDetails(subject, courseId));
+      setSavedProgressDetails(obtenirDetailsProgressionCours(subject, courseId));
     }
-  }, [course, courseId, savedProgressDetails.exerciseCompleted, slideIndex, subject]);
+  }, [CoursLocal, courseId, savedProgressDetails.exerciseCompleted, slideIndex, subject]);
 
-  if (!subject || !courseId || !course) {
+  if (!subject || !courseId || !CoursLocal) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <ThemedView lightColor={THEME.background} style={styles.emptyPage}>
-          <ThemedText lightColor={THEME.ink} style={styles.emptyTitle}>
+        <VueTheme lightColor={themeActif.background} style={styles.emptyPage}>
+          <TexteTheme lightColor={themeActif.ink} style={styles.emptyTitle}>
             Cours introuvable
-          </ThemedText>
+          </TexteTheme>
           <Pressable onPress={() => router.replace('/(tabs)/cours' as Href)} style={styles.backButton}>
-            <MaterialCommunityIcons color={THEME.ink} name="arrow-left" size={18} />
-            <ThemedText lightColor={THEME.ink} style={styles.backButtonText}>
+            <MaterialCommunityIcons color={themeActif.ink} name="arrow-left" size={18} />
+            <TexteTheme lightColor={themeActif.ink} style={styles.backButtonText}>
               Retour
-            </ThemedText>
+            </TexteTheme>
           </Pressable>
-        </ThemedView>
+        </VueTheme>
       </SafeAreaView>
     );
   }
 
-  const slide = course.slides[slideIndex];
-  const maxSlideIndex = course.totalSlides - 1;
+  const slide = CoursLocal.slides[slideIndex];
+  const maxSlideIndex = CoursLocal.totalSlides - 1;
   const progress = savedProgressDetails.progress;
   const isLastSlide = slideIndex === maxSlideIndex;
-  const quiz = getCourseQuiz(subject, courseId);
+  const quiz = obtenirQuizCours(subject, courseId);
   const canGoPrevious = slideIndex > 0;
   const canGoNext = slideIndex < maxSlideIndex;
-  const utiliseCarteFormule = subject === 'math' || subject === 'physique';
-  const contenuDiapoTraite = useMemo(
-    () => ({
-      lignesCode: slide.code ? cleanCodeText(slide.code).split('\n') : [],
-      theorieRendue: renderHighlightedText(slide.theory),
-    }),
-    [slide.code, slide.theory]
-  );
+  const utiliseCarteFormule = subject === 'mathematiques' || subject === 'physique';
+  const contenuDiapoTraite = {
+    lignesCode: slide.code ? cleanCodeText(slide.code).split('\n') : [],
+    theorieRendue: renderHighlightedText(slide.theory),
+  };
   const codeLines = contenuDiapoTraite.lignesCode;
 
   function goPrevious() {
@@ -246,46 +243,46 @@ export default function CourseReaderScreen() {
   function chooseAnswer(answerIndex: number) {
     setSelectedAnswer(answerIndex);
 
-    // The final exercise acts as the 100% gate: correct answer sets the boolean flag and awards XP in db once.
-    if (answerIndex === quiz.answerIndex && subject && courseId && course) {
-      db.saveCourseProgress(
+    // The final exercise acts as the 100% gate: correct answer sets the boolean flag and awards XP in donneesLocales once.
+    if (answerIndex === quiz.answerIndex && subject && courseId && CoursLocal) {
+      donneesLocales.saveCourseProgress(
         subject,
         courseId,
         maxSlideIndex,
-        course.totalSlides,
-        `${SUBJECT_LABELS[subject]} - ${course.title}`,
+        CoursLocal.totalSlides,
+        `${ETIQUETTES_MATIERES[subject]} - ${CoursLocal.title}`,
         true,
       );
-      setSavedProgressDetails(getCourseProgressDetails(subject, courseId));
+      setSavedProgressDetails(obtenirDetailsProgressionCours(subject, courseId));
     }
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ThemedView lightColor={THEME.background} style={styles.page}>
+      <VueTheme lightColor={themeActif.background} style={styles.page}>
         <View style={styles.topBar}>
           <Pressable onPress={goBackToCourses} style={styles.iconButton}>
-            <MaterialCommunityIcons color={THEME.ink} name="arrow-left" size={22} />
+            <MaterialCommunityIcons color={themeActif.ink} name="arrow-left" size={22} />
           </Pressable>
 
           <View style={styles.topMeta}>
-            <ThemedText lightColor={THEME.muted} numberOfLines={1} style={styles.subjectText}>
-              {SUBJECT_LABELS[subject]}
-            </ThemedText>
-            <ThemedText lightColor={THEME.ink} numberOfLines={1} style={styles.courseTitle}>
-              {course.title}
-            </ThemedText>
+            <TexteTheme lightColor={themeActif.muted} numberOfLines={1} style={styles.subjectText}>
+              {ETIQUETTES_MATIERES[subject]}
+            </TexteTheme>
+            <TexteTheme lightColor={themeActif.ink} numberOfLines={1} style={styles.courseTitle}>
+              {CoursLocal.title}
+            </TexteTheme>
           </View>
         </View>
 
         <View style={styles.progressWrap}>
           <View style={styles.progressMeta}>
-            <ThemedText lightColor={THEME.ink} style={styles.progressLabel}>
-              Page {slideIndex + 1}/{course.totalSlides}
-            </ThemedText>
-            <ThemedText lightColor={THEME.ink} style={styles.progressLabel}>
+            <TexteTheme lightColor={themeActif.ink} style={styles.progressLabel}>
+              Page {slideIndex + 1}/{CoursLocal.totalSlides}
+            </TexteTheme>
+            <TexteTheme lightColor={themeActif.ink} style={styles.progressLabel}>
               {progress}%
-            </ThemedText>
+            </TexteTheme>
           </View>
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${progress}%` }]} />
@@ -294,15 +291,15 @@ export default function CourseReaderScreen() {
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.slideCard}>
-            <ThemedText lightColor={THEME.muted} style={styles.slideKicker}>
-              {course.subtitle}
-            </ThemedText>
-            <ThemedText lightColor={THEME.ink} style={styles.slideTitle}>
+            <TexteTheme lightColor={themeActif.muted} style={styles.slideKicker}>
+              {CoursLocal.subtitle}
+            </TexteTheme>
+            <TexteTheme lightColor={themeActif.ink} style={styles.slideTitle}>
               {slide.title}
-            </ThemedText>
-            <ThemedText lightColor={THEME.ink} style={styles.theoryText}>
+            </TexteTheme>
+            <TexteTheme lightColor={themeActif.ink} style={styles.theoryText}>
               {contenuDiapoTraite.theorieRendue}
-            </ThemedText>
+            </TexteTheme>
 
             {slide.code && subject === 'java' ? (
               <View style={styles.codeWindow}>
@@ -310,19 +307,19 @@ export default function CourseReaderScreen() {
                   <View style={[styles.windowDot, { backgroundColor: '#EF4444' }]} />
                   <View style={[styles.windowDot, { backgroundColor: '#F59E0B' }]} />
                   <View style={[styles.windowDot, { backgroundColor: '#10B981' }]} />
-                  <ThemedText lightColor="#8492A6" style={styles.fileName}>
+                  <TexteTheme lightColor="#8492A6" style={styles.fileName}>
                     Main.java
-                  </ThemedText>
+                  </TexteTheme>
                 </View>
                 <View style={styles.codeBody}>
                   {codeLines.map((line, index) => (
                     <View key={`${line}-${index}`} style={styles.codeLine}>
-                      <ThemedText lightColor="#526071" style={styles.lineNumber}>
+                      <TexteTheme lightColor="#526071" style={styles.lineNumber}>
                         {index + 1}
-                      </ThemedText>
-                      <ThemedText lightColor="#E5E7EB" style={styles.codeText}>
+                      </TexteTheme>
+                      <TexteTheme lightColor="#E5E7EB" style={styles.codeText}>
                         {line}
-                      </ThemedText>
+                      </TexteTheme>
                     </View>
                   ))}
                 </View>
@@ -333,20 +330,20 @@ export default function CourseReaderScreen() {
               <View style={styles.formulaCard}>
                 <View style={styles.formulaCardHeader}>
                   <View style={styles.formulaBadge}>
-                    <MaterialCommunityIcons color={THEME.ink} name="function-variant" size={18} />
-                    <ThemedText lightColor={THEME.ink} style={styles.formulaBadgeText}>
+                    <MaterialCommunityIcons color={themeActif.ink} name="function-variant" size={18} />
+                    <TexteTheme lightColor={themeActif.ink} style={styles.formulaBadgeText}>
                       Vue mathematique
-                    </ThemedText>
+                    </TexteTheme>
                   </View>
-                  <ThemedText lightColor={THEME.muted} style={styles.formulaHint}>
+                  <TexteTheme lightColor={themeActif.muted} style={styles.formulaHint}>
                     Formule cle
-                  </ThemedText>
+                  </TexteTheme>
                 </View>
 
                 <View style={styles.formulaSurface}>
                   {codeLines.map((line, index) => (
                     <View key={`${line}-${index}`} style={styles.formulaLine}>
-                      <FormulaRenderer centered fallback={line} math={line} size="lg" />
+                      <RenduFormule centered fallback={line} mathematiques={line} size="lg" />
                     </View>
                   ))}
                 </View>
@@ -355,12 +352,12 @@ export default function CourseReaderScreen() {
 
             {isLastSlide ? (
               <View style={styles.quizCard}>
-                <ThemedText lightColor={THEME.muted} style={styles.quizKicker}>
+                <TexteTheme lightColor={themeActif.muted} style={styles.quizKicker}>
                   Question rapide
-                </ThemedText>
-                <ThemedText lightColor={THEME.ink} style={styles.quizQuestion}>
+                </TexteTheme>
+                <TexteTheme lightColor={themeActif.ink} style={styles.quizQuestion}>
                   {quiz.question}
-                </ThemedText>
+                </TexteTheme>
                 <View style={styles.choiceList}>
                   {quiz.choices.map((choice, index) => {
                     const selected = selectedAnswer === index;
@@ -377,9 +374,9 @@ export default function CourseReaderScreen() {
                           correct ? styles.choiceButtonCorrect : null,
                           incorrect ? styles.choiceButtonIncorrect : null,
                         ]}>
-                        <ThemedText lightColor={THEME.ink} style={styles.choiceText}>
+                        <TexteTheme lightColor={themeActif.ink} style={styles.choiceText}>
                           {choice}
-                        </ThemedText>
+                        </TexteTheme>
                       </Pressable>
                     );
                   })}
@@ -398,10 +395,10 @@ export default function CourseReaderScreen() {
               !canGoPrevious ? styles.navButtonDisabled : null,
               pressed ? styles.pressed : null,
             ]}>
-            <MaterialCommunityIcons color={THEME.ink} name="chevron-left" size={24} />
-            <ThemedText lightColor={THEME.ink} selectable={false} style={styles.navButtonText}>
+            <MaterialCommunityIcons color={themeActif.ink} name="chevron-left" size={24} />
+            <TexteTheme lightColor={themeActif.ink} selectable={false} style={styles.navButtonText}>
               Precedent
-            </ThemedText>
+            </TexteTheme>
           </Pressable>
 
           <Pressable
@@ -412,13 +409,13 @@ export default function CourseReaderScreen() {
               !canGoNext ? styles.navButtonDisabled : null,
               pressed ? styles.pressed : null,
             ]}>
-            <ThemedText lightColor={THEME.ink} selectable={false} style={styles.navButtonText}>
+            <TexteTheme lightColor={themeActif.ink} selectable={false} style={styles.navButtonText}>
               Suivant
-            </ThemedText>
-            <MaterialCommunityIcons color={THEME.ink} name="chevron-right" size={24} />
+            </TexteTheme>
+            <MaterialCommunityIcons color={themeActif.ink} name="chevron-right" size={24} />
           </Pressable>
         </View>
-      </ThemedView>
+      </VueTheme>
     </SafeAreaView>
   );
 }
@@ -428,7 +425,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   page: {
-    backgroundColor: THEME.background,
+    backgroundColor: themeActif.background,
     flex: 1,
   },
   emptyPage: {
@@ -439,14 +436,14 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyTitle: {
-    color: THEME.ink,
+    color: themeActif.ink,
     fontSize: 24,
     fontWeight: '900',
   },
   backButton: {
     alignItems: 'center',
-    backgroundColor: THEME.panel,
-    borderColor: THEME.border,
+    backgroundColor: themeActif.panel,
+    borderColor: themeActif.border,
     borderRadius: 12,
     borderWidth: 1.5,
     flexDirection: 'row',
@@ -469,8 +466,8 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     alignItems: 'center',
-    backgroundColor: THEME.panel,
-    borderColor: THEME.border,
+    backgroundColor: themeActif.panel,
+    borderColor: themeActif.border,
     borderRadius: 14,
     borderWidth: 1,
     height: 46,
@@ -481,14 +478,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   subjectText: {
-    color: THEME.muted,
+    color: themeActif.muted,
     fontSize: 12,
     fontWeight: '800',
     lineHeight: 16,
     textTransform: 'uppercase',
   },
   courseTitle: {
-    color: THEME.ink,
+    color: themeActif.ink,
     fontSize: 20,
     fontWeight: '900',
     lineHeight: 26,
@@ -505,21 +502,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   progressLabel: {
-    color: THEME.ink,
+    color: themeActif.ink,
     fontSize: 12,
     fontWeight: '900',
     lineHeight: 16,
   },
   progressTrack: {
-    backgroundColor: THEME.soft,
-    borderColor: THEME.border,
+    backgroundColor: themeActif.soft,
+    borderColor: themeActif.border,
     borderRadius: 10,
     borderWidth: 1,
     height: 14,
     overflow: 'hidden',
   },
   progressFill: {
-    backgroundColor: THEME.yellow,
+    backgroundColor: themeActif.yellow,
     height: '100%',
   },
   content: {
@@ -530,8 +527,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   slideCard: {
-    backgroundColor: THEME.panel,
-    borderColor: THEME.border,
+    backgroundColor: themeActif.panel,
+    borderColor: themeActif.border,
     borderRadius: 18,
     borderWidth: 1,
     gap: 18,
@@ -542,34 +539,34 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
   },
   slideKicker: {
-    color: THEME.muted,
+    color: themeActif.muted,
     fontSize: 13,
     fontWeight: '900',
     lineHeight: 18,
     textTransform: 'uppercase',
   },
   slideTitle: {
-    color: THEME.ink,
+    color: themeActif.ink,
     fontSize: 30,
     fontWeight: '900',
     lineHeight: 36,
   },
   theoryText: {
-    color: THEME.ink,
+    color: themeActif.ink,
     fontSize: 17,
     lineHeight: 27,
   },
   keywordText: {
     backgroundColor: 'rgba(216, 169, 74, 0.18)',
     borderRadius: 6,
-    color: THEME.ink,
+    color: themeActif.ink,
     fontWeight: '900',
     paddingHorizontal: 4,
   },
   inlineCode: {
     backgroundColor: 'rgba(126, 166, 224, 0.18)',
     borderRadius: 6,
-    color: THEME.ink,
+    color: themeActif.ink,
     fontFamily: 'monospace',
     fontWeight: '900',
     paddingHorizontal: 4,
@@ -622,8 +619,8 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   formulaCard: {
-    backgroundColor: THEME.soft,
-    borderColor: THEME.border,
+    backgroundColor: themeActif.soft,
+    borderColor: themeActif.border,
     borderRadius: 16,
     borderWidth: 1,
     gap: 14,
@@ -638,7 +635,7 @@ const styles = StyleSheet.create({
   formulaBadge: {
     alignItems: 'center',
     backgroundColor: 'rgba(216, 169, 74, 0.18)',
-    borderColor: THEME.border,
+    borderColor: themeActif.border,
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: 'row',
@@ -647,22 +644,22 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   formulaBadgeText: {
-    color: THEME.ink,
+    color: themeActif.ink,
     fontSize: 12,
     fontWeight: '900',
     lineHeight: 16,
     textTransform: 'uppercase',
   },
   formulaHint: {
-    color: THEME.muted,
+    color: themeActif.muted,
     fontSize: 12,
     fontWeight: '800',
     lineHeight: 16,
     textTransform: 'uppercase',
   },
   formulaSurface: {
-    backgroundColor: THEME.panel,
-    borderColor: THEME.border,
+    backgroundColor: themeActif.panel,
+    borderColor: themeActif.border,
     borderRadius: 14,
     borderWidth: 1,
     gap: 12,
@@ -680,22 +677,22 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   quizCard: {
-    backgroundColor: THEME.soft,
-    borderColor: THEME.border,
+    backgroundColor: themeActif.soft,
+    borderColor: themeActif.border,
     borderRadius: 14,
     borderWidth: 1,
     gap: 12,
     padding: 16,
   },
   quizKicker: {
-    color: THEME.muted,
+    color: themeActif.muted,
     fontSize: 12,
     fontWeight: '900',
     lineHeight: 16,
     textTransform: 'uppercase',
   },
   quizQuestion: {
-    color: THEME.ink,
+    color: themeActif.ink,
     fontSize: 18,
     fontWeight: '900',
     lineHeight: 24,
@@ -704,8 +701,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   choiceButton: {
-    backgroundColor: THEME.panel,
-    borderColor: THEME.border,
+    backgroundColor: themeActif.panel,
+    borderColor: themeActif.border,
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: 14,
@@ -713,25 +710,25 @@ const styles = StyleSheet.create({
   },
   choiceButtonSelected: {
     backgroundColor: 'rgba(126, 166, 224, 0.14)',
-    borderColor: THEME.blue,
+    borderColor: themeActif.blue,
   },
   choiceButtonCorrect: {
     backgroundColor: 'rgba(124, 207, 191, 0.16)',
-    borderColor: THEME.green,
+    borderColor: themeActif.green,
   },
   choiceButtonIncorrect: {
     backgroundColor: 'rgba(217, 123, 108, 0.14)',
-    borderColor: THEME.red,
+    borderColor: themeActif.red,
   },
   choiceText: {
-    color: THEME.ink,
+    color: themeActif.ink,
     fontSize: 14,
     fontWeight: '800',
     lineHeight: 19,
   },
   footer: {
     alignSelf: 'center',
-    backgroundColor: THEME.background,
+    backgroundColor: themeActif.background,
     bottom: 0,
     flexDirection: 'row',
     gap: 12,
@@ -742,8 +739,8 @@ const styles = StyleSheet.create({
   },
   navButton: {
     alignItems: 'center',
-    backgroundColor: THEME.panel,
-    borderColor: THEME.border,
+    backgroundColor: themeActif.panel,
+    borderColor: themeActif.border,
     borderRadius: 14,
     borderWidth: 1,
     flex: 1,
@@ -757,7 +754,7 @@ const styles = StyleSheet.create({
     opacity: 0.42,
   },
   navButtonText: {
-    color: THEME.ink,
+    color: themeActif.ink,
     fontSize: 14,
     fontWeight: '900',
     lineHeight: 18,
@@ -767,3 +764,4 @@ const styles = StyleSheet.create({
     transform: [{ translateY: 1 }],
   },
 });
+

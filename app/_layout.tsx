@@ -3,24 +3,24 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
-import { DevFpsCounter } from '@/components/dev-fps-counter';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { CompteurFpsDev } from '@/components/compteur-fps-dev';
+import { useSchemaCouleur } from '@/hooks/use-schema-couleur';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const schemaCouleur = useSchemaCouleur();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={schemaCouleur === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
-      <DevFpsCounter />
+      <CompteurFpsDev />
       <StatusBar style="auto" />
     </ThemeProvider>
   );

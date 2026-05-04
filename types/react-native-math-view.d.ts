@@ -1,8 +1,8 @@
-declare module 'react-native-math-view' {
+declare module 'react-native-mathematiques-view' {
   import { ComponentType, ReactNode } from 'react';
 
   type MathViewProps = {
-    math: string;
+    mathematiques: string;
     renderError?: (props: { error: string }) => ReactNode;
   };
 

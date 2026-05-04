@@ -1,9 +1,9 @@
-import { router } from 'expo-router';
+import { Href, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FloatingMathSymbols } from '@/features/simulations/core/floating-math-symbols';
+import { SymbolesMathematiquesFlottants } from '@/features/simulations/core/symboles-mathematiques-flottants';
 
 const introLogo = require('@/assets/images/evidexe-logo.png');
 
@@ -65,7 +65,7 @@ export default function IntroScreen() {
     };
   }, [opacity, scale]);
 
-  //animation entrer écran d'acceuil
+  //animation entrer Ã©cran d'acceuil
   const handleStart = () => {
     if (isLeaving) {
       return;
@@ -92,7 +92,7 @@ export default function IntroScreen() {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      router.replace('/(tabs)/home');
+      router.replace('/(tabs)/accueil' as Href);
     });
   };
 
@@ -106,7 +106,7 @@ export default function IntroScreen() {
               transform: [{ translateY: screenTranslateY }],
             },
           ]}>
-          <FloatingMathSymbols/>
+          <SymbolesMathematiquesFlottants/>
           <Pressable onPress={handleStart} style={styles.pressable}>
             <Animated.View
               style={[
@@ -183,3 +183,4 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
 });
+
