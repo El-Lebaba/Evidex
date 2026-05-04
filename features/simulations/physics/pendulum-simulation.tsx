@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -228,6 +229,7 @@ function PendulumGraph({
 }
 
 export function PendulumSimulation() {
+  const isFocused = useIsFocused();
   const [lengthCm, setLengthCm] = useState(150);
   const [gravity, setGravity] = useState(9.8);
   const [damping, setDamping] = useState(0.995);
@@ -253,7 +255,7 @@ export function PendulumSimulation() {
   }, [initialAngle, lengthCm, gravity]);
 
   useEffect(() => {
-    if (!isRunning) {
+    if (!isFocused || !isRunning) {
       return;
     }
 
@@ -279,7 +281,7 @@ export function PendulumSimulation() {
     }, 16);
 
     return () => clearInterval(interval);
-  }, [damping, gravity, isRunning, lengthCm]);
+  }, [damping, gravity, isFocused, isRunning, lengthCm]);
 
   const horizontalPadding = width >= 1200 ? 12 : 16;
   const contentWidth = width - horizontalPadding * 2;

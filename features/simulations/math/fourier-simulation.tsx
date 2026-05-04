@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -435,6 +436,7 @@ function HarmonicSlider({
 }
 
 export function FourierSimulation() {
+  const isFocused = useIsFocused();
   const [signalIndex, setSignalIndex] = useState(0);
   const [nTerms, setNTerms] = useState(5);
   const [showComponents, setShowComponents] = useState(true);
@@ -443,6 +445,10 @@ export function FourierSimulation() {
   const { width } = useWindowDimensions();
 
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
     let frameId = 0;
     let lastTime = 0;
 
@@ -461,7 +467,7 @@ export function FourierSimulation() {
     frameId = requestAnimationFrame(tick);
 
     return () => cancelAnimationFrame(frameId);
-  }, []);
+  }, [isFocused]);
 
   const horizontalPadding = width >= 1200 ? 12 : 16;
   const contentWidth = width - horizontalPadding * 2;

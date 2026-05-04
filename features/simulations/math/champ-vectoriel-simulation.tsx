@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -138,6 +139,7 @@ function VectorFieldGraph({
   graphWidth: number;
   showParticles: boolean;
 }) {
+  const isFocused = useIsFocused();
   const particlesRef = useRef<Particle[] | null>(null);
   if (particlesRef.current === null) {
     particlesRef.current = Array.from({ length: PARTICLE_COUNT }, () => randomParticle());
@@ -145,7 +147,7 @@ function VectorFieldGraph({
   const [frame, setFrame] = useState(0);
 
   useEffect(() => {
-    if (!showParticles) {
+    if (!isFocused || !showParticles) {
       return;
     }
 
@@ -176,7 +178,7 @@ function VectorFieldGraph({
     }, 40);
 
     return () => clearInterval(interval);
-  }, [field, showParticles]);
+  }, [field, isFocused, showParticles]);
 
   const vectors = useMemo(() => {
     const items: {

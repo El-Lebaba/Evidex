@@ -4,6 +4,7 @@ import { Animated, Easing, StyleProp, StyleSheet, View, ViewStyle } from 'react-
 type PercentString = `${number}%`;
 
 type FloatingMathSymbolsProps = {
+  isActive?: boolean;
   showGlow?: boolean;
   style?: StyleProp<ViewStyle>;
 };
@@ -60,7 +61,7 @@ function createSymbolSeed(index: number) {
   };
 }
 
-export function FloatingMathSymbols({ showGlow = true, style }: FloatingMathSymbolsProps) {
+export function FloatingMathSymbols({ isActive = true, showGlow = true, style }: FloatingMathSymbolsProps) {
   const symbolSeeds = useMemo(
     () => Array.from({ length: symbolCount }, (_, index) => createSymbolSeed(index)),
     []
@@ -68,6 +69,11 @@ export function FloatingMathSymbols({ showGlow = true, style }: FloatingMathSymb
   const floatValues = useRef(symbolSeeds.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
+    if (!isActive) {
+      floatValues.forEach((value) => value.stopAnimation());
+      return;
+    }
+
     const floatAnimations = floatValues.map((value, index) =>
       Animated.loop(
         Animated.sequence([
@@ -92,7 +98,7 @@ export function FloatingMathSymbols({ showGlow = true, style }: FloatingMathSymb
     return () => {
       floatAnimations.forEach((animation) => animation.stop());
     };
-  }, [floatValues, symbolSeeds]);
+  }, [floatValues, isActive, symbolSeeds]);
 
   return (
     <View pointerEvents="none" style={[styles.container, style]}>

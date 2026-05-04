@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -308,6 +309,7 @@ function ProjectileGraph({
 }
 
 export function ProjectileMotionSimulation() {
+  const isFocused = useIsFocused();
   const [speed, setSpeed] = useState(20);
   const [angle, setAngle] = useState(45);
   const [gravity, setGravity] = useState(9.8);
@@ -325,7 +327,7 @@ export function ProjectileMotionSimulation() {
   }, [angle, gravity, speed]);
 
   useEffect(() => {
-    if (!isLaunched || isPaused) {
+    if (!isFocused || !isLaunched || isPaused) {
       return;
     }
 
@@ -344,7 +346,7 @@ export function ProjectileMotionSimulation() {
     }, 16);
 
     return () => clearInterval(interval);
-  }, [isLaunched, isPaused, values.flightTime]);
+  }, [isFocused, isLaunched, isPaused, values.flightTime]);
 
   const horizontalPadding = width >= 1200 ? 12 : 16;
   const contentWidth = width - horizontalPadding * 2;

@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -398,6 +399,7 @@ function GravityGraph({
 }
 
 export function GravitySimulation() {
+  const isFocused = useIsFocused();
   const [mass1, setMass1] = useState(50);
   const [mass2, setMass2] = useState(30);
   const [distance, setDistance] = useState(150);
@@ -406,12 +408,16 @@ export function GravitySimulation() {
   const { width } = useWindowDimensions();
 
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
     const interval = setInterval(() => {
       setPhase((current) => current + 0.035);
     }, 40);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isFocused]);
 
   const horizontalPadding = width >= 1200 ? 12 : 16;
   const contentWidth = width - horizontalPadding * 2;

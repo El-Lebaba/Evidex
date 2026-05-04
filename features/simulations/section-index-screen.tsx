@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useIsFocused } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import {Href, router} from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -165,6 +166,7 @@ function DashboardSectionScreen({
   entries: SimulationEntry[];
 }) {
   const { width } = useWindowDimensions();
+  const isFocused = useIsFocused();
   const [query, setQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<DashboardFilter[]>([]);
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
@@ -216,7 +218,7 @@ function DashboardSectionScreen({
   return (
     <SafeAreaView style={styles.safeArea}>
       <ThemedView lightColor={MATH_THEME.background} style={styles.mathSafeArea}>
-        <FloatingMathSymbols showGlow={false} style={styles.pageBackground} />
+        <FloatingMathSymbols isActive={isFocused} showGlow={false} style={styles.pageBackground} />
 
         <ScrollView contentContainerStyle={styles.mathScrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.mathContainer}>
