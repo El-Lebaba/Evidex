@@ -52,7 +52,6 @@ export function DefinitionPopover({
   const sheetWidth = Math.min(width - 24, 360);
   const sheetHeight = 360;
   const fabSize = 58;
-  const fabMargin = 20;
 
   useEffect(() => {
     Animated.timing(progress, {

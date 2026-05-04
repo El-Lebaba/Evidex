@@ -515,8 +515,6 @@ export function SpringHookesLawSimulation() {
   const dampFactor = Math.exp(-physics.gamma * elapsed);
   const phase = physics.omegaD * elapsed;
   const displacementMeters = amplitudeMeters * dampFactor * Math.cos(phase);
-  const velocityMeters =
-    amplitudeMeters * dampFactor * (-physics.gamma * Math.cos(phase) - physics.omegaD * Math.sin(phase));
   const forceNewtons = -springConstant * displacementMeters;
 
   useEffect(() => {

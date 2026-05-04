@@ -159,14 +159,12 @@ function NumericSlider({
 
 function PendulumGraph({
   angle,
-  angularVelocity,
   graphHeight,
   graphWidth,
   lengthCm,
   trail,
 }: {
   angle: number;
-  angularVelocity: number;
   graphHeight: number;
   graphWidth: number;
   lengthCm: number;
@@ -341,7 +339,6 @@ export function PendulumSimulation() {
             ]}>
             <PendulumGraph
               angle={state.angle}
-              angularVelocity={state.angularVelocity}
               graphHeight={graphHeight}
               graphWidth={graphWidth}
               lengthCm={lengthCm}
