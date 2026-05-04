@@ -1,5 +1,5 @@
-import { LineSimulationScreen } from '@/features/simulations/core/line-simulation-screen';
+import { CircularMotionSimulation } from '@/features/simulations/physics/circular-motion-simulation';
 
 export default function CircularMotionScreen() {
-  return <LineSimulationScreen title="Circular Motion" type="physics" />;
+  return <CircularMotionSimulation />;
 }

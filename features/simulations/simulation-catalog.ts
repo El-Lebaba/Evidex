@@ -5,7 +5,7 @@ export type SimulationEntry = {
   featured?: boolean;
   href: string;
   icon?: string;
-  status?: 'ready' | 'soon';
+  status?: 'closed' | 'ready' | 'soon';
   tags?: string[];
   title: string;
 };
@@ -85,7 +85,7 @@ export const SIMULATION_CATALOG: Record<SimulationSection, SimulationEntry[]> = 
       description: 'Observe norme et direction en chaque point.',
       href: '/(tabs)/math/champ-vectoriel',
       icon: 'vector-arrange-above',
-      status: 'ready',
+      status: 'closed',
       tags: ['geometrie', 'vecteurs', 'visualisation'],
       title: 'Champ vectoriel',
     },
@@ -145,7 +145,7 @@ export const SIMULATION_CATALOG: Record<SimulationSection, SimulationEntry[]> = 
       description: 'Lie deformation, rappel elastique et oscillations.',
       href: '/(tabs)/physics/spring-hookes-law',
       icon: 'source-branch',
-      status: 'soon',
+      status: 'ready',
       tags: ['mecanique', 'energie'],
       title: 'Ressort et loi de Hooke',
     },
@@ -153,7 +153,7 @@ export const SIMULATION_CATALOG: Record<SimulationSection, SimulationEntry[]> = 
       description: 'Explore la rotation uniforme et les forces centripetes.',
       href: '/(tabs)/physics/circular-motion',
       icon: 'orbit-variant',
-      status: 'soon',
+      status: 'ready',
       tags: ['mecanique'],
       title: 'Mouvement circulaire',
     },

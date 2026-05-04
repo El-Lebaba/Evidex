@@ -158,6 +158,30 @@ function matchesDashboardFilter(entry: SimulationEntry, filter: DashboardFilter)
   return entry.tags?.includes(filter) ?? false;
 }
 
+function getStatusLabel(status: SimulationEntry['status']) {
+  if (status === 'closed') {
+    return 'Verrouille';
+  }
+
+  if (status === 'ready') {
+    return 'Disponible';
+  }
+
+  return 'Bientot';
+}
+
+function getStatusStyle(status: SimulationEntry['status']) {
+  if (status === 'closed') {
+    return styles.statusClosed;
+  }
+
+  if (status === 'ready') {
+    return styles.statusReady;
+  }
+
+  return styles.statusSoon;
+}
+
 function DashboardSectionScreen({
   config,
   entries,
@@ -377,13 +401,22 @@ function DashboardSectionScreen({
                         { columnGap: gridGap },
                         !isTwoColumns ? styles.cardRowSingle : null,
                       ]}>
-                      {row.map((entry) => (
+                      {row.map((entry) => {
+                        const isClosed = entry.status === 'closed';
+
+                        return (
                         <View key={entry.href} style={styles.cardSlot}>
                             <Pressable
-                                onPress={()=>router.push(entry.href as Href)}
+                                disabled={isClosed}
+                                onPress={() => {
+                                  if (!isClosed) {
+                                    router.push(entry.href as Href);
+                                  }
+                                }}
                               style={({ pressed, hovered }) => [
                                 styles.mathCard,
-                                pressed || hovered ? styles.mathCardPressed : null,
+                                isClosed ? styles.mathCardClosed : null,
+                                !isClosed && (pressed || hovered) ? styles.mathCardPressed : null,
                               ]}>
                               <View style={styles.mathCardTop}>
                                 <View style={styles.iconShell}>
@@ -398,12 +431,12 @@ function DashboardSectionScreen({
                                   <View
                                     style={[
                                       styles.statusBadge,
-                                      entry.status === 'ready' ? styles.statusReady : styles.statusSoon,
+                                      getStatusStyle(entry.status),
                                     ]}>
                                     <ThemedText
                                       lightColor="#243B53"
                                       style={styles.statusText}>
-                                      {entry.status === 'ready' ? 'Disponible' : 'Bientot'}
+                                      {getStatusLabel(entry.status)}
                                     </ThemedText>
                                   </View>
                                 </View>
@@ -432,7 +465,8 @@ function DashboardSectionScreen({
                               </View>
                             </Pressable>
                         </View>
-                      ))}
+                      );
+                    })}
 
                       {isTwoColumns && row.length === 1 ? <View style={styles.cardSlot} /> : null}
                     </View>
@@ -459,7 +493,15 @@ function renderDefaultScreen(title: string, entries: SimulationEntry[]) {
             <ThemedText style={styles.description}>Aucune simulation pour l&#39;instant.</ThemedText>
           ) : (
             entries.map((entry) => (
-              <Pressable onPress={()=>router.push(entry.href as Href)} key={entry.href} style={styles.card}>
+              <Pressable
+                disabled={entry.status === 'closed'}
+                onPress={() => {
+                  if (entry.status !== 'closed') {
+                    router.push(entry.href as Href);
+                  }
+                }}
+                key={entry.href}
+                style={[styles.card, entry.status === 'closed' ? styles.cardClosed : null]}>
                 <ThemedText type="defaultSemiBold">{entry.title}</ThemedText>
               </Pressable>
             ))
@@ -509,6 +551,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 18,
     paddingVertical: 16,
+  },
+  cardClosed: {
+    opacity: 0.72,
   },
   mathSafeArea: {
     flex: 1,
@@ -820,6 +865,9 @@ const styles = StyleSheet.create({
     borderColor: '#8D9771',
     transform: [{ translateY: 2 }],
   },
+  mathCardClosed: {
+    opacity: 0.72,
+  },
   mathCardTop: {
     alignItems: 'flex-start',
     flexDirection: 'row',
@@ -850,6 +898,9 @@ const styles = StyleSheet.create({
   },
   statusSoon: {
     backgroundColor: '#E3E5D2',
+  },
+  statusClosed: {
+    backgroundColor: '#F2B36D',
   },
   statusText: {
     color: '#243B53',
