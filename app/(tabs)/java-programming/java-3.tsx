@@ -1,5 +1,0 @@
-import { LineSimulationScreen } from '@/features/simulations/core/line-simulation-screen';
-
-export default function Java3Screen() {
-  return <LineSimulationScreen title="Bientot" type="java-programming" />;
-}

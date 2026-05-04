@@ -1,60 +1,60 @@
 import { Tabs } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 
-import { db } from '@/db/mainData';
+import { donneesLocales } from '@/db/donnees-principales';
 
-export default function TabLayout() {
-  const [darkMode, setDarkMode] = useState(false);
+export default function DispositionOnglets() {
+  const [modeSombre, definirModeSombre] = useState(false);
 
   useEffect(() => {
-    function refreshSettings() {
-      setDarkMode(db.getSettings().darkMode);
+    function rafraichirParametres() {
+      definirModeSombre(donneesLocales.obtenirParametres().darkMode);
     }
 
-    db.init();
-    refreshSettings();
+    donneesLocales.init();
+    rafraichirParametres();
 
     if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
-      window.addEventListener('evidex_settings_changed', refreshSettings);
-      return () => window.removeEventListener('evidex_settings_changed', refreshSettings);
+      window.addEventListener('evidex_settings_changed', rafraichirParametres);
+      return () => window.removeEventListener('evidex_settings_changed', rafraichirParametres);
     }
   }, []);
 
-  const tabBackground = darkMode ? '#1F2A32' : undefined;
-  const tabBorder = darkMode ? '#9DB2C0' : undefined;
+  const arrierePlanOnglet = modeSombre ? '#1F2A32' : undefined;
+  const bordureOnglet = modeSombre ? '#9DB2C0' : undefined;
 
   return (
     <Tabs
       screenOptions={{
         tabBarStyle: {
-          backgroundColor: tabBackground,
-          borderTopColor: tabBorder,
+          backgroundColor: arrierePlanOnglet,
+          borderTopColor: bordureOnglet,
           display: 'none',
         },
         headerShown: false,
       }}>
       <Tabs.Screen
-        name="home/index"
-        options={{ title: 'Home' }}
+        name="accueil/index"
+        options={{ title: 'Accueil' }}
       />
       <Tabs.Screen
-        name="profile/index"
-        options={{ title: 'Profile' }}
+        name="profil/index"
+        options={{ title: 'Profil' }}
       />
       <Tabs.Screen
         name="cours"
         options={{ title: 'Cours' }}
       />
       <Tabs.Screen
-        name="math"
+        name="mathematiques"
         options={{ title: 'Math' }}
       />
       <Tabs.Screen
-        name="physics"
+        name="physique"
         options={{ title: 'Physiques' }}
       />
       <Tabs.Screen
-        name="java-programming"
+        name="programmation-java"
         options={{ title: 'Java' }}
       />
       <Tabs.Screen
@@ -66,3 +66,4 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+

@@ -1,5 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { router } from 'expo-router';
+import { Href, router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,25 +17,25 @@ const palette = {
 
 const sections = [
   {
-    key: 'math',
+    key: 'mathematiques',
     title: 'Math',
     icon: 'functions',
     color: palette.blue,
-    href: '/(tabs)/math' as const,
+    href: '/(tabs)/mathematiques' as const,
   },
   {
-    key: 'physics',
+    key: 'physique',
     title: 'Physique',
     icon: 'science',
     color: palette.yellow,
-    href: '/(tabs)/physics' as const,
+    href: '/(tabs)/physique' as const,
   },
   {
     key: 'java',
     title: 'Java',
     icon: 'code',
     color: palette.coral,
-    href: '/(tabs)/java-programming' as const,
+    href: '/(tabs)/programmation-java' as const,
   },
 ];
 
@@ -59,7 +59,7 @@ export default function SimulationsHubScreen() {
           {sections.map((section) => (
             <Pressable
               key={section.key}
-              onPress={() => router.push(section.href)}
+              onPress={() => router.push(section.href as Href)}
               style={({ pressed }) => [
                 styles.sectionButton,
                 { borderColor: section.color },
@@ -156,3 +156,4 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 });
+
