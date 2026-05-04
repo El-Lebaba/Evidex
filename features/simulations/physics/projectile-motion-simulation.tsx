@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -21,6 +22,7 @@ import {
   SIMULATION_HEADER_TOTAL_HEIGHT,
   SimulationScreenHeader,
 } from '@/features/simulations/core/simulation-screen-header';
+import { useSimulationInterval } from '@/features/simulations/core/use-simulation-interval';
 
 type NumericSliderProps = {
   label: string;
@@ -308,6 +310,7 @@ function ProjectileGraph({
 }
 
 export function ProjectileMotionSimulation() {
+  const isFocused = useIsFocused();
   const [speed, setSpeed] = useState(20);
   const [angle, setAngle] = useState(45);
   const [gravity, setGravity] = useState(9.8);
@@ -324,27 +327,19 @@ export function ProjectileMotionSimulation() {
     setIsPaused(false);
   }, [angle, gravity, speed]);
 
-  useEffect(() => {
-    if (!isLaunched || isPaused) {
-      return;
-    }
+  useSimulationInterval(isFocused && isLaunched && !isPaused, () => {
+    setElapsed((current) => {
+      const nextElapsed = current + 0.096;
 
-    const interval = setInterval(() => {
-      setElapsed((current) => {
-        const nextElapsed = current + 0.048;
+      if (nextElapsed >= values.flightTime) {
+        setIsLaunched(false);
+        setIsPaused(false);
+        return values.flightTime;
+      }
 
-        if (nextElapsed >= values.flightTime) {
-          setIsLaunched(false);
-          setIsPaused(false);
-          return values.flightTime;
-        }
-
-        return nextElapsed;
-      });
-    }, 16);
-
-    return () => clearInterval(interval);
-  }, [isLaunched, isPaused, values.flightTime]);
+      return nextElapsed;
+    });
+  }, 32);
 
   const horizontalPadding = width >= 1200 ? 12 : 16;
   const contentWidth = width - horizontalPadding * 2;
@@ -477,31 +472,22 @@ export function ProjectileMotionSimulation() {
               <View style={styles.velocityCard}>
                 <ThemedText lightColor={THEME.mutedInk} style={styles.infoLabel}>
                   Vitesse actuelle
-                </ThemedText>
-                <View style={styles.velocityRows}>
-                  <View style={styles.velocityRow}>
-                    <FormulaRenderer
-                      fallback={`vx = ${formatNumber(values.vx, 2)} m/s`}
-                      math={`v_x=${formatNumber(values.vx, 2)}\\ \\text{m/s}`}
-                      centered
-                      size="sm"
-                    />
+                  </ThemedText>
+                  <View style={styles.velocityRows}>
+                    <View style={styles.velocityRow}>
+                      <ThemedText lightColor={THEME.ink} style={styles.velocityText}>
+                        vx = {formatNumber(values.vx, 2)} m/s
+                      </ThemedText>
                   </View>
                   <View style={styles.velocityRow}>
-                    <FormulaRenderer
-                      fallback={`vy = ${formatNumber(currentYVelocity, 2)} m/s`}
-                      math={`v_y=${formatNumber(currentYVelocity, 2)}\\ \\text{m/s}`}
-                      centered
-                      size="sm"
-                    />
+                    <ThemedText lightColor={THEME.ink} style={styles.velocityText}>
+                      vy = {formatNumber(currentYVelocity, 2)} m/s
+                    </ThemedText>
                   </View>
                   <View style={styles.velocityRow}>
-                    <FormulaRenderer
-                      fallback={`|v| = ${formatNumber(currentSpeed, 2)} m/s`}
-                      math={`|v|=${formatNumber(currentSpeed, 2)}\\ \\text{m/s}`}
-                      centered
-                      size="sm"
-                    />
+                    <ThemedText lightColor={THEME.ink} style={styles.velocityText}>
+                      |v| = {formatNumber(currentSpeed, 2)} m/s
+                    </ThemedText>
                   </View>
                 </View>
               </View>
@@ -708,5 +694,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 30,
     width: '100%',
+  },
+  velocityText: {
+    color: THEME.ink,
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 20,
+    textAlign: 'center',
   },
 });

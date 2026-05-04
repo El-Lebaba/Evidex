@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
+import { useMemo, useRef, useState } from 'react';
+import { Animated, Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Rect } from 'react-native-svg';
 
@@ -12,6 +13,7 @@ import {
   SIMULATION_HEADER_TOTAL_HEIGHT,
   SimulationScreenHeader,
 } from '@/features/simulations/core/simulation-screen-header';
+import { useSimulationInterval } from '@/features/simulations/core/use-simulation-interval';
 
 type Domain = {
   xMax: number;
@@ -37,8 +39,8 @@ type Particle = {
 
 const SIMULATION_PAGE_BACKGROUND = '#EAE3D2';
 const DOMAIN: Domain = { xMax: 4, xMin: -4, yMax: 4, yMin: -4 };
-const PARTICLE_COUNT = 25;
-const FIELD_STEPS = 18;
+const PARTICLE_COUNT = Platform.OS === 'web' ? 25 : 12;
+const FIELD_STEPS = Platform.OS === 'web' ? 18 : 11;
 const THEME = {
   accent: '#D8A94A',
   accentSoft: 'rgba(216, 169, 74, 0.2)',
@@ -138,45 +140,38 @@ function VectorFieldGraph({
   graphWidth: number;
   showParticles: boolean;
 }) {
+  const isFocused = useIsFocused();
   const particlesRef = useRef<Particle[] | null>(null);
   if (particlesRef.current === null) {
     particlesRef.current = Array.from({ length: PARTICLE_COUNT }, () => randomParticle());
   }
   const [frame, setFrame] = useState(0);
 
-  useEffect(() => {
-    if (!showParticles) {
-      return;
-    }
+  useSimulationInterval(isFocused && showParticles, () => {
+    const currentParticles = particlesRef.current ?? [];
+    particlesRef.current = currentParticles.map((particle) => {
+      const vx = field.p(particle.x, particle.y);
+      const vy = field.q(particle.x, particle.y);
+      const magnitude = Math.sqrt(vx * vx + vy * vy) + 0.001;
+      const nextParticle = {
+        x: particle.x + (vx / magnitude) * 0.06,
+        y: particle.y + (vy / magnitude) * 0.06,
+      };
 
-    const interval = setInterval(() => {
-      const currentParticles = particlesRef.current ?? [];
-      particlesRef.current = currentParticles.map((particle) => {
-        const vx = field.p(particle.x, particle.y);
-        const vy = field.q(particle.x, particle.y);
-        const magnitude = Math.sqrt(vx * vx + vy * vy) + 0.001;
-        const nextParticle = {
-          x: particle.x + (vx / magnitude) * 0.06,
-          y: particle.y + (vy / magnitude) * 0.06,
-        };
+      if (
+        !Number.isFinite(nextParticle.x) ||
+        !Number.isFinite(nextParticle.y) ||
+        Math.abs(nextParticle.x) > DOMAIN.xMax ||
+        Math.abs(nextParticle.y) > DOMAIN.yMax
+      ) {
+        return randomParticle();
+      }
 
-        if (
-          !Number.isFinite(nextParticle.x) ||
-          !Number.isFinite(nextParticle.y) ||
-          Math.abs(nextParticle.x) > DOMAIN.xMax ||
-          Math.abs(nextParticle.y) > DOMAIN.yMax
-        ) {
-          return randomParticle();
-        }
+      return nextParticle;
+    });
 
-        return nextParticle;
-      });
-
-      setFrame((current) => current + 1);
-    }, 40);
-
-    return () => clearInterval(interval);
-  }, [field, showParticles]);
+    setFrame((current) => current + 1);
+  }, 40);
 
   const vectors = useMemo(() => {
     const items: {

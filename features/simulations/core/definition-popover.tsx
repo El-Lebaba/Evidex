@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -38,6 +39,7 @@ export function DefinitionPopover({
   title,
   delayMs = 5000,
 }: DefinitionPopoverProps) {
+  const isFocused = useIsFocused();
   const [visible, setVisible] = useState(false);
   const [fabVisible, setFabVisible] = useState(false);
   const [hintDismissed, setHintDismissed] = useState(false);
@@ -50,7 +52,6 @@ export function DefinitionPopover({
   const sheetWidth = Math.min(width - 24, 360);
   const sheetHeight = 360;
   const fabSize = 58;
-  const fabMargin = 20;
 
   useEffect(() => {
     Animated.timing(progress, {
@@ -62,7 +63,7 @@ export function DefinitionPopover({
   }, [progress, visible]);
 
   useEffect(() => {
-    if (hintDismissed) {
+    if (!isFocused || hintDismissed) {
       return;
     }
 
@@ -77,10 +78,10 @@ export function DefinitionPopover({
     }, delayMs);
 
     return () => clearTimeout(timeoutId);
-  }, [delayMs, fabEntrance, hintDismissed]);
+  }, [delayMs, fabEntrance, hintDismissed, isFocused]);
 
   useEffect(() => {
-    if (!fabVisible || hintDismissed || visible) {
+    if (!isFocused || !fabVisible || hintDismissed || visible) {
       fabShake.stopAnimation();
       fabShake.setValue(0);
       return;
@@ -128,7 +129,7 @@ export function DefinitionPopover({
       shakeLoop.stop();
       fabShake.setValue(0);
     };
-  }, [fabShake, fabVisible, hintDismissed, visible]);
+  }, [fabShake, fabVisible, hintDismissed, isFocused, visible]);
 
   const openDefinition = () => {
     setHintDismissed(true);

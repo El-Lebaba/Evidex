@@ -1,5 +1,5 @@
-import { LineSimulationScreen } from '@/features/simulations/core/line-simulation-screen';
+import { SpringHookesLawSimulation } from '@/features/simulations/physics/spring-hookes-law-simulation';
 
 export default function SpringHookesLawScreen() {
-  return <LineSimulationScreen title="Spring & Hooke's Law" type="physics" />;
+  return <SpringHookesLawSimulation />;
 }

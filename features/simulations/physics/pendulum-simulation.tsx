@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -21,6 +22,7 @@ import {
   SIMULATION_HEADER_TOTAL_HEIGHT,
   SimulationScreenHeader,
 } from '@/features/simulations/core/simulation-screen-header';
+import { useSimulationInterval } from '@/features/simulations/core/use-simulation-interval';
 
 type NumericSliderProps = {
   label: string;
@@ -157,14 +159,12 @@ function NumericSlider({
 
 function PendulumGraph({
   angle,
-  angularVelocity,
   graphHeight,
   graphWidth,
   lengthCm,
   trail,
 }: {
   angle: number;
-  angularVelocity: number;
   graphHeight: number;
   graphWidth: number;
   lengthCm: number;
@@ -228,6 +228,7 @@ function PendulumGraph({
 }
 
 export function PendulumSimulation() {
+  const isFocused = useIsFocused();
   const [lengthCm, setLengthCm] = useState(150);
   const [gravity, setGravity] = useState(9.8);
   const [damping, setDamping] = useState(0.995);
@@ -252,34 +253,26 @@ export function PendulumSimulation() {
     setFrame((current) => current + 1);
   }, [initialAngle, lengthCm, gravity]);
 
-  useEffect(() => {
-    if (!isRunning) {
-      return;
+  useSimulationInterval(isFocused && isRunning, () => {
+    const state = stateRef.current;
+    const lengthM = lengthCm / 100;
+    const dt = 0.032;
+    const angularAcceleration = -(gravity / lengthM) * Math.sin(state.angle);
+
+    state.angularVelocity = (state.angularVelocity + angularAcceleration * dt) * Math.pow(damping, dt / 0.016);
+    state.angle += state.angularVelocity * dt;
+
+    const { graphHeight, graphWidth } = graphMetricsRef.current;
+    if (graphHeight > 0 && graphWidth > 0) {
+      const visualLength = clamp((lengthCm / 250) * graphHeight * 0.66, 90, graphHeight * 0.7);
+      state.trail.push(polarToPoint(graphWidth / 2, 52, visualLength, state.angle));
+      if (state.trail.length > 56) {
+        state.trail.shift();
+      }
     }
 
-    const interval = setInterval(() => {
-      const state = stateRef.current;
-      const lengthM = lengthCm / 100;
-      const dt = 0.016;
-      const angularAcceleration = -(gravity / lengthM) * Math.sin(state.angle);
-
-      state.angularVelocity = (state.angularVelocity + angularAcceleration * dt) * damping;
-      state.angle += state.angularVelocity * dt;
-
-      const { graphHeight, graphWidth } = graphMetricsRef.current;
-      if (graphHeight > 0 && graphWidth > 0) {
-        const visualLength = clamp((lengthCm / 250) * graphHeight * 0.66, 90, graphHeight * 0.7);
-        state.trail.push(polarToPoint(graphWidth / 2, 52, visualLength, state.angle));
-        if (state.trail.length > 56) {
-          state.trail.shift();
-        }
-      }
-
-      setFrame((current) => current + 1);
-    }, 16);
-
-    return () => clearInterval(interval);
-  }, [damping, gravity, isRunning, lengthCm]);
+    setFrame((current) => current + 1);
+  }, 32);
 
   const horizontalPadding = width >= 1200 ? 12 : 16;
   const contentWidth = width - horizontalPadding * 2;
@@ -346,7 +339,6 @@ export function PendulumSimulation() {
             ]}>
             <PendulumGraph
               angle={state.angle}
-              angularVelocity={state.angularVelocity}
               graphHeight={graphHeight}
               graphWidth={graphWidth}
               lengthCm={lengthCm}
@@ -389,12 +381,9 @@ export function PendulumSimulation() {
                     Vitesse ang.
                   </ThemedText>
                   <View style={styles.statFormulaWrap}>
-                    <FormulaRenderer
-                      fallback={`${formatNumber(Math.abs(state.angularVelocity))} rad/s`}
-                      math={`${formatNumber(Math.abs(state.angularVelocity))}\\ \\text{rad/s}`}
-                      centered
-                      size="sm"
-                    />
+                    <ThemedText lightColor={THEME.ink} style={styles.statValueSmall}>
+                      {formatNumber(Math.abs(state.angularVelocity))} rad/s
+                    </ThemedText>
                   </View>
                 </View>
                 <View style={styles.statCard}>
