@@ -1,87 +1,42 @@
 import { memo, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import katex from 'katex';
-import { WebView } from 'react-native-webview';
 
 import { ThemedText } from '@/components/themed-text';
+import { formatFormulaForDisplay } from '@/features/simulations/core/format-formula';
 
 type FormulaRendererProps = {
   fallback: string;
   math: string;
   centered?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 };
 
 const FONT_SIZE = {
-  sm: 0.92,
-  md: 1.05,
-  lg: 1.18,
+  sm: 16,
+  md: 18,
+  lg: 20,
+  xl: 36,
+  xxl: 44,
 } as const;
 
 function FormulaRendererComponent({
   fallback,
-  math,
   centered = false,
   size = 'md',
 }: FormulaRendererProps) {
-  const html = useMemo(() => {
-    try {
-      const markup = katex.renderToString(math || fallback, {
-        displayMode: false,
-        output: 'html',
-        throwOnError: false,
-      });
-
-      return `<!DOCTYPE html>
-<html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.45/dist/katex.min.css" />
-    <style>
-      html, body {
-        background: transparent;
-        margin: 0;
-        padding: 0;
-      }
-
-      body {
-        align-items: ${centered ? 'center' : 'flex-start'};
-        color: #243B53;
-        display: flex;
-        font-size: 18px;
-        justify-content: ${centered ? 'center' : 'flex-start'};
-        min-height: 28px;
-        overflow: hidden;
-        width: 100%;
-      }
-
-      .katex {
-        font-size: ${FONT_SIZE[size]}em;
-      }
-    </style>
-  </head>
-  <body>${markup}</body>
-</html>`;
-    } catch {
-      return null;
-    }
-  }, [centered, fallback, math, size]);
+  const displayFormula = useMemo(() => formatFormulaForDisplay(fallback), [fallback]);
 
   return (
-    <View style={styles.wrap}>
-      {html ? (
-        <WebView
-          originWhitelist={['*']}
-          scrollEnabled={false}
-          source={{ html }}
-          style={styles.webview}
-        />
-      ) : (
-        <ThemedText lightColor="#243B53" style={styles.fallback}>
-          {fallback}
-        </ThemedText>
-      )}
+    <View style={[styles.wrap, centered ? styles.centered : undefined]}>
+      <ThemedText
+        lightColor="#243B53"
+        style={[
+          styles.fallback,
+          centered ? styles.centered : undefined,
+          { fontSize: FONT_SIZE[size], lineHeight: FONT_SIZE[size] + 6 },
+        ]}>
+        {displayFormula}
+      </ThemedText>
     </View>
   );
 }
@@ -94,9 +49,9 @@ const styles = StyleSheet.create({
     minHeight: 32,
     width: '100%',
   },
-  webview: {
-    backgroundColor: 'transparent',
-    height: 34,
+  centered: {
+    alignItems: 'center',
+    textAlign: 'center',
   },
   fallback: {
     color: '#243B53',

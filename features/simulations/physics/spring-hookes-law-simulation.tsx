@@ -22,6 +22,7 @@ import {
   SIMULATION_HEADER_TOTAL_HEIGHT,
   SimulationScreenHeader,
 } from '@/features/simulations/core/simulation-screen-header';
+import { useSimulationInterval } from '@/features/simulations/core/use-simulation-interval';
 
 type NumericSliderProps = {
   label: string;
@@ -522,17 +523,9 @@ export function SpringHookesLawSimulation() {
     setElapsed(0);
   }, [amplitudePixels, damping, mass, springConstant]);
 
-  useEffect(() => {
-    if (!isFocused || isPaused) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setElapsed((current) => current + 0.032);
-    }, 32);
-
-    return () => clearInterval(interval);
-  }, [isFocused, isPaused]);
+  useSimulationInterval(isFocused && !isPaused, () => {
+    setElapsed((current) => current + 0.032);
+  }, 32);
 
   const horizontalPadding = width >= 1200 ? 12 : 16;
   const contentWidth = width - horizontalPadding * 2;
@@ -680,12 +673,9 @@ export function SpringHookesLawSimulation() {
                     Deplacement actuel
                   </ThemedText>
                   <View style={styles.statFormulaWrap}>
-                    <FormulaRenderer
-                      centered
-                      fallback={`x = ${formatNumber(displacementMeters, 2)} m`}
-                      math={`x=${formatMathNumber(displacementMeters, 2)}\\ \\text{m}`}
-                      size="sm"
-                    />
+                    <ThemedText lightColor={THEME.ink} style={styles.statValue}>
+                      x = {formatNumber(displacementMeters, 2)} m
+                    </ThemedText>
                   </View>
                 </View>
                 <View style={styles.statCard}>
@@ -711,12 +701,9 @@ export function SpringHookesLawSimulation() {
                     Force de rappel
                   </ThemedText>
                   <View style={styles.statFormulaWrap}>
-                    <FormulaRenderer
-                      centered
-                      fallback={`F = ${formatNumber(forceNewtons, 2)} N`}
-                      math={`F=${formatMathNumber(forceNewtons, 2)}\\ \\text{N}`}
-                      size="sm"
-                    />
+                    <ThemedText lightColor={THEME.ink} style={styles.statValue}>
+                      F = {formatNumber(forceNewtons, 2)} N
+                    </ThemedText>
                   </View>
                 </View>
               </View>

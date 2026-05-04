@@ -26,11 +26,6 @@ function getSectionHref(type: string): Href {
 
 export function SimulationScreenHeader({ title, type }: SimulationScreenHeaderProps) {
   const closeSimulation = () => {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
-
     router.replace(getSectionHref(type));
   };
 

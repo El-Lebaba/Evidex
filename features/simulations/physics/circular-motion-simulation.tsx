@@ -22,6 +22,7 @@ import {
   SIMULATION_HEADER_TOTAL_HEIGHT,
   SimulationScreenHeader,
 } from '@/features/simulations/core/simulation-screen-header';
+import { useSimulationInterval } from '@/features/simulations/core/use-simulation-interval';
 
 type NumericSliderProps = {
   label: string;
@@ -264,17 +265,9 @@ export function CircularMotionSimulation() {
     setElapsed(0);
   }, [omega, radiusCm]);
 
-  useEffect(() => {
-    if (!isFocused || isPaused) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setElapsed((current) => current + 0.032);
-    }, 32);
-
-    return () => clearInterval(interval);
-  }, [isFocused, isPaused]);
+  useSimulationInterval(isFocused && !isPaused, () => {
+    setElapsed((current) => current + 0.032);
+  }, 32);
 
   const horizontalPadding = width >= 1200 ? 12 : 16;
   const contentWidth = width - horizontalPadding * 2;

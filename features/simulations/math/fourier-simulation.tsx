@@ -1,5 +1,5 @@
 import { useIsFocused } from '@react-navigation/native';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   GestureResponderEvent,
@@ -22,6 +22,7 @@ import {
   SIMULATION_HEADER_CONTENT_GAP,
   SIMULATION_HEADER_TOTAL_HEIGHT,
 } from '@/features/simulations/core/simulation-screen-header';
+import { useSimulationInterval } from '@/features/simulations/core/use-simulation-interval';
 
 type SignalConfig = {
   coeff: (k: number) => number;
@@ -38,6 +39,9 @@ type GraphPoint = {
 const SIMULATION_PAGE_BACKGROUND = '#EAE3D2';
 const HARMONIC_MIN = 1;
 const HARMONIC_MAX = 30;
+const GRAPH_SAMPLE_STEP = Platform.OS === 'web' ? 2 : 5;
+const HARMONIC_PATH_LIMIT = Platform.OS === 'web' ? 5 : 3;
+const PHASOR_LIMIT = Platform.OS === 'web' ? 8 : 6;
 const THEME = {
   approximation: '#7CCFBF',
   background: '#E9ECE4',
@@ -161,7 +165,7 @@ function FourierWaveGraph({
   const approximationPath = useMemo(() => {
     const points: GraphPoint[] = [];
 
-    for (let px = 0; px <= graphWidth; px += 2) {
+    for (let px = 0; px <= graphWidth; px += GRAPH_SAMPLE_STEP) {
       points.push(getWavePoint(px, graphWidth, graphHeight, phase, nTerms, signal));
     }
 
@@ -173,12 +177,12 @@ function FourierWaveGraph({
       return [];
     }
 
-    return Array.from({ length: Math.min(nTerms, 5) }, (_, index) => {
+    return Array.from({ length: Math.min(nTerms, HARMONIC_PATH_LIMIT) }, (_, index) => {
       const harmonic = index + 1;
       const amplitude = signal.coeff(harmonic);
       const points: GraphPoint[] = [];
 
-      for (let px = 0; px <= graphWidth; px += 2) {
+      for (let px = 0; px <= graphWidth; px += GRAPH_SAMPLE_STEP) {
         const x = (px / graphWidth) * 4 * Math.PI - 2 * Math.PI - phase * 0.55;
         const y = Math.sin(harmonic * x) * amplitude;
         points.push({
@@ -305,7 +309,7 @@ function PhasorGraph({
     let x = centerX;
     let y = centerY;
 
-    for (let harmonic = 1; harmonic <= Math.min(nTerms, 8); harmonic += 1) {
+    for (let harmonic = 1; harmonic <= Math.min(nTerms, PHASOR_LIMIT); harmonic += 1) {
       const amplitude = Math.abs(signal.coeff(harmonic));
 
       if (amplitude < 0.001) {
@@ -444,30 +448,9 @@ export function FourierSimulation() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
 
-  useEffect(() => {
-    if (!isFocused) {
-      return;
-    }
-
-    let frameId = 0;
-    let lastTime = 0;
-
-    const tick = (time: number) => {
-      if (!lastTime) {
-        lastTime = time;
-      }
-
-      const delta = (time - lastTime) / 1000;
-      lastTime = time;
-
-      setPhase((current) => current + delta);
-      frameId = requestAnimationFrame(tick);
-    };
-
-    frameId = requestAnimationFrame(tick);
-
-    return () => cancelAnimationFrame(frameId);
-  }, [isFocused]);
+  useSimulationInterval(isFocused, () => {
+    setPhase((current) => current + 0.032);
+  }, 32);
 
   const horizontalPadding = width >= 1200 ? 12 : 16;
   const contentWidth = width - horizontalPadding * 2;

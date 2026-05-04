@@ -1,5 +1,5 @@
 import { useIsFocused } from '@react-navigation/native';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   GestureResponderEvent,
@@ -30,6 +30,7 @@ import {
   SIMULATION_HEADER_TOTAL_HEIGHT,
   SimulationScreenHeader,
 } from '@/features/simulations/core/simulation-screen-header';
+import { useSimulationInterval } from '@/features/simulations/core/use-simulation-interval';
 import {
   calculateGravitationalForce,
   EARTH_GRAVITY,
@@ -407,17 +408,9 @@ export function GravitySimulation() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const { width } = useWindowDimensions();
 
-  useEffect(() => {
-    if (!isFocused) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setPhase((current) => current + 0.035);
-    }, 40);
-
-    return () => clearInterval(interval);
-  }, [isFocused]);
+  useSimulationInterval(isFocused, () => {
+    setPhase((current) => current + 0.035);
+  }, 40);
 
   const horizontalPadding = width >= 1200 ? 12 : 16;
   const contentWidth = width - horizontalPadding * 2;
