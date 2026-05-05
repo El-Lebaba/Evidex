@@ -1,6 +1,6 @@
-import { EcranSimulationLigne } from '@/features/simulations/core/ecran-simulation-ligne';
+import { SimulationChampsElectriques } from '@/features/simulations/physique/simulation-champs-electriques';
 
 export default function EcranChampsElectriques() {
-  return <EcranSimulationLigne titre="Champs electriques" domaine="physique" />;
+  return <SimulationChampsElectriques />;
 }
 
